@@ -33,7 +33,7 @@ def convert_pdf_nuclear(pdf_path, output_dir=None):
     result = converter.convert(pdf_path)
     doc = result.document
 
-    images_dir = output_dir / "images"
+    images_dir = Path("images")
     final_filename = output_dir / f"{pdf_path.stem}_nuclear.md"
     
     doc.save_as_markdown(

@@ -1,10 +1,10 @@
-![Image](/home/mando/Work/bwired/images/image_000000_0fcc2a4157c6d712c6317f7e8b611dd8dbb018ca5d51fa74a89dc406f7ab94ce.png)
+![Image](images/image_000000_0fcc2a4157c6d712c6317f7e8b611dd8dbb018ca5d51fa74a89dc406f7ab94ce.png)
 
 ThePolitical EconomyofState-owned Enterprises in China and India
 
 XuYi-chong
 
-![Image](/home/mando/Work/bwired/images/image_000001_dfc91ec691178db24f404c3134e17f0546c5d05786b5389fa34b529ecc83c182.png)
+![Image](images/image_000001_dfc91ec691178db24f404c3134e17f0546c5d05786b5389fa34b529ecc83c182.png)
 
 ## International Political Economy Series
 
@@ -106,9 +106,9 @@ Edited by
 
 Research Professor, School of Government and International Relations, Griffith University, Australia
 
-![Image](/home/mando/Work/bwired/images/image_000002_5d1c289c24d9109d46bd3c9dd4a67182b4452816ffbd2cf91a2558d3907a54c9.png)
+![Image](images/image_000002_5d1c289c24d9109d46bd3c9dd4a67182b4452816ffbd2cf91a2558d3907a54c9.png)
 
-![Image](/home/mando/Work/bwired/images/image_000003_7926a590c3b320c19854718768074b87f173e5a8515684a3a59f7bcdec6ca5a1.png)
+![Image](images/image_000003_7926a590c3b320c19854718768074b87f173e5a8515684a3a59f7bcdec6ca5a1.png)
 
 Editorial matter, selection and inclusion © Xu Yi-chong 2012 All remaining chapter © respective authors 2012
 
@@ -1537,7 +1537,7 @@ There is broad agreement in the literature as well as explicit policy statements
 
 Figure  5.1 Multiplicity  of  goals  and  functions  of  petroleum  and  natural  gas PSEs
 
-![Image](/home/mando/Work/bwired/images/image_000004_cb4d560e78f63c71c29a22648be9b8b6f9495037fe7e7165e3fc351330fbfa43.png)
+![Image](images/image_000004_cb4d560e78f63c71c29a22648be9b8b6f9495037fe7e7165e3fc351330fbfa43.png)
 
 Hence, the analytical framework for this essay takes into account these aspects and their linkages (Figure 5.1).
 
@@ -1790,7 +1790,7 @@ In  terms  of  return  on  capital  employed,  by  2009-10  companies in the sec
 
 Figure 5.2 Profit after tax (PAT) to total income of various E&amp;P companies in India
 
-![Image](/home/mando/Work/bwired/images/image_000005_8cd0747f86b1ac55c80f3fa52f279fb490e692bbe70d3a95682dc5541397ac9c.png)
+![Image](images/image_000005_8cd0747f86b1ac55c80f3fa52f279fb490e692bbe70d3a95682dc5541397ac9c.png)
 
 Source
 
@@ -1806,7 +1806,7 @@ Given the comparative indicators, it would be fair to say that, at first glance,
 
 Figure 5.3 Return on capital employed for various E&amp;P companies in India
 
-![Image](/home/mando/Work/bwired/images/image_000006_9d5e3df18fbf989bd6be6eb0cf89a731777250d0d7ca27a3bafd9467bcc584d6.png)
+![Image](images/image_000006_9d5e3df18fbf989bd6be6eb0cf89a731777250d0d7ca27a3bafd9467bcc584d6.png)
 
 Source :   CMIE
 
@@ -1814,7 +1814,7 @@ Prowess database.
 
 Figure 5.4 Debt to equity ratios for various E&amp;P companies in India
 
-![Image](/home/mando/Work/bwired/images/image_000007_fbdaa544ddca943b0b531459c5019c960db00ae771ebf5bf0909fb7ef7793964.png)
+![Image](images/image_000007_fbdaa544ddca943b0b531459c5019c960db00ae771ebf5bf0909fb7ef7793964.png)
 
 Source :   CMIE Prowess database.
 
@@ -2347,7 +2347,7 @@ The  overwhelming  shareholding  of  the  government  in  NTPC  has ensured that
 
 Figure 7.1 Shareholding pattern of NTPC as of 30 September 2011
 
-![Image](/home/mando/Work/bwired/images/image_000008_0b874371d77667dedb6111a5bb8a068cd293849487ca80557aff5c4898ae1312.png)
+![Image](images/image_000008_0b874371d77667dedb6111a5bb8a068cd293849487ca80557aff5c4898ae1312.png)
 
 Source :  NTPC website at http://www.ntpc.co.in/index.php?option=com\_content&amp;view=ar ticle&amp;id=49&amp;Itemid=63&amp;lang=en.
 
@@ -2359,7 +2359,7 @@ No  remuneration  committee  has  been  established  because  the board does not
 
 Figure 7.2 Corporate structure of NTPC
 
-![Image](/home/mando/Work/bwired/images/image_000009_389b9a159734c5ae66bf458c4ff7459c26778ba77a62d15cfaa317145467ba63.png)
+![Image](images/image_000009_389b9a159734c5ae66bf458c4ff7459c26778ba77a62d15cfaa317145467ba63.png)
 
 determined by the government. However, NTPC does disclose the salary,  benefits,  performance-based  incentives  and  independent  sitting fees for its directors in its annual report.
 
@@ -2618,7 +2618,7 @@ First,  from  the  mid-1990s  state  financial  assistance  to  Baoshan became c
 
 Figure 8.1 Structure of the Baosteel Group, 2010 Source :  Author's compilation from (Baosteel Group 2011b).
 
-![Image](/home/mando/Work/bwired/images/image_000010_6de6cc1e33fdb0bf6778754a95f4b643e1dc14ad59adc7e70a3b81fb77cf60bb.png)
+![Image](images/image_000010_6de6cc1e33fdb0bf6778754a95f4b643e1dc14ad59adc7e70a3b81fb77cf60bb.png)
 
 obligations to assist the state's consolidation and technical upgrading efforts. In 1998, the MMI arranged for Baoshan to merge with, and then upgrade, two smaller Shanghai steel mills - Shanghai Metallurgical and Meishan I&amp;S (Hogan 1999: 15). Both firms were ailing, with outmoded technology and heavy social-welfare obligations, which placed burdens on Baoshan to cover their welfare costs and to finance technical modernisations. However (and despite misgivings from Baoshan's management), given the attendant financial largesse from the state, the firm had little choice but to undertake the merger (Sun 2005: 181). Importantly, no other steel firm was forced to absorb ailing mills during this period, making this technology-upgrading function a role uniquely required of Baoshan.
 
@@ -2924,7 +2924,7 @@ In terms of medium-term prospects, SAIL would be worried if it compared its perf
 
 Figure 9.1 Major steel producers in Asia: production trends (1992-2010) Source :  http://worldsteel.org (downloaded 30 July 2011).
 
-![Image](/home/mando/Work/bwired/images/image_000011_fdb17c5bb4f999cedb740781d04db178065dfd917571317c4ed2bf969700b1e4.png)
+![Image](images/image_000011_fdb17c5bb4f999cedb740781d04db178065dfd917571317c4ed2bf969700b1e4.png)
 
 As Figure 9.1 demonstrates, the last decade has seen a far more robust period of growth for all five producers compared with the 1990s. All producers, particularly Baosteel, SAIL and POSCO, have benefited from the growth and expansion in Asia and the high demand for steel in their respective home economies. The latter part of the last decade has been a particularly favourable period for SAIL, with profits increasing rapidly. However, its performance has been laggard as far as expanding output is concerned. The high profits could have been mostly on account of high steel prices - both at home and abroad - rather than efficiency or output improvements.
 
@@ -3455,7 +3455,7 @@ Today SBI continues to be by far the largest bank in India, spanning the length 
 
 Figure 11.1 The SBI Group, 2009
 
-![Image](/home/mando/Work/bwired/images/image_000012_05a3a87fa76795557c551bb5ed12f1a26ca067f5659534008ca51313ca58d875.png)
+![Image](images/image_000012_05a3a87fa76795557c551bb5ed12f1a26ca067f5659534008ca51313ca58d875.png)
 
 banking, private equity, pension fund management, wealth advisory and insurance.
 
