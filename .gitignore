@@ -206,5 +206,12 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+venv/
+/venv
 venv
+./venv
+
+images/
+/images
 images
+./images
