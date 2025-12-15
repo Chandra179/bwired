@@ -1,0 +1,2 @@
+docling==2.64.1
+docling_core==2.55.0
