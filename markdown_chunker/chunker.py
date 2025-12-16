@@ -1,8 +1,5 @@
-"""
-Core chunking logic with content-type specific rules
-"""
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
+from typing import List, Dict, Any
 import logging
 
 from .parser import MarkdownElement, ElementType, MarkdownParser

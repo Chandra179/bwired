@@ -1,6 +1,3 @@
-"""
-Example script demonstrating programmatic usage of the markdown chunker
-"""
 import logging
 from pathlib import Path
 
@@ -13,7 +10,6 @@ from markdown_chunker import (
     QdrantStorage
 )
 
-# Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -22,14 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    
-    # ==========================================================================
-    # STEP 1: Configure
-    # ==========================================================================
-    
     logger.info("Setting up configuration...")
     
-    # Embedding configuration
     embedding_config = EmbeddingConfig(
         model_name="BAAI/bge-base-en-v1.5",  # Or any HuggingFace model
         max_token_limit=512,
@@ -39,19 +29,14 @@ def main():
         device="cpu"  # Change to "cuda" if GPU available
     )
     
-    # Qdrant configuration
     qdrant_config = QdrantConfig(
         url="http://localhost:6333",  # Local Qdrant
         collection_name="example_docs",
         create_if_not_exists=True
     )
     
-    # ==========================================================================
-    # STEP 2: Read Markdown File
-    # ==========================================================================
-    
     logger.info("Reading markdown file...")
-    
+
     markdown_file = "sample_document.md"
     
     if not Path(markdown_file).exists():
@@ -66,30 +51,13 @@ def main():
     
     logger.info(f"Processing document: {document_title}")
     
-    # ==========================================================================
-    # STEP 3: Initialize Components
-    # ==========================================================================
-    
-    logger.info("Initializing components...")
-    
-    # Token counter
     token_counter = TokenCounter(embedding_config.model_name)
-    
-    # Chunker
     chunker = MarkdownChunker(embedding_config, token_counter)
-    
-    # Embedder
     embedder = EmbeddingGenerator(embedding_config)
-    
-    # Storage
     storage = QdrantStorage(
         qdrant_config, 
         embedder.get_embedding_dimension()
     )
-    
-    # ==========================================================================
-    # STEP 4: Parse and Chunk Document
-    # ==========================================================================
     
     logger.info("Parsing and chunking document...")
     
@@ -97,7 +65,6 @@ def main():
     
     logger.info(f"Generated {len(chunks)} chunks")
     
-    # Print some statistics
     total_tokens = sum(chunk.token_count for chunk in chunks)
     avg_tokens = total_tokens // len(chunks) if chunks else 0
     

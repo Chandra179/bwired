@@ -1,6 +1,3 @@
-"""
-Token counting utilities using model's tokenizer
-"""
 from transformers import AutoTokenizer
 from typing import List
 import logging

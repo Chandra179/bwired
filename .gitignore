@@ -245,7 +245,6 @@ htmlcov/
 logs/
 
 # Configuration files with secrets
-config.yaml
 .env
 secrets.yaml
 

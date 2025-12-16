@@ -18,5 +18,19 @@ run2:
 	--input document.md \
 	--dry-run
 
+run3:
+	python -m markdown_chunker.cli \
+	--input econ_nuclear.md \
+	--collection-name econ_nuclear \
+	--document-title "Economy Report"
+
+run4:
+	python -m markdown_chunker.cli \
+	--search "whats the cause of the politican tension between china and india" \
+	--search-limit 10 \
+	--collection-name econ_nuclear
+
 ex:
 	python example_usage.py
+
+	

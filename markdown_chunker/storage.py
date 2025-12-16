@@ -1,6 +1,3 @@
-"""
-Qdrant vector database storage operations
-"""
 from typing import List, Dict, Any
 import logging
 from qdrant_client import QdrantClient
@@ -40,7 +37,6 @@ class QdrantStorage:
         if self.config.collection_name not in collection_names:
             logger.info(f"Creating collection: {self.config.collection_name}")
             
-            # Map distance metric
             distance_map = {
                 "Cosine": Distance.COSINE,
                 "Euclidean": Distance.EUCLID,
@@ -85,10 +81,8 @@ class QdrantStorage:
         
         points = []
         for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-            # Create metadata
             metadata = ChunkMetadata.from_chunk(chunk, document_id, document_title)
             
-            # Create point
             point = PointStruct(
                 id=hash(metadata.chunk_id) % (2**63),  # Use hash as numeric ID
                 vector=embedding.tolist(),

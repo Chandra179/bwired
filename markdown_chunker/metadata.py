@@ -1,6 +1,3 @@
-"""
-Metadata schema and generation
-"""
 from dataclasses import dataclass, asdict
 from typing import List, Dict, Any, Optional
 import uuid

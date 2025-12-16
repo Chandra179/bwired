@@ -7,7 +7,6 @@ import logging
 from pathlib import Path
 
 from .config import EmbeddingConfig, QdrantConfig
-from .parser import MarkdownParser
 from .tokenizer_utils import TokenCounter
 from .chunker import MarkdownChunker
 from .embedder import EmbeddingGenerator
@@ -44,14 +43,37 @@ Examples:
   
   # With GPU acceleration
   python -m markdown_chunker.cli --input report.md --device cuda
+  
+  # Search for similar chunks
+  python -m markdown_chunker.cli --search "what's the cause of the political tension" --collection my_docs
+  
+  # Search with limit and document filter
+  python -m markdown_chunker.cli --search "climate change" --search-limit 10 --filter-document report_2024
         """
     )
     
-    # Required arguments
+    # Input - now optional (required only if not searching)
     parser.add_argument(
         '--input', '-i',
-        required=True,
         help='Path to input markdown file'
+    )
+    
+    # Search functionality
+    parser.add_argument(
+        '--search', '-s',
+        help='Search query text'
+    )
+    
+    parser.add_argument(
+        '--search-limit',
+        type=int,
+        default=5,
+        help='Maximum number of search results (default: 5)'
+    )
+    
+    parser.add_argument(
+        '--filter-document',
+        help='Filter search results by document ID'
     )
     
     # Qdrant configuration
@@ -190,6 +212,67 @@ def load_configurations(args):
     return embedding_config, qdrant_config
 
 
+def perform_search(args, embedding_config, qdrant_config):
+    """Perform search operation"""
+    logger.info(f"Searching for: '{args.search}'")
+    
+    # Initialize embedder
+    logger.info("Initializing embedding model...")
+    embedder = EmbeddingGenerator(embedding_config)
+    
+    # Generate query embedding
+    logger.info("Generating query embedding...")
+    query_embedding = embedder.generate_embeddings([args.search])[0]
+    
+    # Initialize storage
+    storage = QdrantStorage(qdrant_config, embedder.get_embedding_dimension())
+    
+    # Build filters if document filter is specified
+    filters = None
+    if args.filter_document:
+        filters = {
+            "must": [
+                {
+                    "key": "document_id",
+                    "match": {"value": args.filter_document}
+                }
+            ]
+        }
+        logger.info(f"Filtering by document: {args.filter_document}")
+    
+    # Perform search
+    logger.info(f"Searching (limit: {args.search_limit})...")
+    results = storage.search(
+        query_embedding=query_embedding,
+        limit=args.search_limit,
+        filters=filters
+    )
+    
+    # Display results
+    if not results:
+        print("\nNo results found.")
+        return 0
+    
+    print(f"\n{'='*80}")
+    print(f"Found {len(results)} results for: '{args.search}'")
+    print(f"{'='*80}\n")
+    
+    for i, result in enumerate(results, 1):
+        score = result['score']
+        content = result['content']
+        metadata = result['metadata']
+        
+        print(f"Result {i} (Score: {score:.4f})")
+        print(f"Document: {metadata.get('document_title', 'N/A')} (ID: {metadata.get('document_id', 'N/A')})")
+        if metadata.get('heading'):
+            print(f"Heading: {metadata['heading']}")
+        print(f"Chunk: {metadata.get('chunk_index', 'N/A')}/{metadata.get('total_chunks', 'N/A')}")
+        print(f"\nContent:\n{content}")
+        print(f"{'-'*80}\n")
+    
+    return 0
+
+
 def main():
     """Main entry point"""
     args = parse_args()
@@ -200,6 +283,16 @@ def main():
     try:
         # Load configurations
         embedding_config, qdrant_config = load_configurations(args)
+        
+        # Handle search mode
+        if args.search:
+            return perform_search(args, embedding_config, qdrant_config)
+        
+        # Validate input is provided for non-search operations
+        if not args.input and not args.show_collection_info:
+            logger.error("--input is required when not using --search or --show-collection-info")
+            print("Error: --input is required when not using --search", file=sys.stderr)
+            return 1
         
         logger.info("Starting markdown chunking pipeline")
         logger.info(f"Input file: {args.input}")

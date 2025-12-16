@@ -1,8 +1,6 @@
 """
 Markdown Chunking and Embedding System
 
-A modular system for parsing markdown documents, chunking them intelligently
-based on token limits, generating embeddings, and storing in Qdrant vector database.
 """
 
 __version__ = "1.0.0"

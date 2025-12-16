@@ -1,6 +1,3 @@
-"""
-Generate embeddings using BGE model
-"""
 from typing import List
 import torch
 from transformers import AutoTokenizer, AutoModel
