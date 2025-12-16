@@ -6,8 +6,6 @@ logger = logging.getLogger(__name__)
 
 
 class TokenCounter:
-    """Count tokens using a specific model's tokenizer"""
-    
     def __init__(self, model_name: str):
         """
         Initialize tokenizer for the given model

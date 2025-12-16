@@ -113,8 +113,8 @@ def main():
         file_size = Path(args.input).stat().st_size
         
         # Get document metadata
-        document_id = args.document_id or get_document_id_from_path(args.input)
-        document_title = args.document_title or Path(args.input).name
+        document_id = get_document_id_from_path(args.input)
+        document_title = Path(args.input).name
         
         # Initialize components
         logger.info("Initializing tokenizer...")

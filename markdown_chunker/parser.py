@@ -50,7 +50,6 @@ class MarkdownParser:
         while i < len(lines):
             line = lines[i]
             
-            # Check for header
             if header := self.header_pattern.match(line):
                 level = len(header.group(1))
                 text = header.group(2)
@@ -64,7 +63,6 @@ class MarkdownParser:
                 i += 1
                 continue
             
-            # Check for horizontal rule
             if self.hr_pattern.match(line.strip()):
                 elements.append(MarkdownElement(
                     type=ElementType.HORIZONTAL_RULE,
@@ -75,7 +73,6 @@ class MarkdownParser:
                 i += 1
                 continue
             
-            # Check for code block
             if code_match := self.code_fence.match(line.strip()):
                 lang = code_match.group(1)
                 start = i
@@ -94,7 +91,6 @@ class MarkdownParser:
                 i += 1
                 continue
             
-            # Check for table
             if '|' in line and i + 1 < len(lines):
                 if self.table_separator.match(lines[i + 1].strip()):
                     table_lines, end = self._parse_table(lines, i)
@@ -108,7 +104,6 @@ class MarkdownParser:
                     i = end + 1
                     continue
             
-            # Check for list
             if self.list_pattern.match(line):
                 list_lines, end = self._parse_list(lines, i)
                 elements.append(MarkdownElement(
@@ -121,7 +116,6 @@ class MarkdownParser:
                 i = end + 1
                 continue
             
-            # Check for images
             if self.image_pattern.search(line):
                 elements.append(MarkdownElement(
                     type=ElementType.IMAGE,
@@ -133,7 +127,6 @@ class MarkdownParser:
                 i += 1
                 continue
             
-            # Paragraph (collect consecutive non-empty lines)
             if line.strip():
                 para_lines, end = self._parse_paragraph(lines, i)
                 elements.append(MarkdownElement(
