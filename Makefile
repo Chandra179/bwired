@@ -10,27 +10,8 @@ i:
 up:
 	docker compose up -d
 
-run:
-	python -m markdown_chunker.cli --input econ_nuclear.md --qdrant-url http://localhost:6333
+r:
+	python -m markdown_chunker.vectorize --config vectorize.yaml --input document.md
 
-run2:
-	python -m econ_nuclear.cli \
-	--input document.md \
-	--dry-run
-
-run3:
-	python -m markdown_chunker.cli \
-	--input econ_nuclear.md \
-	--collection-name econ_nuclear \
-	--document-title "Economy Report"
-
-run4:
-	python -m markdown_chunker.cli \
-	--search "whats the cause of the politican tension between china and india" \
-	--search-limit 10 \
-	--collection-name econ_nuclear
-
-ex:
-	python example_usage.py
-
-	
+s:
+	python -m markdown_chunker.search --config search.yaml --query "what is the political situation"

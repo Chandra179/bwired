@@ -10,109 +10,151 @@ A modular Python system for intelligently parsing, chunking, and embedding markd
 - 🔄 **Context Preservation**: Adds overlap between chunks and includes header hierarchy
 - 🚀 **Embedding Generation**: Uses BAAI/bge-base-en-v1.5 or any HuggingFace model
 - 💾 **Vector Storage**: Direct integration with Qdrant vector database
+- 🔍 **Vector Search**: Fast semantic search across your documents
 - 🛠️ **Modular Design**: Easy to extend and customize
+- ⚙️ **Config-Driven**: YAML configuration for easy management
 
-## Usage
+## Quick Start
 
-### Basic Command
+### 1. Vectorize Documents
 
-```bash
-python -m markdown_chunker.cli --input document.md --qdrant-url http://localhost:6333
-```
-
-### Common Examples
-
-**1. Process with custom collection name:**
-```bash
-python -m markdown_chunker.cli \
-  --input report.md \
-  --collection-name my_documents \
-  --document-title "Q4 Financial Report"
-```
-
-**2. Customize chunking parameters:**
-```bash
-python -m markdown_chunker.cli \
-  --input large_doc.md \
-  --target-chunk-size 300 \
-  --overlap-tokens 75 \
-  --max-tokens 512
-```
-
-**3. Use GPU for faster embedding:**
-```bash
-python -m markdown_chunker.cli \
-  --input document.md \
-  --device cuda
-```
-
-**4. Dry run (parse and chunk without storing):**
-```bash
-python -m markdown_chunker.cli \
-  --input document.md \
-  --dry-run
-```
-
-### Using Config File
-
-Create a `config.yaml`:
+Create a `vectorize.yaml` config file:
 
 ```yaml
-# Embedding configuration
+# Embedding Model Configuration
 model_name: "BAAI/bge-base-en-v1.5"
+device: "cpu"
 max_token_limit: 512
+
+# Chunking Parameters
 target_chunk_size: 400
 min_chunk_size: 100
 overlap_tokens: 50
-device: "cpu"
 
-# Qdrant configuration
+# Qdrant Configuration
 qdrant_url: "http://localhost:6333"
 collection_name: "markdown_docs"
 distance_metric: "Cosine"
+
+# Logging
+log_level: "INFO"
 ```
 
 Then run:
 
 ```bash
-python -m markdown_chunker.cli --input document.md --config config.yaml
+python -m markdown_chunker.vectorize --input document.md --config vectorize.yaml
 ```
 
-## Command-Line Options
+### 2. Search Documents
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--input`, `-i` | Path to markdown file | **Required** |
-| `--qdrant-url` | Qdrant server URL | `http://localhost:6333` |
-| `--collection-name` | Collection name | `markdown_chunks` |
-| `--api-key` | Qdrant API key | None |
-| `--model` | HuggingFace model | `BAAI/bge-base-en-v1.5` |
-| `--device` | Device (cpu/cuda) | `cpu` |
-| `--max-tokens` | Max token limit | `512` |
-| `--target-chunk-size` | Target chunk size | `400` |
-| `--min-chunk-size` | Min chunk size | `100` |
-| `--overlap-tokens` | Overlap tokens | `50` |
-| `--document-id` | Document ID | Filename stem |
-| `--document-title` | Document title | Filename |
-| `--config` | Config file path | None |
-| `--log-level` | Logging level | `INFO` |
-| `--log-file` | Log file path | None |
-| `--dry-run` | Parse without storing | `False` |
-| `--show-collection-info` | Show collection info | `False` |
+Create a `search.yaml` config file:
 
+```yaml
+# Embedding Model Configuration
+model_name: "BAAI/bge-base-en-v1.5"
+device: "cpu"
+
+# Qdrant Configuration
+qdrant_url: "http://localhost:6333"
+collection_name: "markdown_docs"
+
+# Search Parameters
+search_limit: 5
+# score_threshold: 0.7
+# filter_document: "report_2024"
+
+# Logging
+log_level: "INFO"
 ```
-# Basic search
-python -m markdown_chunker.cli --search "what's political economy situation between china and india"
 
-# With custom limit
-python -m markdown_chunker.cli --search "climate change" --search-limit 10
+Then search:
 
-# Filter by document
-python -m markdown_chunker.cli --search "revenue" --filter-document report_2024
-
-# With custom collection
-python -m markdown_chunker.cli --search "query" --collection-name my_docs --qdrant-url http://localhost:6333
+```bash
+python -m markdown_chunker.search --config search.yaml --query "what is the political situation"
 ```
+
+## Usage Examples
+
+### Vectorization
+
+**Basic vectorization:**
+```bash
+python -m markdown_chunker.vectorize --input report.md --config vectorize.yaml
+```
+
+**With custom document title:**
+```bash
+python -m markdown_chunker.vectorize \
+  --input report.md \
+  --config vectorize.yaml \
+  --document-title "Q4 Financial Report"
+```
+
+**With GPU acceleration (edit vectorize.yaml):**
+```yaml
+device: "cuda"  # Change from "cpu" to "cuda"
+```
+
+### Search
+
+**Basic search:**
+```bash
+python -m markdown_chunker.search \
+  --config search.yaml \
+  --query "what are the main findings"
+```
+
+**Search with filters (edit search.yaml):**
+```yaml
+# Filter by specific document
+filter_document: "report_2024"
+
+# Filter by heading
+filter_heading: "Introduction"
+
+# Set score threshold
+score_threshold: 0.75
+
+# Increase result limit
+search_limit: 10
+```
+
+## Configuration Files
+
+### vectorize.yaml
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `model_name` | HuggingFace model name | `BAAI/bge-base-en-v1.5` |
+| `device` | Device for embedding (cpu/cuda) | `cpu` |
+| `max_token_limit` | Maximum token limit | `512` |
+| `target_chunk_size` | Target chunk size in tokens | `400` |
+| `min_chunk_size` | Minimum chunk size in tokens | `100` |
+| `overlap_tokens` | Overlap between chunks | `50` |
+| `qdrant_url` | Qdrant server URL | `http://localhost:6333` |
+| `collection_name` | Collection name | `markdown_docs` |
+| `distance_metric` | Distance metric (Cosine/Euclid/Dot) | `Cosine` |
+| `api_key` | Qdrant API key (optional) | None |
+| `log_level` | Logging level | `INFO` |
+| `log_file` | Log file path (optional) | None |
+
+### search.yaml
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `model_name` | HuggingFace model (must match vectorization) | `BAAI/bge-base-en-v1.5` |
+| `device` | Device for embedding (cpu/cuda) | `cpu` |
+| `max_token_limit` | Maximum token limit | `512` |
+| `qdrant_url` | Qdrant server URL | `http://localhost:6333` |
+| `collection_name` | Collection name | `markdown_docs` |
+| `api_key` | Qdrant API key (optional) | None |
+| `search_limit` | Maximum number of results | `5` |
+| `score_threshold` | Minimum similarity score (0.0-1.0) | None |
+| `filter_document` | Filter by document ID | None |
+| `filter_heading` | Filter by heading | None |
+| `log_level` | Logging level | `INFO` |
+| `log_file` | Log file path (optional) | None |
 
 ## Architecture
 
@@ -126,12 +168,73 @@ python -m markdown_chunker.cli --search "query" --collection-name my_docs --qdra
 6. **metadata.py**: Metadata schema for vector storage
 7. **storage.py**: Qdrant client and storage operations
 8. **utils.py**: Helper functions
-9. **cli.py**: Command-line interface
-9. **extract_doc.py**: Extract docs to target file (markdown, etc..)
+9. **vectorize.py**: Command-line interface for vectorization
+10. **search.py**: Command-line interface for vector search
 
 ## Performance Tips
 
-1. **GPU Acceleration**: Use `--device cuda` for ~5-10x faster embedding generation
-2. **Batch Processing**: Process multiple files by running CLI in a loop
-3. **Token Limits**: Adjust `--target-chunk-size` based on your use case
-4. **Overlap**: Increase `--overlap-tokens` for better context preservation
+1. **GPU Acceleration**: Set `device: "cuda"` in config for ~5-10x faster embedding generation
+2. **Batch Processing**: Process multiple files by running vectorize in a loop
+3. **Token Limits**: Adjust `target_chunk_size` based on your use case
+4. **Overlap**: Increase `overlap_tokens` for better context preservation
+5. **Search Optimization**: Use `score_threshold` and filters to refine results
+
+## Advanced Usage
+
+### Multiple Collections
+
+Create different config files for different collections:
+
+**technical_docs.yaml:**
+```yaml
+collection_name: "technical_docs"
+target_chunk_size: 300
+```
+
+**marketing_content.yaml:**
+```yaml
+collection_name: "marketing_content"
+target_chunk_size: 500
+```
+
+### Custom Models
+
+Use different embedding models:
+
+```yaml
+model_name: "sentence-transformers/all-MiniLM-L6-v2"
+max_token_limit: 256
+```
+
+**Note:** Ensure you use the same model for both vectorization and search!
+
+## Workflow Example
+
+```bash
+# 1. Vectorize multiple documents
+python -m markdown_chunker.vectorize --input docs/intro.md --config vectorize.yaml
+python -m markdown_chunker.vectorize --input docs/guide.md --config vectorize.yaml
+python -m markdown_chunker.vectorize --input docs/api.md --config vectorize.yaml
+
+# 2. Search across all documents
+python -m markdown_chunker.search --config search.yaml --query "authentication"
+
+# 3. Search within specific document (edit search.yaml first)
+# Add: filter_document: "guide"
+python -m markdown_chunker.search --config search.yaml --query "getting started"
+```
+
+## Requirements
+
+- Python 3.8+
+- PyTorch
+- Transformers
+- Qdrant Client
+- PyYAML
+- Other dependencies (see requirements.txt)
+
+## Installation
+
+```bash
+pip install -r requirements.txt
+```

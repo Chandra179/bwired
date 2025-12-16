@@ -120,6 +120,7 @@ class QdrantStorage:
         self, 
         query_embedding: np.ndarray, 
         limit: int = 10,
+        score_threshold: float = 0.6,
         filters: Dict[str, Any] = None
     ) -> List[Dict[str, Any]]:
         """
@@ -138,7 +139,8 @@ class QdrantStorage:
                 collection_name=self.config.collection_name,
                 query=query_embedding.tolist(),  # Argument name changed from 'query_vector' to 'query'
                 limit=limit,
-                query_filter=filters             # Argument name is likely 'query_filter' or 'filter' depending on exact version
+                query_filter=filters,
+                score_threshold=score_threshold
             ).points
             
             return [

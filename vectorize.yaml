@@ -1,0 +1,24 @@
+# Vectorization Configuration
+# Used by: python -m markdown_chunker.vectorize --config vectorize.yaml
+
+# Embedding Model Configuration
+model_name: "BAAI/bge-base-en-v1.5"
+device: "cpu"  # Options: "cpu", "cuda"
+max_token_limit: 512
+
+# Chunking Parameters
+target_chunk_size: 400  # Target size in tokens
+min_chunk_size: 100     # Minimum chunk size in tokens
+overlap_tokens: 50      # Overlap between chunks
+
+# Qdrant Configuration
+qdrant_url: "http://localhost:6333"
+collection_name: "econ_nuclear"
+distance_metric: "Cosine"  # Options: "Cosine", "Euclid", "Dot"
+
+# Optional: Qdrant Cloud API key
+# api_key: "your-api-key-here"
+
+# Logging Configuration
+log_level: "INFO"  # Options: "DEBUG", "INFO", "WARNING", "ERROR"
+# log_file: "vectorize.log"  # Uncomment to log to file
