@@ -1,2 +1,12 @@
 docling==2.64.1
 docling_core==2.55.0
+
+transformers>=4.30.0
+torch>=2.0.0
+qdrant-client>=1.7.0
+numpy>=1.24.0
+pyyaml>=6.0
+
+# Optional but recommended
+sentencepiece>=0.1.99  # For some tokenizers
+protobuf>=3.20.0  # For model serialization

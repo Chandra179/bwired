@@ -1,0 +1,61 @@
+# Example Configuration File for Markdown Chunker
+# Copy this to config.yaml and customize as needed
+
+# =============================================================================
+# EMBEDDING CONFIGURATION
+# =============================================================================
+
+# HuggingFace model name for embeddings
+# Popular options:
+#   - BAAI/bge-base-en-v1.5 (768 dim, balanced)
+#   - BAAI/bge-large-en-v1.5 (1024 dim, higher quality)
+#   - sentence-transformers/all-MiniLM-L6-v2 (384 dim, faster)
+model_name: "BAAI/bge-base-en-v1.5"
+
+# Model embedding dimension (must match model)
+model_dim: 768
+
+# Maximum tokens the model can handle
+max_token_limit: 512
+
+# Target size for chunks (leave buffer for safety)
+target_chunk_size: 400
+
+# Minimum size for chunks (avoid too-small chunks)
+min_chunk_size: 100
+
+# Number of tokens to overlap between consecutive chunks
+# Higher values = better context preservation, more redundancy
+overlap_tokens: 50
+
+# Maximum recursion depth for splitting oversized elements
+max_recursion_depth: 3
+
+# Buffer tokens when truncating
+truncation_buffer: 10
+
+# Device for computation: "cpu" or "cuda"
+# Use "cuda" if you have a GPU for ~5-10x speedup
+device: "cpu"
+
+# =============================================================================
+# QDRANT CONFIGURATION
+# =============================================================================
+
+# Qdrant server URL
+# Local: http://localhost:6333
+# Cloud: https://xyz-example.cloud.qdrant.io:6333
+qdrant_url: "http://localhost:6333"
+
+# Collection name for storing vectors
+collection_name: "markdown_chunks"
+
+# API key (required for Qdrant Cloud, optional for local)
+# api_key: "your_api_key_here"
+
+# Distance metric for similarity search
+# Options: "Cosine", "Euclidean", "Dot"
+distance_metric: "Cosine"
+
+# Create collection if it doesn't exist
+create_if_not_exists: true

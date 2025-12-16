@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant_db
+    restart: unless-stopped
+    ports:
+      # REST API (HTTP) - Default port 6333
+      - "6333:6333"
+      # gRPC API - Default port 6334 (optional, but good for clients)
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+
+volumes:
+  qdrant_storage:

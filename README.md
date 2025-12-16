@@ -1,0 +1,4 @@
+# Bwired
+
+Command-Line Options
+OptionDescriptionDefault--input, -iPath to markdown fileRequired--qdrant-urlQdrant server URLhttp://localhost:6333--collection-nameCollection namemarkdown_chunks--api-keyQdrant API keyNone--modelHuggingFace modelBAAI/bge-base-en-v1.5--deviceDevice (cpu/cuda)cpu--max-tokensMax token limit512--target-chunk-sizeTarget chunk size400--min-chunk-sizeMin chunk size100--overlap-tokensOverlap tokens50--document-idDocument IDFilename stem--document-titleDocument titleFilename--configConfig file pathNone--log-levelLogging levelINFO--log-fileLog file pathNone--dry-runParse without storingFalse--show-collection-infoShow collection infoFalse
