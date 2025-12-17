@@ -36,7 +36,7 @@ create_code_descriptions: true   # Natural language descriptions for code
 
 # Qdrant Configuration
 qdrant_url: "http://localhost:6333"
-collection_name: "sample_chunk"
+collection_name: "markdown_chunks"
 distance_metric: "Cosine"  # Options: "Cosine", "Euclid", "Dot"
 
 # Optional: Qdrant Cloud API key

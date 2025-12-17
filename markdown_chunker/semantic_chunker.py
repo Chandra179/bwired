@@ -38,6 +38,10 @@ class SemanticChunk:
     
     # Additional metadata
     extra_metadata: Dict[str, Any] = field(default_factory=dict)
+    
+    # Optimization: Direct reference to source element (Excluded from serialization/repr)
+    # This enables O(1) access to metadata without searching
+    source_element: Optional[MarkdownElement] = field(default=None, repr=False)
 
 
 class SemanticChunker:
@@ -54,7 +58,6 @@ class SemanticChunker:
     def __init__(self, config: RAGChunkingConfig):
         self.config = config
         
-        # Initialize components
         self.parser = MarkdownParser()
         self.section_analyzer = SectionAnalyzer()
         self.sentence_splitter = SentenceSplitter()
@@ -82,15 +85,12 @@ class SemanticChunker:
         """
         logger.info(f"Processing document: {document_id}")
         
-        # Stage 1: Parse markdown into AST
         elements = self.parser.parse(content)
         logger.info(f"Stage 1: Parsed {len(elements)} elements")
         
-        # Stage 2: Extract semantic sections
         sections = self.section_analyzer.analyze(elements)
         logger.info(f"Stage 2: Extracted {len(sections)} top-level sections")
         
-        # Stage 3: Chunk sections semantically
         chunks = []
         chunk_index = 0
         
@@ -106,8 +106,7 @@ class SemanticChunker:
         
         logger.info(f"Stage 3: Created {len(chunks)} semantic chunks")
         
-        # Stage 4: Enhance with context
-        chunks = self._enhance_chunks(chunks, elements, document_title)
+        chunks = self._enhance_chunks(chunks, document_title)
         logger.info(f"Stage 4: Enhanced {len(chunks)} chunks with context")
         
         return chunks
@@ -152,31 +151,40 @@ class SemanticChunker:
         header_path: str,
         section_level: int
     ) -> List[SemanticChunk]:
-        """Chunk a single element based on its type"""
-        
+        """
+        Chunk a single element based on type and inject source reference
+        """
+        generated_chunks = []
+
         if element.type == ElementType.TABLE:
-            return self._chunk_table(element, header_path, section_level)
+            generated_chunks = self._chunk_table(element, header_path, section_level)
         
         elif element.type == ElementType.CODE_BLOCK:
-            return self._chunk_code(element, header_path, section_level)
+            generated_chunks = self._chunk_code(element, header_path, section_level)
         
         elif element.type == ElementType.LIST:
-            return self._chunk_list(element, header_path, section_level)
+            generated_chunks = self._chunk_list(element, header_path, section_level)
         
         elif element.type == ElementType.PARAGRAPH:
-            return self._chunk_text(element, header_path, section_level)
+            generated_chunks = self._chunk_text(element, header_path, section_level)
         
         elif element.type == ElementType.HEADING:
-            # Headings are usually handled at section level
-            # Only chunk if it's a standalone heading with significant content
+            # Only chunk significant headings
             token_count = self.token_counter.count_tokens(element.content)
-            if token_count > 50:  # Arbitrary threshold for "significant"
-                return self._chunk_text(element, header_path, section_level)
-            return []
+            if token_count > 50:
+                generated_chunks = self._chunk_text(element, header_path, section_level)
+            else:
+                generated_chunks = []
         
         else:
-            # Default: treat as text
-            return self._chunk_text(element, header_path, section_level)
+            generated_chunks = self._chunk_text(element, header_path, section_level)
+
+        # CRITICAL OPTIMIZATION: Attach source element reference here
+        # This avoids the O(N^2) search in Stage 4
+        for chunk in generated_chunks:
+            chunk.source_element = element
+            
+        return generated_chunks
     
     def _chunk_table(
         self,
@@ -510,45 +518,88 @@ class SemanticChunker:
     def _enhance_chunks(
         self,
         chunks: List[SemanticChunk],
-        elements: List[MarkdownElement],
         document_title: str
     ) -> List[SemanticChunk]:
         """
-        Stage 4: Enhance chunks with context and multi-representation
+        Stage 4: O(N) Context Enhancement
+        Eliminates redundant sentence splitting and searching.
         """
         enhanced_chunks = []
+        cfg = self.config.context
         
+        # 1. Pre-calculate sentences for all chunks (Single Pass)
+        # This acts as a cache so we don't re-split text for neighbors
+        chunk_sentences_map = []
+        needs_context = cfg.surrounding_sentences_before > 0 or cfg.surrounding_sentences_after > 0
+        
+        if needs_context:
+            for chunk in chunks:
+                chunk_sentences_map.append(
+                    self.sentence_splitter.split_sentences(chunk.original_content)
+                )
+        
+        total_chunks = len(chunks)
+
+        # 2. Single Loop Enhancement
         for i, chunk in enumerate(chunks):
-            # Get surrounding context
-            surrounding_context = self._get_surrounding_context(chunks, i)
+            context = {}
             
-            # Get original element if possible
-            element = self._find_element_for_chunk(chunk, elements)
+            if needs_context:
+                # Optimized Context Before (Lookup, no splitting)
+                if cfg.surrounding_sentences_before > 0 and i > 0:
+                    prev_sentences = []
+                    # Look back up to 3 chunks purely for sentences
+                    lookback_start = max(0, i - 3)
+                    for j in range(i - 1, lookback_start - 1, -1):
+                        prev_sentences = chunk_sentences_map[j] + prev_sentences
+                        if len(prev_sentences) >= cfg.surrounding_sentences_before:
+                            break
+                    
+                    if prev_sentences:
+                        relevant = prev_sentences[-cfg.surrounding_sentences_before:]
+                        context['before'] = ' '.join(relevant)
+                
+                # Optimized Context After (Lookup, no splitting)
+                if cfg.surrounding_sentences_after > 0 and i < total_chunks - 1:
+                    next_sentences = []
+                    lookahead_end = min(total_chunks, i + 3)
+                    for j in range(i + 1, lookahead_end):
+                        next_sentences.extend(chunk_sentences_map[j])
+                        if len(next_sentences) >= cfg.surrounding_sentences_after:
+                            break
+                    
+                    if next_sentences:
+                        relevant = next_sentences[:cfg.surrounding_sentences_after]
+                        context['after'] = ' '.join(relevant)
             
-            # Enrich the chunk
+            # 3. Direct Element Access (O(1))
+            # We use the reference stored in Stage 3
+            element = chunk.source_element
+            
+            # Enrich
             enriched = self.context_enricher.enrich_chunk(
                 content=chunk.content,
                 chunk_type=chunk.chunk_type,
                 header_path=chunk.section_path,
                 document_title=document_title,
                 element=element,
-                surrounding_context=surrounding_context
+                surrounding_context=context
             )
             
-            # Update chunk with enriched data
+            # Update fields
             chunk.content = enriched['content']
             chunk.token_count = self.token_counter.count_tokens(chunk.content)
             
-            # Add extracted metadata
             if 'entities' in enriched.get('metadata', {}):
                 chunk.entities = enriched['metadata']['entities']
             
-            # Add multi-representation
             if 'representations' in enriched:
                 chunk.has_multi_representation = True
                 chunk.representations = enriched['representations']
-                chunk.natural_language_description = enriched['metadata'].get(
-                    'table_description' or enriched['metadata'].get('code_description')
+                # Prefer explicit descriptions if available
+                chunk.natural_language_description = (
+                    enriched['metadata'].get('table_description') or 
+                    enriched['metadata'].get('code_description')
                 )
             
             enhanced_chunks.append(chunk)
