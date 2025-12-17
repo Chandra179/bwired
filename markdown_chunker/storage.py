@@ -146,8 +146,8 @@ class QdrantStorage:
             return [
                 {
                     "score": result.score,
-                    "content": result.payload.get("content"),
-                    "metadata": {k: v for k, v in result.payload.items() if k != "content"}
+                    "content": result.payload.get("search_content"),
+                    "metadata": {k: v for k, v in result.payload.items() if k != "search_content"}
                 }
                 for result in results
             ]
