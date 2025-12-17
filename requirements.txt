@@ -10,3 +10,17 @@ pyyaml>=6.0
 # Optional but recommended
 sentencepiece>=0.1.99  # For some tokenizers
 protobuf>=3.20.0  # For model serialization
+
+# Markdown parsing
+markdown-it-py>=3.0.0
+mdit-py-plugins>=0.4.0
+
+# NLP
+spacy>=3.7.0
+
+python-dotenv>=1.0.0
+
+bleach>=6.3.0
+linkify-it-py>=2.0.3
+
+# Run: python -m spacy download en_core_web_sm

@@ -9,7 +9,6 @@ __author__ = "Your Name"
 from .config import EmbeddingConfig, QdrantConfig
 from .parser import MarkdownParser, MarkdownElement, ElementType
 from .tokenizer_utils import TokenCounter
-from .chunker import MarkdownChunker, Chunk
 from .embedder import EmbeddingGenerator
 from .metadata import ChunkMetadata
 from .storage import QdrantStorage
@@ -21,8 +20,6 @@ __all__ = [
     'MarkdownElement',
     'ElementType',
     'TokenCounter',
-    'MarkdownChunker',
-    'Chunk',
     'EmbeddingGenerator',
     'ChunkMetadata',
     'QdrantStorage',

@@ -3,12 +3,13 @@
 
 # Embedding Model Configuration (must match vectorization model)
 model_name: "BAAI/bge-base-en-v1.5"
+model_dim: 768
 device: "cpu"  # Options: "cpu", "cuda"
 max_token_limit: 512
 
 # Qdrant Configuration
 qdrant_url: "http://localhost:6333"
-collection_name: "econ_nuclear"
+collection_name: "markdown_chunks"
 
 # Optional: Qdrant Cloud API key
 # api_key: "your-api-key-here"
@@ -20,13 +21,23 @@ search_limit: 5  # Maximum number of results to return
 # Only return results with similarity score above this threshold
 # score_threshold: 0.7
 
-# Optional: Filter by document ID
-# Only search within a specific document
+# Optional: Filters
+# Filter by document ID - only search within a specific document
 # filter_document: "report_2024"
 
-# Optional: Filter by heading
-# Only search within chunks under a specific heading
-# filter_heading: "Introduction"
+# Filter by chunk type - only search specific content types
+# filter_chunk_type: "paragraph"  # Options: paragraph, table, code_block, list
+
+# Filter by section - only search within a specific section path
+# filter_section_path: "Introduction > Overview"
+
+# Filter by section level - only search at specific hierarchy depth
+# filter_section_level: 2  # 0=root, 1=H1, 2=H2, etc.
+
+# Show Options
+show_metadata: true          # Display chunk metadata in results
+show_entities: true          # Display extracted entities
+show_representations: true   # Display multi-representations (for tables/code)
 
 # Logging Configuration
 log_level: "INFO"  # Options: "DEBUG", "INFO", "WARNING", "ERROR"

@@ -1,30 +1,39 @@
-from dataclasses import dataclass, asdict
+"""
+Enhanced metadata for RAG-optimized chunks
+"""
+from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Any, Optional
 import uuid
 
 
 @dataclass
 class ChunkMetadata:
-    """Metadata for a chunk stored in vector database"""
+    """Comprehensive metadata for RAG chunks"""
     
     # Identity
     chunk_id: str
     document_id: str
     document_title: str
     
-    # Token information
+    # Content characteristics
     token_count: int
-    chunk_type: str
+    chunk_type: str  # paragraph, table, code, list, etc.
     
     # Hierarchy and structure
-    header_path: List[str]
-    element_index: int
-    chunk_index: int
-    total_chunks: int
+    section_path: List[str]  # Full header path
+    section_level: int  # Depth in hierarchy
+    chunk_index: int  # Index within section
     
-    # Line numbers
+    # Source location
     line_start: int
     line_end: int
+    
+    # RAG-specific metadata
+    entities: Optional[Dict[str, List[str]]] = None  # {entity_type: [entities]}
+    
+    # Multi-representation (for tables/code)
+    has_multi_representation: bool = False
+    natural_language_description: Optional[str] = None
     
     # Additional metadata
     extra: Optional[Dict[str, Any]] = None
@@ -40,16 +49,20 @@ class ChunkMetadata:
         else:
             data.pop('extra', None)
         
-        # Convert header_path list to string for easier querying
-        if 'header_path' in data and data['header_path']:
-            data['header_path_str'] = ' > '.join(data['header_path'])
+        # Handle None values
+        data = {k: v for k, v in data.items() if v is not None}
         
         return data
     
     @classmethod
-    def from_chunk(cls, chunk, document_id: str, document_title: str) -> 'ChunkMetadata':
-        """Create metadata from a Chunk object"""
-        chunk_id = f"{document_id}_{chunk.element_index}_{chunk.chunk_index}_{uuid.uuid4().hex[:8]}"
+    def from_chunk(
+        cls,
+        chunk,  # SemanticChunk instance
+        document_id: str,
+        document_title: str
+    ) -> 'ChunkMetadata':
+        """Create metadata from a SemanticChunk object"""
+        chunk_id = f"{document_id}_{chunk.chunk_index}_{uuid.uuid4().hex[:8]}"
         
         return cls(
             chunk_id=chunk_id,
@@ -57,12 +70,13 @@ class ChunkMetadata:
             document_title=document_title,
             token_count=chunk.token_count,
             chunk_type=chunk.chunk_type,
-            header_path=chunk.metadata.get('header_path', []),
-            element_index=chunk.element_index,
+            section_path=chunk.section_path,
+            section_level=chunk.section_level,
             chunk_index=chunk.chunk_index,
-            total_chunks=chunk.total_chunks,
-            line_start=chunk.metadata.get('line_start', 0),
-            line_end=chunk.metadata.get('line_end', 0),
-            extra={k: v for k, v in chunk.metadata.items() 
-                   if k not in ['header_path', 'line_start', 'line_end']}
+            line_start=chunk.line_start,
+            line_end=chunk.line_end,
+            entities=chunk.entities,
+            has_multi_representation=chunk.has_multi_representation,
+            natural_language_description=chunk.natural_language_description,
+            extra=chunk.extra_metadata
         )

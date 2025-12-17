@@ -1,175 +1,219 @@
+"""
+Example usage of the RAG-optimized semantic chunker
+"""
 import logging
-from pathlib import Path
+from markdown_chunker.config import RAGChunkingConfig, ChunkingConfig, ContextConfig, EmbeddingConfig
+from markdown_chunker.semantic_chunker import SemanticChunker
+from markdown_chunker.embedder import EmbeddingGenerator
+from markdown_chunker.storage import QdrantStorage
+from markdown_chunker.config import QdrantConfig
 
-from markdown_chunker import (
-    EmbeddingConfig,
-    QdrantConfig,
-    TokenCounter,
-    MarkdownChunker,
-    EmbeddingGenerator,
-    QdrantStorage
-)
-
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
 logger = logging.getLogger(__name__)
 
 
 def main():
-    logger.info("Setting up configuration...")
+    # Example 1: Basic usage with default configuration
+    print("=" * 80)
+    print("Example 1: Basic Semantic Chunking")
+    print("=" * 80)
     
-    embedding_config = EmbeddingConfig(
-        model_name="BAAI/bge-base-en-v1.5",  # Or any HuggingFace model
-        max_token_limit=512,
-        target_chunk_size=400,
-        min_chunk_size=100,
-        overlap_tokens=50,
-        device="cpu"  # Change to "cuda" if GPU available
-    )
+    # Create configuration
+    config = RAGChunkingConfig()
     
-    qdrant_config = QdrantConfig(
-        url="http://localhost:6333",  # Local Qdrant
-        collection_name="example_docs",
-        create_if_not_exists=True
-    )
+    # Initialize chunker
+    chunker = SemanticChunker(config)
     
-    logger.info("Reading markdown file...")
+    # Sample markdown content
+    markdown_content = """
+# Introduction to Machine Learning
 
-    markdown_file = "sample_document.md"
+Machine learning is a subset of artificial intelligence that focuses on building systems that can learn from data.
+
+## Types of Machine Learning
+
+### Supervised Learning
+
+Supervised learning uses labeled data to train models. Common algorithms include:
+- Linear Regression
+- Decision Trees
+- Neural Networks
+
+### Unsupervised Learning
+
+Unsupervised learning finds patterns in unlabeled data.
+
+## Example Code
+
+```python
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
+# Create sample data
+X = np.array([[1], [2], [3], [4], [5]])
+y = np.array([2, 4, 6, 8, 10])
+
+# Train model
+model = LinearRegression()
+model.fit(X, y)
+```
+
+## Performance Metrics
+
+| Metric | Description | Range |
+|--------|-------------|-------|
+| Accuracy | Correct predictions / Total | 0-1 |
+| Precision | True Positives / (TP + FP) | 0-1 |
+| Recall | True Positives / (TP + FN) | 0-1 |
+"""
     
-    if not Path(markdown_file).exists():
-        logger.error(f"File not found: {markdown_file}")
-        return
-    
-    with open(markdown_file, 'r', encoding='utf-8') as f:
-        content = f.read()
-    
-    document_id = Path(markdown_file).stem
-    document_title = "Sample Financial Report"
-    
-    logger.info(f"Processing document: {document_title}")
-    
-    token_counter = TokenCounter(embedding_config.model_name)
-    chunker = MarkdownChunker(embedding_config, token_counter)
-    embedder = EmbeddingGenerator(embedding_config)
-    storage = QdrantStorage(
-        qdrant_config, 
-        embedder.get_embedding_dimension()
+    # Chunk the document
+    chunks = chunker.chunk_document(
+        content=markdown_content,
+        document_id="ml_intro",
+        document_title="Introduction to Machine Learning"
     )
     
-    logger.info("Parsing and chunking document...")
+    print(f"\nGenerated {len(chunks)} semantic chunks:\n")
     
-    chunks = chunker.chunk_document(content, document_id, document_title)
-    
-    logger.info(f"Generated {len(chunks)} chunks")
-    
-    total_tokens = sum(chunk.token_count for chunk in chunks)
-    avg_tokens = total_tokens // len(chunks) if chunks else 0
-    
-    print("\n" + "="*60)
-    print("CHUNKING RESULTS")
-    print("="*60)
-    print(f"Total chunks:        {len(chunks)}")
-    print(f"Total tokens:        {total_tokens:,}")
-    print(f"Average tokens:      {avg_tokens}")
-    print(f"Min tokens:          {min(c.token_count for c in chunks)}")
-    print(f"Max tokens:          {max(c.token_count for c in chunks)}")
-    print("="*60 + "\n")
-    
-    # Show first few chunks
-    print("First 3 chunks:")
-    print("-" * 60)
-    for i, chunk in enumerate(chunks[:3]):
-        print(f"\nChunk {i+1}:")
+    for i, chunk in enumerate(chunks):
+        print(f"Chunk {i + 1}:")
         print(f"  Type: {chunk.chunk_type}")
+        print(f"  Section: {' > '.join(chunk.section_path)}")
         print(f"  Tokens: {chunk.token_count}")
-        print(f"  Content preview: {chunk.content[:100]}...")
-        print(f"  Header path: {' > '.join(chunk.metadata.get('header_path', []))}")
-    print("-" * 60)
+        print(f"  Content preview: {chunk.original_content[:100]}...")
+        
+        if chunk.entities:
+            print(f"  Entities: {chunk.entities}")
+        
+        if chunk.has_multi_representation:
+            print(f"  Multi-representation: Yes")
+            print(f"  Description: {chunk.natural_language_description}")
+        
+        print()
     
-    # ==========================================================================
-    # STEP 5: Generate Embeddings
-    # ==========================================================================
+    # Example 2: Custom configuration for larger chunks
+    print("=" * 80)
+    print("Example 2: Custom Configuration")
+    print("=" * 80)
     
-    logger.info("Generating embeddings...")
-    
-    chunk_texts = [chunk.content for chunk in chunks]
-    embeddings = embedder.generate_embeddings(chunk_texts, batch_size=16)
-    
-    logger.info(f"Generated {len(embeddings)} embeddings")
-    
-    # ==========================================================================
-    # STEP 6: Store in Qdrant
-    # ==========================================================================
-    
-    logger.info("Storing chunks in Qdrant...")
-    
-    storage.store_chunks(
-        chunks=chunks,
-        embeddings=embeddings,
-        document_id=document_id,
-        document_title=document_title,
-        batch_size=50
+    custom_config = RAGChunkingConfig(
+        chunking=ChunkingConfig(
+            target_chunk_size=500,  # Larger chunks
+            min_chunk_size=200,
+            keep_tables_intact=True,
+            keep_code_blocks_intact=True,
+            use_sentence_boundaries=True
+        ),
+        context=ContextConfig(
+            include_surrounding_context=True,
+            surrounding_sentences_before=3,
+            surrounding_sentences_after=2,
+            extract_entities=True,
+            create_table_descriptions=True,
+            create_code_descriptions=True
+        ),
+        embedding=EmbeddingConfig(
+            model_name="BAAI/bge-base-en-v1.5",
+            max_token_limit=512
+        )
     )
     
-    logger.info("Storage complete!")
-    
-    # ==========================================================================
-    # STEP 7: Verify Storage
-    # ==========================================================================
-    
-    logger.info("Verifying storage...")
-    
-    collection_info = storage.get_collection_info()
-    
-    print("\n" + "="*60)
-    print("QDRANT COLLECTION INFO")
-    print("="*60)
-    print(f"Collection:          {collection_info['name']}")
-    print(f"Vector count:        {collection_info['vectors_count']}")
-    print(f"Vector dimension:    {collection_info['vector_size']}")
-    print(f"Distance metric:     {collection_info['distance']}")
-    print("="*60 + "\n")
-    
-    # ==========================================================================
-    # STEP 8: Example Search (Optional)
-    # ==========================================================================
-    
-    logger.info("Performing example search...")
-    
-    # Search for content related to "revenue"
-    query_text = "What was the revenue performance?"
-    query_embedding = embedder.generate_embedding(query_text)
-    
-    search_results = storage.search(
-        query_embedding=query_embedding,
-        limit=3
+    custom_chunker = SemanticChunker(custom_config)
+    custom_chunks = custom_chunker.chunk_document(
+        content=markdown_content,
+        document_id="ml_intro_custom",
+        document_title="Introduction to Machine Learning"
     )
     
-    print("\n" + "="*60)
-    print(f"SEARCH RESULTS for: '{query_text}'")
-    print("="*60)
-    for i, result in enumerate(search_results, 1):
-        print(f"\nResult {i}:")
-        print(f"  Score: {result['score']:.4f}")
-        print(f"  Type: {result['metadata']['chunk_type']}")
-        print(f"  Header: {result['metadata'].get('header_path_str', 'N/A')}")
-        print(f"  Content preview: {result['content'][:150]}...")
-    print("="*60 + "\n")
+    print(f"\nGenerated {len(custom_chunks)} chunks with custom config\n")
     
-    logger.info("Example completed successfully!")
+    # Example 3: Full pipeline with embeddings and storage
+    print("=" * 80)
+    print("Example 3: Full Pipeline (Chunking + Embedding + Storage)")
+    print("=" * 80)
     
-    print("\n✓ Success! Your document has been chunked and stored.")
-    print(f"✓ Collection '{qdrant_config.collection_name}' contains {len(chunks)} chunks")
-    print(f"✓ You can now query this collection using Qdrant's API")
+    try:
+        # Initialize embedding generator
+        embedder = EmbeddingGenerator(config.embedding)
+        
+        # Generate embeddings for chunks
+        texts = [chunk.content for chunk in chunks]
+        embeddings = embedder.generate_embeddings(texts)
+        
+        print(f"Generated {len(embeddings)} embeddings")
+        print(f"Embedding dimension: {embedder.get_embedding_dimension()}")
+        
+        # Initialize Qdrant storage
+        qdrant_config = QdrantConfig(
+            url="http://localhost:6333",
+            collection_name="ml_docs"
+        )
+        
+        storage = QdrantStorage(qdrant_config, embedder.get_embedding_dimension())
+        
+        # Store chunks with embeddings
+        storage.store_chunks(
+            chunks=chunks,
+            embeddings=embeddings,
+            document_id="ml_intro",
+            document_title="Introduction to Machine Learning"
+        )
+        
+        print("\nSuccessfully stored chunks in Qdrant!")
+        
+        # Example search
+        query = "What are types of machine learning?"
+        query_embedding = embedder.generate_embedding(query)
+        
+        results = storage.search(
+            query_embedding=query_embedding,
+            limit=3,
+            score_threshold=0.5
+        )
+        
+        print(f"\nSearch results for: '{query}'")
+        for i, result in enumerate(results):
+            print(f"\nResult {i + 1} (score: {result['score']:.3f}):")
+            print(f"Content: {result['content'][:200]}...")
+            print(f"Section: {result['metadata'].get('section_context', 'N/A')}")
+        
+    except Exception as e:
+        print(f"\nNote: Full pipeline requires running Qdrant instance")
+        print(f"Error: {e}")
+    
+    # Example 4: Analyzing chunk distribution
+    print("\n" + "=" * 80)
+    print("Example 4: Chunk Analysis")
+    print("=" * 80)
+    
+    chunk_types = {}
+    total_tokens = 0
+    
+    for chunk in chunks:
+        chunk_types[chunk.chunk_type] = chunk_types.get(chunk.chunk_type, 0) + 1
+        total_tokens += chunk.token_count
+    
+    print("\nChunk Distribution:")
+    for chunk_type, count in sorted(chunk_types.items()):
+        print(f"  {chunk_type}: {count}")
+    
+    print(f"\nTotal tokens: {total_tokens}")
+    print(f"Average tokens per chunk: {total_tokens / len(chunks):.1f}")
+    
+    # Show chunks with multi-representation
+    multi_repr_chunks = [c for c in chunks if c.has_multi_representation]
+    print(f"\nChunks with multi-representation: {len(multi_repr_chunks)}")
+    
+    for chunk in multi_repr_chunks:
+        print(f"\n  Type: {chunk.chunk_type}")
+        print(f"  Description: {chunk.natural_language_description}")
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        logger.info("Interrupted by user")
-    except Exception as e:
-        logger.error(f"Error: {e}", exc_info=True)
+    main()

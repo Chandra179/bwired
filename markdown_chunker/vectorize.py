@@ -1,14 +1,13 @@
 """
-Command-line interface for markdown chunking and embedding
+Command-line interface for RAG-optimized markdown chunking and embedding
 """
 import argparse
 import sys
 import logging
 from pathlib import Path
 
-from .config import EmbeddingConfig, QdrantConfig
-from .tokenizer_utils import TokenCounter
-from .chunker import MarkdownChunker
+from .config import RAGChunkingConfig, ChunkingConfig, ContextConfig, EmbeddingConfig, QdrantConfig
+from .semantic_chunker import SemanticChunker
 from .embedder import EmbeddingGenerator
 from .storage import QdrantStorage
 from .utils import (
@@ -16,7 +15,6 @@ from .utils import (
     read_markdown_file, 
     load_config_file,
     get_document_id_from_path,
-    print_summary
 )
 
 logger = logging.getLogger(__name__)
@@ -25,7 +23,7 @@ logger = logging.getLogger(__name__)
 def parse_args():
     """Parse command-line arguments"""
     parser = argparse.ArgumentParser(
-        description='Chunk markdown documents and store embeddings in Qdrant',
+        description='Chunk markdown documents with RAG optimization and store embeddings in Qdrant',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -34,6 +32,9 @@ Examples:
   
   # Override document title
   python -m markdown_chunker.vectorize --input report.md --config vectorize.yaml --document-title "Q4 Report"
+  
+  # Process with custom document ID
+  python -m markdown_chunker.vectorize -i report.md -c vectorize.yaml --document-id "q4_2024"
         """
     )
     
@@ -67,28 +68,92 @@ def load_configurations(config_path):
     logger.info(f"Loading config from: {config_path}")
     config_data = load_config_file(config_path)
     
+    # Create chunking config
+    chunking_config = ChunkingConfig(
+        target_chunk_size=config_data.get('target_chunk_size', 500),
+        min_chunk_size=config_data.get('min_chunk_size', 100),
+        max_chunk_size=config_data.get('max_chunk_size', 800),
+        keep_tables_intact=config_data.get('keep_tables_intact', True),
+        keep_code_blocks_intact=config_data.get('keep_code_blocks_intact', True),
+        keep_list_items_together=config_data.get('keep_list_items_together', True),
+        use_sentence_boundaries=config_data.get('use_sentence_boundaries', True),
+        max_recursion_depth=config_data.get('max_recursion_depth', 3)
+    )
+    
+    # Create context config
+    context_config = ContextConfig(
+        include_document_context=config_data.get('include_document_context', True),
+        include_header_path=config_data.get('include_header_path', True),
+        include_surrounding_context=config_data.get('include_surrounding_context', True),
+        surrounding_sentences_before=config_data.get('surrounding_sentences_before', 2),
+        surrounding_sentences_after=config_data.get('surrounding_sentences_after', 1),
+        extract_entities=config_data.get('extract_entities', True),
+        entity_types=config_data.get('entity_types', ["PERSON", "ORG", "PRODUCT", "GPE", "DATE", "MONEY"]),
+        create_table_descriptions=config_data.get('create_table_descriptions', True),
+        create_code_descriptions=config_data.get('create_code_descriptions', True)
+    )
+    
     # Create embedding config
     embedding_config = EmbeddingConfig(
         model_name=config_data.get('model_name', 'BAAI/bge-base-en-v1.5'),
+        model_dim=config_data.get('model_dim', 768),
         max_token_limit=config_data.get('max_token_limit', 512),
-        target_chunk_size=config_data.get('target_chunk_size', 400),
-        min_chunk_size=config_data.get('min_chunk_size', 100),
-        overlap_tokens=config_data.get('overlap_tokens', 50),
-        device=config_data.get('device', 'cpu')
+        device=config_data.get('device', 'cpu'),
+        batch_size=config_data.get('batch_size', 32)
+    )
+    
+    # Create RAG config
+    rag_config = RAGChunkingConfig(
+        chunking=chunking_config,
+        context=context_config,
+        embedding=embedding_config
     )
     
     # Create Qdrant config
     qdrant_config = QdrantConfig(
         url=config_data.get('qdrant_url', 'http://localhost:6333'),
         collection_name=config_data.get('collection_name', 'markdown_chunks'),
-        api_key=config_data.get('api_key')
+        api_key=config_data.get('api_key'),
+        distance_metric=config_data.get('distance_metric', 'Cosine')
     )
     
     # Get logging config
     log_level = config_data.get('log_level', 'INFO')
     log_file = config_data.get('log_file')
     
-    return embedding_config, qdrant_config, log_level, log_file
+    return rag_config, qdrant_config, log_level, log_file
+
+
+def print_chunk_statistics(chunks):
+    """Print statistics about generated chunks"""
+    if not chunks:
+        return
+    
+    chunk_types = {}
+    total_tokens = 0
+    multi_repr_count = 0
+    entity_count = 0
+    
+    for chunk in chunks:
+        chunk_types[chunk.chunk_type] = chunk_types.get(chunk.chunk_type, 0) + 1
+        total_tokens += chunk.token_count
+        if chunk.has_multi_representation:
+            multi_repr_count += 1
+        if chunk.entities:
+            entity_count += 1
+    
+    print(f"\nChunk Statistics:")
+    print(f"  Total chunks: {len(chunks)}")
+    print(f"  Total tokens: {total_tokens}")
+    print(f"  Average tokens/chunk: {total_tokens / len(chunks):.1f}")
+    
+    print(f"\n  Chunk types:")
+    for chunk_type, count in sorted(chunk_types.items()):
+        print(f"    {chunk_type}: {count}")
+    
+    print(f"\n  RAG features:")
+    print(f"    Chunks with multi-representation: {multi_repr_count}")
+    print(f"    Chunks with entities: {entity_count}")
 
 
 def main():
@@ -97,69 +162,100 @@ def main():
     
     try:
         # Load configurations
-        embedding_config, qdrant_config, log_level, log_file = load_configurations(args.config)
+        rag_config, qdrant_config, log_level, log_file = load_configurations(args.config)
         
         # Setup logging
         setup_logging(log_level, log_file)
         
-        logger.info("Starting markdown vectorization pipeline")
+        logger.info("=" * 80)
+        logger.info("Starting RAG-optimized markdown vectorization pipeline")
+        logger.info("=" * 80)
         logger.info(f"Input file: {args.input}")
-        logger.info(f"Model: {embedding_config.model_name}")
-        logger.info(f"Target chunk size: {embedding_config.target_chunk_size} tokens")
+        logger.info(f"Model: {rag_config.embedding.model_name}")
+        logger.info(f"Target chunk size: {rag_config.chunking.target_chunk_size} tokens")
+        logger.info(f"Sentence boundaries: {rag_config.chunking.use_sentence_boundaries}")
+        logger.info(f"Entity extraction: {rag_config.context.extract_entities}")
         
         # Read markdown file
-        logger.info("Reading markdown file...")
+        logger.info("\n[1/5] Reading markdown file...")
         content = read_markdown_file(args.input)
         file_size = Path(args.input).stat().st_size
+        logger.info(f"  File size: {file_size:,} bytes")
         
         # Get document metadata
-        document_id = get_document_id_from_path(args.input)
-        document_title = Path(args.input).name
+        document_id = args.document_id or get_document_id_from_path(args.input)
+        document_title = args.document_title or Path(args.input).name
+        logger.info(f"  Document ID: {document_id}")
+        logger.info(f"  Document title: {document_title}")
         
-        # Initialize components
-        logger.info("Initializing tokenizer...")
-        token_counter = TokenCounter(embedding_config.model_name)
-        
-        logger.info("Initializing chunker...")
-        chunker = MarkdownChunker(embedding_config, token_counter)
+        # Initialize semantic chunker
+        logger.info("\n[2/5] Initializing semantic chunker...")
+        chunker = SemanticChunker(rag_config)
         
         # Parse and chunk document
-        logger.info("Parsing and chunking document...")
+        logger.info("\n[3/5] Parsing and chunking document...")
+        logger.info("  Stage 1: Parsing markdown (markdown-it-py)")
+        logger.info("  Stage 2: Extracting semantic sections")
+        logger.info("  Stage 3: Semantic chunking with sentence boundaries")
+        logger.info("  Stage 4: Context enhancement and multi-representation")
+        
         chunks = chunker.chunk_document(content, document_id, document_title)
         
         if not chunks:
             logger.warning("No chunks generated from document")
+            print("\n✗ No chunks generated. Document may be empty or invalid.", file=sys.stderr)
             return 1
         
-        # Calculate statistics
-        total_tokens = sum(chunk.token_count for chunk in chunks)
-        num_elements = len(chunker.parser.parse(content))
+        logger.info(f"  Generated {len(chunks)} semantic chunks")
         
-        # Print summary
-        print_summary(document_id, num_elements, len(chunks), total_tokens, file_size)
+        # Print chunk statistics
+        print_chunk_statistics(chunks)
         
         # Generate embeddings
-        logger.info("Generating embeddings...")
-        embedder = EmbeddingGenerator(embedding_config)
+        logger.info("\n[4/5] Generating embeddings...")
+        embedder = EmbeddingGenerator(rag_config.embedding)
         
         chunk_texts = [chunk.content for chunk in chunks]
-        embeddings = embedder.generate_embeddings(chunk_texts)
+        embeddings = embedder.generate_embeddings(
+            chunk_texts,
+            batch_size=rag_config.embedding.batch_size
+        )
+        logger.info(f"  Generated {len(embeddings)} embeddings")
+        logger.info(f"  Embedding dimension: {embedder.get_embedding_dimension()}")
         
         # Store in Qdrant
-        logger.info("Storing in Qdrant...")
+        logger.info("\n[5/5] Storing in Qdrant...")
         storage = QdrantStorage(qdrant_config, embedder.get_embedding_dimension())
-        storage.store_chunks(chunks, embeddings, document_id, document_title)
         
-        logger.info("Pipeline completed successfully!")
-        print(f"\n✓ Successfully processed and stored {len(chunks)} chunks")
+        storage.store_chunks(
+            chunks=chunks,
+            embeddings=embeddings,
+            document_id=document_id,
+            document_title=document_title
+        )
+        
+        logger.info("  Successfully stored in vector database")
+        
+        # Success summary
+        print("\n" + "=" * 80)
+        print("✓ Pipeline completed successfully!")
+        print("=" * 80)
         print(f"  Collection: {qdrant_config.collection_name}")
         print(f"  Document ID: {document_id}")
+        print(f"  Chunks stored: {len(chunks)}")
+        print(f"  Vector dimension: {embedder.get_embedding_dimension()}")
+        print("=" * 80)
         
         return 0
         
     except KeyboardInterrupt:
-        logger.info("Interrupted by user")
+        logger.info("\nInterrupted by user")
+        print("\n✗ Process interrupted by user", file=sys.stderr)
         return 130
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {e}")
+        print(f"\n✗ Error: File not found - {e}", file=sys.stderr)
+        return 1
     except Exception as e:
         logger.error(f"Pipeline failed: {e}", exc_info=True)
         print(f"\n✗ Error: {e}", file=sys.stderr)
