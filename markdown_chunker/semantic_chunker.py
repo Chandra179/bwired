@@ -25,12 +25,8 @@ class SemanticChunk:
     chunk_index: int
     
     # Hierarchy
-    section_path: List[str]
+    section_path: str  # Full hierarchical path (e.g., "Introduction > Getting Started > Installation")
     section_level: int
-    
-    # Source location
-    line_start: int
-    line_end: int
     
     # RAG metadata
     entities: Optional[Dict[str, List[str]]] = None
@@ -153,7 +149,7 @@ class SemanticChunker:
     def _chunk_element(
         self,
         element: MarkdownElement,
-        header_path: List[str],
+        header_path: str,
         section_level: int
     ) -> List[SemanticChunk]:
         """Chunk a single element based on its type"""
@@ -173,7 +169,8 @@ class SemanticChunker:
         elif element.type == ElementType.HEADING:
             # Headings are usually handled at section level
             # Only chunk if it's a standalone heading with significant content
-            if len(element.content) > self.config.chunking.min_chunk_size:
+            token_count = self.token_counter.count_tokens(element.content)
+            if token_count > 50:  # Arbitrary threshold for "significant"
                 return self._chunk_text(element, header_path, section_level)
             return []
         
@@ -184,23 +181,23 @@ class SemanticChunker:
     def _chunk_table(
         self,
         element: MarkdownElement,
-        header_path: List[str],
+        header_path: str,
         section_level: int
     ) -> List[SemanticChunk]:
         """Chunk table - keep intact if possible"""
         token_count = self.token_counter.count_tokens(element.content)
         
-        # If table fits, keep it whole
+        # If table fits within target, keep it whole
         if token_count <= self.config.chunking.target_chunk_size or \
            self.config.chunking.keep_tables_intact:
             
-            # If still too large, truncate
-            if token_count > self.config.chunking.max_chunk_size:
+            # If exceeds target, truncate
+            if token_count > self.config.chunking.target_chunk_size:
                 content = self.token_counter.truncate_to_tokens(
                     element.content,
-                    self.config.chunking.max_chunk_size
+                    self.config.chunking.target_chunk_size
                 )
-                token_count = self.config.chunking.max_chunk_size
+                token_count = self.config.chunking.target_chunk_size
             else:
                 content = element.content
             
@@ -212,8 +209,6 @@ class SemanticChunker:
                 chunk_index=0,
                 section_path=header_path,
                 section_level=section_level,
-                line_start=element.line_start,
-                line_end=element.line_end,
                 extra_metadata=element.metadata
             )]
         
@@ -223,7 +218,7 @@ class SemanticChunker:
     def _split_table_by_rows(
         self,
         element: MarkdownElement,
-        header_path: List[str],
+        header_path: str,
         section_level: int
     ) -> List[SemanticChunk]:
         """Split large table by rows"""
@@ -261,8 +256,6 @@ class SemanticChunker:
                         chunk_index=len(chunks),
                         section_path=header_path,
                         section_level=section_level,
-                        line_start=element.line_start,
-                        line_end=element.line_end,
                         extra_metadata={
                             **element.metadata,
                             'is_partial_table': True
@@ -283,8 +276,6 @@ class SemanticChunker:
                 chunk_index=len(chunks),
                 section_path=header_path,
                 section_level=section_level,
-                line_start=element.line_start,
-                line_end=element.line_end,
                 extra_metadata={
                     **element.metadata,
                     'is_partial_table': True
@@ -296,7 +287,7 @@ class SemanticChunker:
     def _chunk_code(
         self,
         element: MarkdownElement,
-        header_path: List[str],
+        header_path: str,
         section_level: int
     ) -> List[SemanticChunk]:
         """Chunk code block - keep intact if possible"""
@@ -307,12 +298,12 @@ class SemanticChunker:
            self.config.chunking.keep_code_blocks_intact:
             
             # Truncate if necessary
-            if token_count > self.config.chunking.max_chunk_size:
+            if token_count > self.config.chunking.target_chunk_size:
                 content = self.token_counter.truncate_to_tokens(
                     element.content,
-                    self.config.chunking.max_chunk_size
+                    self.config.chunking.target_chunk_size
                 )
-                token_count = self.config.chunking.max_chunk_size
+                token_count = self.config.chunking.target_chunk_size
             else:
                 content = element.content
             
@@ -324,8 +315,6 @@ class SemanticChunker:
                 chunk_index=0,
                 section_path=header_path,
                 section_level=section_level,
-                line_start=element.line_start,
-                line_end=element.line_end,
                 extra_metadata=element.metadata
             )]
         
@@ -335,7 +324,7 @@ class SemanticChunker:
     def _split_code_by_lines(
         self,
         element: MarkdownElement,
-        header_path: List[str],
+        header_path: str,
         section_level: int
     ) -> List[SemanticChunk]:
         """Split code by lines when too large"""
@@ -361,8 +350,6 @@ class SemanticChunker:
                         chunk_index=len(chunks),
                         section_path=header_path,
                         section_level=section_level,
-                        line_start=element.line_start,
-                        line_end=element.line_end,
                         extra_metadata={
                             **element.metadata,
                             'is_partial_code': True
@@ -382,8 +369,6 @@ class SemanticChunker:
                 chunk_index=len(chunks),
                 section_path=header_path,
                 section_level=section_level,
-                line_start=element.line_start,
-                line_end=element.line_end,
                 extra_metadata={
                     **element.metadata,
                     'is_partial_code': True
@@ -395,7 +380,7 @@ class SemanticChunker:
     def _chunk_list(
         self,
         element: MarkdownElement,
-        header_path: List[str],
+        header_path: str,
         section_level: int
     ) -> List[SemanticChunk]:
         """Chunk list - keep items together"""
@@ -411,8 +396,6 @@ class SemanticChunker:
                 chunk_index=0,
                 section_path=header_path,
                 section_level=section_level,
-                line_start=element.line_start,
-                line_end=element.line_end,
                 extra_metadata=element.metadata
             )]
         
@@ -426,7 +409,7 @@ class SemanticChunker:
     def _split_list_by_items(
         self,
         element: MarkdownElement,
-        header_path: List[str],
+        header_path: str,
         section_level: int
     ) -> List[SemanticChunk]:
         """Split list by items"""
@@ -455,8 +438,6 @@ class SemanticChunker:
                         chunk_index=len(chunks),
                         section_path=header_path,
                         section_level=section_level,
-                        line_start=element.line_start,
-                        line_end=element.line_end,
                         extra_metadata=element.metadata
                     ))
                 
@@ -473,8 +454,6 @@ class SemanticChunker:
                 chunk_index=len(chunks),
                 section_path=header_path,
                 section_level=section_level,
-                line_start=element.line_start,
-                line_end=element.line_end,
                 extra_metadata=element.metadata
             ))
         
@@ -483,7 +462,7 @@ class SemanticChunker:
     def _chunk_text(
         self,
         element: MarkdownElement,
-        header_path: List[str],
+        header_path: str,
         section_level: int
     ) -> List[SemanticChunk]:
         """Chunk text/paragraph with sentence awareness"""
@@ -499,8 +478,6 @@ class SemanticChunker:
                 chunk_index=0,
                 section_path=header_path,
                 section_level=section_level,
-                line_start=element.line_start,
-                line_end=element.line_end,
                 extra_metadata=element.metadata
             )]
         
@@ -525,8 +502,6 @@ class SemanticChunker:
                 chunk_index=i,
                 section_path=header_path,
                 section_level=section_level,
-                line_start=element.line_start,
-                line_end=element.line_end,
                 extra_metadata=element.metadata
             ))
         
@@ -621,9 +596,10 @@ class SemanticChunker:
         chunk: SemanticChunk,
         elements: List[MarkdownElement]
     ) -> Optional[MarkdownElement]:
-        """Find the original element that generated this chunk"""
+        """Find the original element that generated this chunk by matching content"""
         for element in elements:
-            if (element.line_start == chunk.line_start and
-                element.line_end == chunk.line_end):
+            # Match by content similarity since we no longer have line numbers
+            if element.content.strip() in chunk.original_content.strip() or \
+               chunk.original_content.strip() in element.content.strip():
                 return element
         return None

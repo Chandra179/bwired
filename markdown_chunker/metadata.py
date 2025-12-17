@@ -20,13 +20,9 @@ class ChunkMetadata:
     chunk_type: str  # paragraph, table, code, list, etc.
     
     # Hierarchy and structure
-    section_path: List[str]  # Full header path
+    section_path: str  # Full hierarchical header path (e.g., "Introduction > Getting Started > Installation")
     section_level: int  # Depth in hierarchy
     chunk_index: int  # Index within section
-    
-    # Source location
-    line_start: int
-    line_end: int
     
     # RAG-specific metadata
     entities: Optional[Dict[str, List[str]]] = None  # {entity_type: [entities]}
@@ -73,8 +69,6 @@ class ChunkMetadata:
             section_path=chunk.section_path,
             section_level=chunk.section_level,
             chunk_index=chunk.chunk_index,
-            line_start=chunk.line_start,
-            line_end=chunk.line_end,
             entities=chunk.entities,
             has_multi_representation=chunk.has_multi_representation,
             natural_language_description=chunk.natural_language_description,

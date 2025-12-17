@@ -7,9 +7,7 @@ class ChunkingConfig:
     """Default configuration for semantic chunking, Custom config at .yaml files"""
     
     # Size parameters (in tokens)
-    target_chunk_size: int = 500
-    min_chunk_size: int = 100
-    max_chunk_size: int = 800
+    target_chunk_size: int = 400
     
     # Semantic chunking behavior
     keep_tables_intact: bool = True
@@ -22,19 +20,6 @@ class ChunkingConfig:
     
     # Recursion control
     max_recursion_depth: int = 3
-    
-    def __post_init__(self):
-        """Validate configuration"""
-        if self.min_chunk_size > self.target_chunk_size:
-            raise ValueError(
-                f"min_chunk_size ({self.min_chunk_size}) must be <= "
-                f"target_chunk_size ({self.target_chunk_size})"
-            )
-        if self.target_chunk_size > self.max_chunk_size:
-            raise ValueError(
-                f"target_chunk_size ({self.target_chunk_size}) must be <= "
-                f"max_chunk_size ({self.max_chunk_size})"
-            )
 
 
 @dataclass
@@ -92,9 +77,9 @@ class RAGChunkingConfig:
     
     def __post_init__(self):
         """Cross-validate configurations"""
-        if self.chunking.max_chunk_size > self.embedding.max_token_limit:
+        if self.chunking.target_chunk_size > self.embedding.max_token_limit:
             raise ValueError(
-                f"chunking.max_chunk_size ({self.chunking.max_chunk_size}) must be <= "
+                f"chunking.target_chunk_size ({self.chunking.target_chunk_size}) must be <= "
                 f"embedding.max_token_limit ({self.embedding.max_token_limit})"
             )
 

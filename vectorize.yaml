@@ -6,8 +6,6 @@ max_token_limit: 512
 
 # Chunking Parameters
 target_chunk_size: 500  # Target size in tokens
-min_chunk_size: 100     # Minimum chunk size in tokens
-max_chunk_size: 500     # Maximum chunk size (hard limit)
 
 # Semantic Chunking Behavior
 keep_tables_intact: true      # Keep tables whole if possible

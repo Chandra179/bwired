@@ -71,8 +71,6 @@ def load_configurations(config_path):
     # Create chunking config
     chunking_config = ChunkingConfig(
         target_chunk_size=config_data.get('target_chunk_size', 500),
-        min_chunk_size=config_data.get('min_chunk_size', 100),
-        max_chunk_size=config_data.get('max_chunk_size', 800),
         keep_tables_intact=config_data.get('keep_tables_intact', True),
         keep_code_blocks_intact=config_data.get('keep_code_blocks_intact', True),
         keep_list_items_together=config_data.get('keep_list_items_together', True),

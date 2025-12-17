@@ -20,14 +20,14 @@ class Section:
     start_index: int  # Index in original elements list
     end_index: int    # Index in original elements list
     
-    def get_header_path(self) -> List[str]:
-        """Get the hierarchical path of headers"""
+    def get_header_path(self) -> str:
+        """Get the hierarchical path of headers as a single string"""
         path = []
         current = self
         while current and current.heading:
             path.insert(0, current.heading.content)
             current = getattr(current, 'parent', None)
-        return path
+        return " > ".join(path)
     
     def get_all_content(self) -> str:
         """Get all text content in this section"""
@@ -77,13 +77,19 @@ class SectionAnalyzer:
         return sections
     
     def _build_hierarchy(self, elements: List[MarkdownElement]) -> List[Section]:
-        """Build hierarchical section structure"""
+        """Build hierarchical section structure, ignoring content before first header"""
         if not elements:
             return []
         
         sections = []
         i = 0
         
+        # Skip any content before the first heading
+        while i < len(elements) and elements[i].type != ElementType.HEADING:
+            logger.debug(f"Skipping element at index {i} before first header")
+            i += 1
+        
+        # Process sections starting from first heading
         while i < len(elements):
             element = elements[i]
             
@@ -93,21 +99,15 @@ class SectionAnalyzer:
                 sections.append(section)
                 i = next_index
             else:
-                # Content before first heading - create root section
-                if not sections:
-                    root_section, next_index = self._extract_section(elements, i, is_root=True)
-                    sections.append(root_section)
-                    i = next_index
-                else:
-                    i += 1
+                # This shouldn't happen if logic is correct, but skip just in case
+                i += 1
         
         return sections
     
     def _extract_section(
         self, 
         elements: List[MarkdownElement], 
-        start_index: int,
-        is_root: bool = False
+        start_index: int
     ) -> tuple[Section, int]:
         """
         Extract a section starting at given index
@@ -115,16 +115,10 @@ class SectionAnalyzer:
         Returns:
             (Section object, next_index to process)
         """
-        if is_root:
-            # Root section (content before first heading)
-            heading = None
-            level = 0
-            content_start = start_index
-        else:
-            # Regular section with heading
-            heading = elements[start_index]
-            level = heading.level
-            content_start = start_index + 1
+        # Section with heading
+        heading = elements[start_index]
+        level = heading.level
+        content_start = start_index + 1
         
         content_elements = []
         subsections = []
@@ -135,7 +129,7 @@ class SectionAnalyzer:
             elem = elements[current_index]
             
             if elem.type == ElementType.HEADING:
-                if is_root or elem.level <= level:
+                if elem.level <= level:
                     # Next section at same or higher level
                     break
                 else:
