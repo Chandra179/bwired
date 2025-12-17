@@ -33,8 +33,6 @@ class MarkdownElement:
     type: ElementType
     content: str
     level: Optional[int] = None  # For headings (1-6)
-    line_start: int = 0
-    line_end: int = 0
     metadata: Dict[str, Any] = None
     children: List['MarkdownElement'] = None
     
@@ -155,8 +153,6 @@ class MarkdownParser:
             type=ElementType.HEADING,
             content=text_content,
             level=level,
-            line_start=token.map[0] if token.map else 0,
-            line_end=token.map[1] if token.map else 0,
             metadata={'tag': token.tag}
         )
     
@@ -178,8 +174,6 @@ class MarkdownParser:
         return MarkdownElement(
             type=ElementType.PARAGRAPH,
             content=text_content,
-            line_start=token.map[0] if token.map else 0,
-            line_end=token.map[1] if token.map else 0,
             metadata={'has_image': has_image}
         )
     
@@ -190,8 +184,6 @@ class MarkdownParser:
         return MarkdownElement(
             type=ElementType.CODE_BLOCK,
             content=token.content.rstrip('\n'),
-            line_start=token.map[0] if token.map else 0,
-            line_end=token.map[1] if token.map else 0,
             metadata={
                 'language': language,
                 'is_fenced': token.type == 'fence'
@@ -221,8 +213,6 @@ class MarkdownParser:
         return MarkdownElement(
             type=ElementType.TABLE,
             content=table_content,
-            line_start=line_start,
-            line_end=line_end,
             metadata={
                 'num_rows': num_rows,
                 'num_cols': num_cols,
@@ -256,8 +246,6 @@ class MarkdownParser:
         return MarkdownElement(
             type=ElementType.LIST,
             content=list_content,
-            line_start=line_start,
-            line_end=line_end,
             metadata={
                 'is_ordered': is_ordered,
                 'item_count': item_count
@@ -280,18 +268,14 @@ class MarkdownParser:
         
         return MarkdownElement(
             type=ElementType.BLOCKQUOTE,
-            content=quote_content,
-            line_start=line_start,
-            line_end=line_end
+            content=quote_content
         )
     
     def _process_hr(self, token: Token) -> MarkdownElement:
         """Process horizontal rule"""
         return MarkdownElement(
             type=ElementType.HORIZONTAL_RULE,
-            content='---',
-            line_start=token.map[0] if token.map else 0,
-            line_end=token.map[1] if token.map else 0
+            content='---'
         )
     
     def _extract_text_from_inline(self, inline_token: Token) -> str:
