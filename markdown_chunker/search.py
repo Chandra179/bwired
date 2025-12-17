@@ -117,7 +117,7 @@ def display_results(query, results, show_metadata=True):
                 print(f"Heading: {metadata['heading']}")
             
             if metadata.get('section_path'):
-                print(f"Section: {' > '.join(metadata['section_path'])}")
+                print(f"Section: {metadata['section_path']}")
             
             print(f"Chunk: {metadata.get('chunk_index', 'N/A')}/{metadata.get('total_chunks', 'N/A')}")
         

@@ -11,10 +11,10 @@ up:
 	docker compose up -d
 
 v:
-	python -m markdown_chunker.vectorize --config vectorize.yaml --input econ_nuclear.md
+	python -m markdown_chunker.vectorize --config vectorize.yaml --input sample_document.md
 
 s:
-	python -m markdown_chunker.search --config search.yaml --query "what is the political situation"
+	python -m markdown_chunker.search --config search.yaml --query "quarter 3 finance report summary"
 
 e:
 	python example_usage.py

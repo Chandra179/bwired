@@ -42,6 +42,8 @@ class SemanticChunk:
     # Optimization: Direct reference to source element (Excluded from serialization/repr)
     # This enables O(1) access to metadata without searching
     source_element: Optional[MarkdownElement] = field(default=None, repr=False)
+    
+    search_content: Optional[str] = None  # Search: "Config > Rate Limit \n Context: API... \n The limit is 50."
 
 
 class SemanticChunker:
@@ -589,6 +591,7 @@ class SemanticChunker:
             # Update fields
             chunk.content = enriched['content']
             chunk.token_count = self.token_counter.count_tokens(chunk.content)
+            chunk.search_content = enriched.get('contextualized_content') or chunk.content
             
             if 'entities' in enriched.get('metadata', {}):
                 chunk.entities = enriched['metadata']['entities']

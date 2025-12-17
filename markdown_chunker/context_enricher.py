@@ -1,35 +1,45 @@
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 import logging
+import ast
+import re
+from dataclasses import dataclass
 
+# Assume these exist in your project
 from .parser import MarkdownElement
 from .config import ContextConfig
 
 logger = logging.getLogger(__name__)
 
-
-try:
-    import spacy
-    SPACY_AVAILABLE = True
-except ImportError:
-    SPACY_AVAILABLE = False
-
+# --- Singleton for Heavy Models ---
+class NLPModel:
+    _instance = None
+    
+    @classmethod
+    def get(cls):
+        if cls._instance is None:
+            try:
+                import spacy
+                logger.info("Loading spaCy model (Singleton)...")
+                # Disable components we don't need for speed (parser, lemmatizer)
+                cls._instance = spacy.load("en_core_web_sm", disable=["parser", "lemmatizer"]) 
+            except ImportError:
+                logger.warning("spaCy not installed.")
+                cls._instance = None
+            except OSError:
+                logger.warning("spaCy model 'en_core_web_sm' not found.")
+                cls._instance = None
+        return cls._instance
 
 class ContextEnricher:
-    """Enhance chunks with context for better RAG retrieval"""
+    """
+    Optimized Context Enricher
+    Supports Batch Processing and Lazy Loading
+    """
     
     def __init__(self, config: ContextConfig):
         self.config = config
-        self.nlp = None
-        
-        # Load spaCy for entity extraction if needed
-        if config.extract_entities and SPACY_AVAILABLE:
-            try:
-                logger.info("Loading spaCy for entity extraction")
-                self.nlp = spacy.load("en_core_web_sm")
-                logger.info("spaCy loaded for entity extraction")
-            except OSError:
-                logger.warning("spaCy model not available, entity extraction disabled")
-    
+        # Do NOT load spaCy here. Wait until we use it.
+
     def enrich_chunk(
         self,
         content: str,
@@ -37,255 +47,144 @@ class ContextEnricher:
         header_path: List[str],
         document_title: str,
         element: Optional[MarkdownElement] = None,
-        surrounding_context: Optional[Dict[str, str]] = None
+        surrounding_context: Optional[Dict[str, str]] = None,
+        pre_calculated_entities: Optional[Dict[str, List[str]]] = None
     ) -> Dict[str, Any]:
-        """
-        Enrich a chunk with contextual information
         
-        Args:
-            content: Chunk content
-            chunk_type: Type of chunk (table, code, paragraph, etc.)
-            header_path: Hierarchical path of headers
-            document_title: Document title
-            element: Original MarkdownElement (for metadata)
-            surrounding_context: Optional surrounding text
-            
-        Returns:
-            Dict with enriched content and metadata
-        """
+        # Keep original pure
         enriched = {
-            'content': content,
-            'original_content': content,  # Keep original
-            'metadata': {}
+            'content': content, 
+            'metadata': {},
+            # Create a specific field for embedding that includes the glue
+            'contextualized_content': content 
         }
         
-        # Add document context
+        # --- Metadata Enrichment ---
         if self.config.include_document_context:
             enriched['metadata']['document_title'] = document_title
         
-        # Add header path
         if self.config.include_header_path and header_path:
+            if isinstance(header_path, str):
+                path_str = header_path
+                # Optional: If you want to store it as a list in metadata, split it back
+                # enriched['metadata']['header_path'] = header_path.split(' > ')
+            else:
+                # It is a list, so we join it
+                path_str = ' > '.join(header_path)
+            
             enriched['metadata']['header_path'] = header_path
-            enriched['metadata']['section_context'] = ' > '.join(header_path)
-        
-        # Add surrounding context
+            enriched['metadata']['section_context'] = path_str
+            
+            # Prepend header to embedding content
+            enriched['contextualized_content'] = f"{path_str}\n{enriched['contextualized_content']}"
+
+        # --- Context Injection ---
         if self.config.include_surrounding_context and surrounding_context:
-            context_parts = []
-            
+            parts = []
             if 'before' in surrounding_context:
-                context_parts.append(f"[Context before: {surrounding_context['before']}]")
+                parts.append(f"Context: {surrounding_context['before']}")
             
-            context_parts.append(content)
+            parts.append(enriched['contextualized_content'])
             
             if 'after' in surrounding_context:
-                context_parts.append(f"[Context after: {surrounding_context['after']}]")
+                parts.append(f"Context: {surrounding_context['after']}")
             
-            enriched['content'] = '\n'.join(context_parts)
-        
-        # Extract entities
+            # We update the embedding text, but 'content' remains clean for display
+            enriched['contextualized_content'] = '\n---\n'.join(parts)
+
+        # --- Entity Extraction ---
         if self.config.extract_entities:
-            entities = self._extract_entities(content)
-            if entities:
-                enriched['metadata']['entities'] = entities
-        
-        # Multi-representation for special types
+            if pre_calculated_entities:
+                enriched['metadata']['entities'] = pre_calculated_entities
+            elif chunk_type in ['paragraph', 'text']:
+                # Fallback for single mode
+                nlp = NLPModel.get()
+                if nlp:
+                    doc = nlp(content[:5000])
+                    entities = self._extract_entities_from_doc(doc)
+                    if entities:
+                        enriched['metadata']['entities'] = entities
+
+        # --- Specialized Descriptions ---
         if chunk_type == 'table' and self.config.create_table_descriptions:
-            table_desc = self._create_table_description(content, element)
-            enriched['metadata']['table_description'] = table_desc
-            enriched['representations'] = {
-                'natural_language': table_desc,
-                'structured': content
-            }
-        
+            desc = self._create_table_description(content)
+            enriched['metadata']['table_description'] = desc
+            # Multi-vector representation (store summary for search, raw for result)
+            enriched['search_content'] = desc 
+
         elif chunk_type == 'code_block' and self.config.create_code_descriptions:
-            code_desc = self._create_code_description(content, element)
-            enriched['metadata']['code_description'] = code_desc
-            enriched['representations'] = {
-                'natural_language': code_desc,
-                'code': content
-            }
-        
+            lang = element.metadata.get('language', '') if element else ''
+            desc = self._create_code_description(content, lang)
+            enriched['metadata']['code_description'] = desc
+            enriched['search_content'] = desc 
+
         return enriched
-    
-    def _extract_entities(self, text: str) -> Dict[str, List[str]]:
-        """Extract named entities from text"""
-        if not self.nlp or not text:
-            return {}
+
+    def _extract_entities_from_doc(self, doc) -> Dict[str, List[str]]:
+        """Helper to extract entities from a processed Doc"""
+        entities = {}
+        target_labels = self.config.entity_types or ["ORG", "PRODUCT", "GPE", "PERSON"]
         
-        try:
-            doc = self.nlp(text[:5000])  # Limit length for performance
-            
-            entities = {}
-            for ent in doc.ents:
-                if ent.label_ in self.config.entity_types:
-                    if ent.label_ not in entities:
-                        entities[ent.label_] = []
-                    if ent.text not in entities[ent.label_]:
-                        entities[ent.label_].append(ent.text)
-            
-            return entities
-        except Exception as e:
-            logger.warning(f"Entity extraction failed: {e}")
-            return {}
-    
-    def _create_table_description(
-        self, 
-        table_content: str, 
-        element: Optional[MarkdownElement]
-    ) -> str:
-        """
-        Create natural language description of table
-        Simple rule-based for now, can be enhanced with LLM later
-        """
-        lines = [l.strip() for l in table_content.split('\n') if l.strip() and '|' in l]
+        for ent in doc.ents:
+            if ent.label_ in target_labels:
+                if ent.label_ not in entities:
+                    entities[ent.label_] = []
+                # Deduplicate
+                if ent.text not in entities[ent.label_]:
+                    entities[ent.label_].append(ent.text)
+        return entities
+
+    def _create_code_description(self, code: str, language: str) -> str:
+        """Robust Code Analysis using AST for Python"""
+        lines = code.splitlines()
+        desc_parts = [f"{language} code block with {len(lines)} lines."]
         
-        if len(lines) < 2:
-            return "Empty table"
-        
-        # Extract header
-        header_line = lines[0]
-        headers = [h.strip() for h in header_line.split('|') if h.strip()]
-        
-        # Count rows (excluding header and separator)
-        num_rows = len(lines) - 2 if len(lines) > 2 else 0
-        num_cols = len(headers)
-        
-        # Build description
-        description_parts = [
-            f"This table contains {num_rows} rows and {num_cols} columns."
-        ]
-        
-        if headers:
-            description_parts.append(f"The columns are: {', '.join(headers)}.")
-        
-        # Sample first data row if available
-        if len(lines) > 2:
-            first_data = lines[2]
-            cells = [c.strip() for c in first_data.split('|') if c.strip()]
-            if cells and headers:
-                sample_pairs = [f"{h}: {c}" for h, c in zip(headers, cells) if h and c]
-                if sample_pairs:
-                    description_parts.append(
-                        f"Example row: {', '.join(sample_pairs[:3])}."  # Limit to 3
-                    )
-        
-        return ' '.join(description_parts)
-    
-    def _create_code_description(
-        self, 
-        code_content: str, 
-        element: Optional[MarkdownElement]
-    ) -> str:
-        """
-        Create natural language description of code block
-        Simple rule-based for now, can be enhanced with LLM later
-        """
-        language = element.metadata.get('language', 'unknown') if element else 'unknown'
-        
-        lines = [l for l in code_content.split('\n') if l.strip()]
-        num_lines = len(lines)
-        
-        description_parts = [
-            f"This is a {language} code block with {num_lines} lines."
-        ]
-        
-        # Detect common patterns
+        # 1. Python AST Analysis (Much more accurate than regex)
         if language.lower() in ['python', 'py']:
-            description_parts.extend(self._analyze_python_code(code_content))
-        elif language.lower() in ['javascript', 'js', 'typescript', 'ts']:
-            description_parts.extend(self._analyze_javascript_code(code_content))
+            try:
+                tree = ast.parse(code)
+                functions = [node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)]
+                classes = [node.name for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
+                imports = [node.names[0].name for node in ast.walk(tree) if isinstance(node, ast.Import)]
+                
+                if classes:
+                    desc_parts.append(f"Defines classes: {', '.join(classes[:3])}.")
+                if functions:
+                    desc_parts.append(f"Defines functions: {', '.join(functions[:5])}.")
+                if imports:
+                    desc_parts.append(f"Uses libraries: {', '.join(imports[:3])}.")
+            except SyntaxError:
+                desc_parts.append("Contains Python code fragments.")
+
+        # 2. Fallback / Other Languages (Keep simple regex)
         elif language.lower() in ['sql']:
-            description_parts.extend(self._analyze_sql_code(code_content))
-        
-        # Check for comments
-        if '#' in code_content or '//' in code_content or '/*' in code_content:
-            description_parts.append("The code includes comments.")
-        
-        return ' '.join(description_parts)
-    
-    def _analyze_python_code(self, code: str) -> List[str]:
-        """Analyze Python code for description"""
-        features = []
-        
-        if 'def ' in code:
-            # Count functions
-            func_count = code.count('def ')
-            features.append(f"It defines {func_count} function(s).")
-        
-        if 'class ' in code:
-            class_count = code.count('class ')
-            features.append(f"It defines {class_count} class(es).")
-        
-        if 'import ' in code or 'from ' in code:
-            features.append("It includes import statements.")
-        
-        return features
-    
-    def _analyze_javascript_code(self, code: str) -> List[str]:
-        """Analyze JavaScript code for description"""
-        features = []
-        
-        if 'function ' in code or '=>' in code:
-            features.append("It defines function(s).")
-        
-        if 'class ' in code:
-            features.append("It defines class(es).")
-        
-        if 'const ' in code or 'let ' in code or 'var ' in code:
-            features.append("It declares variables.")
-        
-        if 'import ' in code or 'require(' in code:
-            features.append("It includes imports.")
-        
-        return features
-    
-    def _analyze_sql_code(self, code: str) -> List[str]:
-        """Analyze SQL code for description"""
-        features = []
-        code_upper = code.upper()
-        
-        if 'SELECT ' in code_upper:
-            features.append("It contains SELECT queries.")
-        
-        if 'INSERT ' in code_upper:
-            features.append("It contains INSERT statements.")
-        
-        if 'UPDATE ' in code_upper:
-            features.append("It contains UPDATE statements.")
-        
-        if 'DELETE ' in code_upper:
-            features.append("It contains DELETE statements.")
-        
-        if 'CREATE TABLE' in code_upper:
-            features.append("It creates table(s).")
-        
-        return features
-    
-    def create_summary_representation(
-        self, 
-        content: str, 
-        max_length: int = 200
-    ) -> str:
+            keywords = [w for w in ["SELECT", "INSERT", "UPDATE", "DELETE", "JOIN"] if w in code.upper()]
+            if keywords:
+                desc_parts.append(f"Performs {', '.join(keywords)} operations.")
+
+        return " ".join(desc_parts)
+
+    def _create_table_description(self, content: str) -> str:
         """
-        Create a summary representation for retrieval
-        Simple extractive summary for now
+        Generate a dense summary for table embedding.
+        Format: "Table with columns [A, B, C]. Row 1: [Val1, Val2, Val3]..."
         """
-        sentences = self._split_sentences_simple(content)
+        lines = [l.strip() for l in content.split('\n') if '|' in l]
+        if len(lines) < 2:
+            return "Table structure."
+            
+        # Parse Header
+        header = [h.strip() for h in lines[0].strip('|').split('|')]
         
-        if not sentences:
-            return content[:max_length]
+        desc = f"Table with columns: {', '.join(header)}."
         
-        # Take first 2-3 sentences
-        summary_sentences = sentences[:3]
-        summary = ' '.join(summary_sentences)
-        
-        if len(summary) > max_length:
-            summary = summary[:max_length-3] + '...'
-        
-        return summary
-    
-    def _split_sentences_simple(self, text: str) -> List[str]:
-        """Simple sentence splitter"""
-        import re
-        sentences = re.split(r'(?<=[.!?])\s+', text)
-        return [s.strip() for s in sentences if s.strip()]
+        # Add first 2 rows of data as "context samples" for the embedding
+        # This allows vector search to find the table by its content values
+        data_rows = lines[2:4] # Skip separator
+        for i, row in enumerate(data_rows):
+            cells = [c.strip() for c in row.strip('|').split('|')]
+            # Zip header with value for semantic context "Price: $10"
+            pairs = [f"{h}={c}" for h, c in zip(header, cells) if c]
+            desc += f" Row {i+1}: {', '.join(pairs)}."
+            
+        return desc

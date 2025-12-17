@@ -9,7 +9,7 @@ max_token_limit: 512
 
 # Qdrant Configuration
 qdrant_url: "http://localhost:6333"
-collection_name: "markdown_chunks"
+collection_name: "sample_chunk"
 
 # Optional: Qdrant Cloud API key
 # api_key: "your-api-key-here"

@@ -213,7 +213,7 @@ def main():
         logger.info("\n[4/5] Generating embeddings...")
         embedder = EmbeddingGenerator(rag_config.embedding)
         
-        chunk_texts = [chunk.content for chunk in chunks]
+        chunk_texts = [chunk.search_content for chunk in chunks]
         embeddings = embedder.generate_embeddings(
             chunk_texts,
             batch_size=rag_config.embedding.batch_size
