@@ -114,9 +114,7 @@ def load_configurations(config_path):
     qdrant_config = QdrantConfig(
         url=config_data.get('qdrant_url', 'http://localhost:6333'),
         collection_name=config_data.get('collection_name', 'markdown_chunks'),
-        api_key=config_data.get('api_key'),
         distance_metric=config_data.get('distance_metric', 'Cosine'),
-        use_grpc=config_data.get('use_grpc', True),
         grpc_port=config_data.get('grpc_port', 6334),
         storage_batch_size=config_data.get('storage_batch_size', 500)
     )
@@ -178,7 +176,6 @@ async def async_main(args):
         logger.info(f"Embedding batch size: {rag_config.embedding.batch_size}")
         logger.info(f"Storage batch size: {qdrant_config.storage_batch_size}")
         logger.info(f"FP16 enabled: {rag_config.embedding.use_fp16 and rag_config.embedding.device == 'cuda'}")
-        logger.info(f"gRPC enabled: {qdrant_config.use_grpc}")
         
         # Read markdown file
         logger.info("\n[1/5] Reading markdown file...")

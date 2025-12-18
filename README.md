@@ -135,7 +135,6 @@ search_limit: 10
 | `qdrant_url` | Qdrant server URL | `http://localhost:6333` |
 | `collection_name` | Collection name | `markdown_docs` |
 | `distance_metric` | Distance metric (Cosine/Euclid/Dot) | `Cosine` |
-| `api_key` | Qdrant API key (optional) | None |
 | `log_level` | Logging level | `INFO` |
 | `log_file` | Log file path (optional) | None |
 
@@ -148,7 +147,6 @@ search_limit: 10
 | `max_token_limit` | Maximum token limit | `512` |
 | `qdrant_url` | Qdrant server URL | `http://localhost:6333` |
 | `collection_name` | Collection name | `markdown_docs` |
-| `api_key` | Qdrant API key (optional) | None |
 | `search_limit` | Maximum number of results | `5` |
 | `score_threshold` | Minimum similarity score (0.0-1.0) | None |
 | `filter_document` | Filter by document ID | None |

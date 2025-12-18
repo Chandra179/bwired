@@ -16,20 +16,13 @@ class QdrantStorage:
     def __init__(self, config: QdrantConfig, embedding_dim: int):
         self.config = config
         self.embedding_dim = embedding_dim
-        
-        if config.use_grpc:
-            host = config.url.replace("http://", "").replace("https://", "").split(":")[0]
-            self.client = AsyncQdrantClient(
-                host=host,
-                grpc_port=config.grpc_port,
-                prefer_grpc=True
-            )
-            logger.info(f"Connecting to Qdrant via gRPC at {host}:{config.grpc_port}")
-           
-        else:
-            logger.info(f"Connecting to Qdrant via HTTP at {config.url}")
-            self.client = AsyncQdrantClient(url=config.url)
-        
+        host = config.url.replace("http://", "").replace("https://", "").split(":")[0]
+        self.client = AsyncQdrantClient(
+            host=host,
+            grpc_port=config.grpc_port,
+            prefer_grpc=True
+        )
+        logger.info(f"Connecting to Qdrant via gRPC at {host}:{config.grpc_port}")
         logger.info(f"Storage batch size: {config.storage_batch_size}")
         
     async def initialize(self):

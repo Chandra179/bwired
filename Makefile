@@ -11,7 +11,7 @@ up:
 	docker compose up -d
 
 v:
-	python -m markdown_chunker.vectorize --config vectorize.yaml --input econ_nuclear.md
+	python -m markdown_chunker.vectorize --config vectorize.yaml --input sample.md
 
 s:
 	python -m markdown_chunker.search --config search.yaml --query "what is the political situation"

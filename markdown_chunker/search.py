@@ -56,7 +56,6 @@ def load_configurations(config_path):
     qdrant_config = QdrantConfig(
         url=config_data.get('qdrant_url', 'http://localhost:6333'),
         collection_name=config_data.get('collection_name', 'markdown_chunks'),
-        api_key=config_data.get('api_key')
     )
     
     # Get search parameters

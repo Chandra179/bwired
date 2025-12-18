@@ -6,9 +6,6 @@ model_dim: 768
 device: "cuda"  # Options: "cpu", "cuda"
 max_token_limit: 512
 
-# ==========================================
-# PERFORMANCE OPTIMIZATION
-# ==========================================
 # Embedding generation batch size (increased from 32 to 128)
 embedding_batch_size: 128
 
@@ -24,7 +21,7 @@ show_progress_bar: false
 # ==========================================
 # CHUNKING PARAMETERS
 # ==========================================
-target_chunk_size: 500  # Target size in tokens
+target_chunk_size: 512  # Target size in tokens (same as token limit)
 
 # Semantic Chunking Behavior
 keep_tables_intact: true      # Keep tables whole if possible
@@ -63,15 +60,10 @@ create_code_descriptions: true   # Natural language descriptions for code
 # QDRANT CONFIGURATION
 # ==========================================
 qdrant_url: "http://localhost:6333"
-collection_name: "markdown_chunks"
+collection_name: "sample_chunk"
 distance_metric: "Cosine"  # Options: "Cosine", "Euclid", "Dot"
 
-# gRPC configuration (faster than HTTP)
-use_grpc: true        # Enable gRPC for faster communication
 grpc_port: 6334       # gRPC port (from docker-compose.yml)
-
-# Optional: Qdrant Cloud API key
-# api_key: "your-api-key-here"
 
 # ==========================================
 # LOGGING CONFIGURATION

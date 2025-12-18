@@ -93,10 +93,7 @@ class QdrantConfig:
     # Connection settings
     url: str = "http://localhost:6333"
     collection_name: str = "markdown_chunks"
-    api_key: Optional[str] = None
     
-    # gRPC configuration for faster communication
-    use_grpc: bool = True
     grpc_port: int = 6334
     
     # Collection configuration
