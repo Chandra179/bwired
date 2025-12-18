@@ -76,7 +76,6 @@ def load_configurations(config_path):
         keep_code_blocks_intact=config_data.get('keep_code_blocks_intact', True),
         keep_list_items_together=config_data.get('keep_list_items_together', True),
         use_sentence_boundaries=config_data.get('use_sentence_boundaries', True),
-        max_recursion_depth=config_data.get('max_recursion_depth', 3)
     )
     
     # Create context config
@@ -121,9 +120,8 @@ def load_configurations(config_path):
     
     # Get logging config
     log_level = config_data.get('log_level', 'INFO')
-    log_file = config_data.get('log_file')
     
-    return rag_config, qdrant_config, log_level, log_file
+    return rag_config, qdrant_config, log_level
 
 
 def print_chunk_statistics(chunks):
@@ -139,8 +137,6 @@ def print_chunk_statistics(chunks):
     for chunk in chunks:
         chunk_types[chunk.chunk_type] = chunk_types.get(chunk.chunk_type, 0) + 1
         total_tokens += chunk.token_count
-        if chunk.has_multi_representation:
-            multi_repr_count += 1
         if chunk.entities:
             entity_count += 1
     
@@ -162,10 +158,10 @@ async def async_main(args):
     """Main async entry point"""
     try:
         # Load configurations
-        rag_config, qdrant_config, log_level, log_file = load_configurations(args.config)
+        rag_config, qdrant_config, log_level = load_configurations(args.config)
         
         # Setup logging
-        setup_logging(log_level, log_file)
+        setup_logging(log_level)
         
         logger.info("=" * 80)
         logger.info("Starting RAG-optimized markdown vectorization pipeline (OPTIMIZED)")
@@ -209,10 +205,8 @@ async def async_main(args):
         
         logger.info(f"  Generated {len(chunks)} semantic chunks")
         
-        # Print chunk statistics
         print_chunk_statistics(chunks)
         
-        # Generate embeddings
         logger.info("\n[4/5] Generating embeddings with sentence-transformers...")
         embedder = EmbeddingGenerator(rag_config.embedding)
         
@@ -229,7 +223,6 @@ async def async_main(args):
         # Initialize storage (create collection if needed)
         await storage.initialize()
         
-        # Store chunks asynchronously
         await storage.store_chunks(
             chunks=chunks,
             embeddings=embeddings,
@@ -238,11 +231,7 @@ async def async_main(args):
         )
         
         logger.info("  Successfully stored in vector database")
-        
-        # Close connection
-        await storage.close()
-        
-        # Success summary
+
         print("\n" + "=" * 80)
         print("✓ Pipeline completed successfully!")
         print("=" * 80)

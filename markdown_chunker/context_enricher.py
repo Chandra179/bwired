@@ -51,11 +51,9 @@ class ContextEnricher:
         pre_calculated_entities: Optional[Dict[str, List[str]]] = None
     ) -> Dict[str, Any]:
         
-        # Keep original pure
         enriched = {
             'content': content, 
             'metadata': {},
-            # Create a specific field for embedding that includes the glue
             'contextualized_content': content 
         }
         
@@ -66,8 +64,6 @@ class ContextEnricher:
         if self.config.include_header_path and header_path:
             if isinstance(header_path, str):
                 path_str = header_path
-                # Optional: If you want to store it as a list in metadata, split it back
-                # enriched['metadata']['header_path'] = header_path.split(' > ')
             else:
                 # It is a list, so we join it
                 path_str = ' > '.join(header_path)

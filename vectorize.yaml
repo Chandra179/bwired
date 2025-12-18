@@ -28,7 +28,6 @@ keep_tables_intact: true      # Keep tables whole if possible
 keep_code_blocks_intact: true # Keep code blocks whole if possible
 keep_list_items_together: true # Keep list items together
 use_sentence_boundaries: true  # Never split mid-sentence
-# max_recursion_depth: 3       # Maximum depth for recursive splitting
 
 # ==========================================
 # CONTEXT ENHANCEMENT
@@ -60,7 +59,7 @@ create_code_descriptions: true   # Natural language descriptions for code
 # QDRANT CONFIGURATION
 # ==========================================
 qdrant_url: "http://localhost:6333"
-collection_name: "sample_chunk"
+collection_name: "markdown_chunk"
 distance_metric: "Cosine"  # Options: "Cosine", "Euclid", "Dot"
 
 grpc_port: 6334       # gRPC port (from docker-compose.yml)
@@ -69,4 +68,3 @@ grpc_port: 6334       # gRPC port (from docker-compose.yml)
 # LOGGING CONFIGURATION
 # ==========================================
 log_level: "INFO"  # Options: "DEBUG", "INFO", "WARNING", "ERROR"
-# log_file: "vectorize.log"  # Uncomment to log to file

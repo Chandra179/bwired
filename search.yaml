@@ -6,7 +6,7 @@ max_token_limit: 512
 
 # Qdrant Configuration
 qdrant_url: "http://localhost:6333"
-collection_name: "sample_chunk"
+collection_name: "markdown_chunk"
 
 # Search Parameters
 search_limit: 5  # Maximum number of results to return
@@ -25,14 +25,9 @@ search_limit: 5  # Maximum number of results to return
 # Filter by section - only search within a specific section path
 # filter_section_path: "Introduction > Overview"
 
-# Filter by section level - only search at specific hierarchy depth
-# filter_section_level: 2  # 0=root, 1=H1, 2=H2, etc.
-
 # Show Options
 show_metadata: true          # Display chunk metadata in results
 show_entities: true          # Display extracted entities
-show_representations: true   # Display multi-representations (for tables/code)
 
 # Logging Configuration
 log_level: "INFO"  # Options: "DEBUG", "INFO", "WARNING", "ERROR"
-# log_file: "search.log"  # Uncomment to log to file

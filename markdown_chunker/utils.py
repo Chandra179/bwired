@@ -8,13 +8,12 @@ from typing import Optional
 import yaml
 
 
-def setup_logging(level: str = "INFO", log_file: Optional[str] = None):
+def setup_logging(level: str = "INFO"):
     """
     Setup logging configuration
     
     Args:
         level: Logging level (DEBUG, INFO, WARNING, ERROR)
-        log_file: Optional log file path
     """
     numeric_level = getattr(logging, level.upper(), logging.INFO)
     
@@ -28,13 +27,6 @@ def setup_logging(level: str = "INFO", log_file: Optional[str] = None):
     
     handlers = [console_handler]
     
-    # File handler if specified
-    if log_file:
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(formatter)
-        handlers.append(file_handler)
-    
-    # Configure root logger
     logging.basicConfig(
         level=numeric_level,
         handlers=handlers

@@ -19,22 +19,14 @@ logger = logging.getLogger(__name__)
 class SemanticChunk:
     """Represents a semantically meaningful chunk for RAG"""
     content: str
-    original_content: str  # Before context enrichment
+    original_content: str
     token_count: int
     chunk_type: str
     chunk_index: int
     
-    # Hierarchy
     section_path: str  # Full hierarchical path (e.g., "Introduction > Getting Started > Installation")
-    section_level: int
     
-    # RAG metadata
     entities: Optional[Dict[str, List[str]]] = None
-    
-    # Multi-representation
-    has_multi_representation: bool = False
-    natural_language_description: Optional[str] = None
-    representations: Optional[Dict[str, str]] = None
     
     # Additional metadata
     extra_metadata: Dict[str, Any] = field(default_factory=dict)
@@ -43,8 +35,11 @@ class SemanticChunk:
     # This enables O(1) access to metadata without searching
     source_element: Optional[MarkdownElement] = field(default=None, repr=False)
     
-    search_content: Optional[str] = None  # Search: "Config > Rate Limit \n Context: API... \n The limit is 50."
-
+    # Search: "Config > Rate Limit \n Context: API... \n The limit is 50."
+    search_content: Optional[str] = None 
+    
+    # Sticky Context (for split code/tables)
+    contextual_header: Optional[str] = None  # e.g., "function process_data(...) {"
 
 class SemanticChunker:
     """
@@ -105,7 +100,6 @@ class SemanticChunker:
                 chunk_index += 1
             
             chunks.extend(section_chunks)
-        
         logger.info(f"Stage 3: Created {len(chunks)} semantic chunks")
         
         chunks = self._enhance_chunks(chunks, document_title)
@@ -131,12 +125,10 @@ class SemanticChunker:
         chunks = []
         header_path = section.get_header_path()
         
-        # Process content elements in this section
         for element in section.content_elements:
             element_chunks = self._chunk_element(
                 element, 
-                header_path,
-                section.level
+                header_path
             )
             chunks.extend(element_chunks)
         
@@ -150,39 +142,40 @@ class SemanticChunker:
     def _chunk_element(
         self,
         element: MarkdownElement,
-        header_path: str,
-        section_level: int
+        header_path: str
     ) -> List[SemanticChunk]:
         """
         Chunk a single element based on type and inject source reference
         """
         generated_chunks = []
 
+        if element.type in (ElementType.PARAGRAPH, ElementType.HEADING):
+            if self._is_metadata_noise(element.content):
+                return []
+            
         if element.type == ElementType.TABLE:
-            generated_chunks = self._chunk_table(element, header_path, section_level)
+            generated_chunks = self._chunk_table(element, header_path)
         
         elif element.type == ElementType.CODE_BLOCK:
-            generated_chunks = self._chunk_code(element, header_path, section_level)
+            generated_chunks = self._chunk_code(element, header_path)
         
         elif element.type == ElementType.LIST:
-            generated_chunks = self._chunk_list(element, header_path, section_level)
+            generated_chunks = self._chunk_list(element, header_path)
         
         elif element.type == ElementType.PARAGRAPH:
-            generated_chunks = self._chunk_text(element, header_path, section_level)
+            generated_chunks = self._chunk_text(element, header_path)
         
         elif element.type == ElementType.HEADING:
             # Only chunk significant headings
             token_count = self.token_counter.count_tokens(element.content)
             if token_count > 50:
-                generated_chunks = self._chunk_text(element, header_path, section_level)
+                generated_chunks = self._chunk_text(element, header_path)
             else:
                 generated_chunks = []
         
         else:
-            generated_chunks = self._chunk_text(element, header_path, section_level)
+            generated_chunks = self._chunk_text(element, header_path)
 
-        # CRITICAL OPTIMIZATION: Attach source element reference here
-        # This avoids the O(N^2) search in Stage 4
         for chunk in generated_chunks:
             chunk.source_element = element
             
@@ -191,8 +184,7 @@ class SemanticChunker:
     def _chunk_table(
         self,
         element: MarkdownElement,
-        header_path: str,
-        section_level: int
+        header_path: str
     ) -> List[SemanticChunk]:
         """Chunk table - keep intact if possible"""
         token_count = self.token_counter.count_tokens(element.content)
@@ -218,25 +210,23 @@ class SemanticChunker:
                 chunk_type="table",
                 chunk_index=0,
                 section_path=header_path,
-                section_level=section_level,
                 extra_metadata=element.metadata
             )]
         
         # Table is too large and splitting allowed
-        return self._split_table_by_rows(element, header_path, section_level)
+        return self._split_table_by_rows(element, header_path)
     
     def _split_table_by_rows(
         self,
         element: MarkdownElement,
-        header_path: str,
-        section_level: int
+        header_path: str
     ) -> List[SemanticChunk]:
         """Split large table by rows"""
         lines = element.content.split('\n')
         
         if len(lines) < 3:
             # Too small to split
-            return self._chunk_table(element, header_path, section_level)
+            return self._chunk_table(element, header_path)
         
         header_row = lines[0]
         separator = lines[1]
@@ -265,7 +255,6 @@ class SemanticChunker:
                         chunk_type="table",
                         chunk_index=len(chunks),
                         section_path=header_path,
-                        section_level=section_level,
                         extra_metadata={
                             **element.metadata,
                             'is_partial_table': True
@@ -285,7 +274,6 @@ class SemanticChunker:
                 chunk_type="table",
                 chunk_index=len(chunks),
                 section_path=header_path,
-                section_level=section_level,
                 extra_metadata={
                     **element.metadata,
                     'is_partial_table': True
@@ -297,8 +285,7 @@ class SemanticChunker:
     def _chunk_code(
         self,
         element: MarkdownElement,
-        header_path: str,
-        section_level: int
+        header_path: str
     ) -> List[SemanticChunk]:
         """Chunk code block - keep intact if possible"""
         token_count = self.token_counter.count_tokens(element.content)
@@ -324,74 +311,63 @@ class SemanticChunker:
                 chunk_type="code_block",
                 chunk_index=0,
                 section_path=header_path,
-                section_level=section_level,
                 extra_metadata=element.metadata
             )]
         
         # Code too large - split by lines
-        return self._split_code_by_lines(element, header_path, section_level)
+        return self._split_code_by_lines(element, header_path)
     
     def _split_code_by_lines(
         self,
         element: MarkdownElement,
-        header_path: str,
-        section_level: int
+        header_path: str
     ) -> List[SemanticChunk]:
-        """Split code by lines when too large"""
         lines = element.content.split('\n')
         chunks = []
         current_lines = []
-        current_tokens = 0
         
-        for line in lines:
+        # Identify Sticky Header (Naive approach: First non-empty line)
+        # In production, use regex to find 'def', 'class', 'func'
+        sticky_header = next((line for line in lines if line.strip()), "")
+        
+        current_tokens = self.token_counter.count_tokens(sticky_header)
+        
+        # Start loop skipping the sticky header if we added it
+        start_index = 1 if lines[0] == sticky_header else 0
+        
+        for line in lines[start_index:]:
             line_tokens = self.token_counter.count_tokens(line)
             
             if current_tokens + line_tokens <= self.config.chunking.target_chunk_size:
                 current_lines.append(line)
                 current_tokens += line_tokens
             else:
+                # Flush Chunk
                 if current_lines:
-                    code_chunk = '\n'.join(current_lines)
+                    # Prepend sticky header to the chunk content if it's not the first chunk
+                    # Or store it in metadata for the LLM to see contextually
+                    chunk_content = '\n'.join(current_lines)
+                    
                     chunks.append(SemanticChunk(
-                        content=code_chunk,
-                        original_content=code_chunk,
-                        token_count=self.token_counter.count_tokens(code_chunk),
+                        content=chunk_content,
+                        original_content=chunk_content,
+                        token_count=current_tokens,
                         chunk_type="code_block",
                         chunk_index=len(chunks),
                         section_path=header_path,
-                        section_level=section_level,
-                        extra_metadata={
-                            **element.metadata,
-                            'is_partial_code': True
-                        }
+                        contextual_header=sticky_header if len(chunks) > 0 else None, 
+                        extra_metadata={**element.metadata, 'is_partial_code': True}
                     ))
                 
                 current_lines = [line]
-                current_tokens = line_tokens
-        
-        if current_lines:
-            code_chunk = '\n'.join(current_lines)
-            chunks.append(SemanticChunk(
-                content=code_chunk,
-                original_content=code_chunk,
-                token_count=self.token_counter.count_tokens(code_chunk),
-                chunk_type="code_block",
-                chunk_index=len(chunks),
-                section_path=header_path,
-                section_level=section_level,
-                extra_metadata={
-                    **element.metadata,
-                    'is_partial_code': True
-                }
-            ))
-        
+                current_tokens = line_tokens + self.token_counter.count_tokens(sticky_header)
+
         return chunks
     
     def _chunk_list(
         self,
         element: MarkdownElement,
-        header_path: str,
-        section_level: int
+        header_path: str
     ) -> List[SemanticChunk]:
         """Chunk list - keep items together"""
         token_count = self.token_counter.count_tokens(element.content)
@@ -405,22 +381,19 @@ class SemanticChunker:
                 chunk_type="list",
                 chunk_index=0,
                 section_path=header_path,
-                section_level=section_level,
                 extra_metadata=element.metadata
             )]
         
-        # Split by items
         if self.config.chunking.keep_list_items_together:
-            return self._split_list_by_items(element, header_path, section_level)
+            return self._split_list_by_items(element, header_path)
         else:
             # Treat as text
-            return self._chunk_text(element, header_path, section_level)
+            return self._chunk_text(element, header_path)
     
     def _split_list_by_items(
         self,
         element: MarkdownElement,
-        header_path: str,
-        section_level: int
+        header_path: str
     ) -> List[SemanticChunk]:
         """Split list by items"""
         lines = element.content.split('\n')
@@ -447,7 +420,6 @@ class SemanticChunker:
                         chunk_type="list",
                         chunk_index=len(chunks),
                         section_path=header_path,
-                        section_level=section_level,
                         extra_metadata=element.metadata
                     ))
                 
@@ -463,7 +435,6 @@ class SemanticChunker:
                 chunk_type="list",
                 chunk_index=len(chunks),
                 section_path=header_path,
-                section_level=section_level,
                 extra_metadata=element.metadata
             ))
         
@@ -472,8 +443,7 @@ class SemanticChunker:
     def _chunk_text(
         self,
         element: MarkdownElement,
-        header_path: str,
-        section_level: int
+        header_path: str
     ) -> List[SemanticChunk]:
         """Chunk text/paragraph with sentence awareness"""
         token_count = self.token_counter.count_tokens(element.content)
@@ -487,7 +457,6 @@ class SemanticChunker:
                 chunk_type=element.type.value,
                 chunk_index=0,
                 section_path=header_path,
-                section_level=section_level,
                 extra_metadata=element.metadata
             )]
         
@@ -511,7 +480,6 @@ class SemanticChunker:
                 chunk_type=element.type.value,
                 chunk_index=i,
                 section_path=header_path,
-                section_level=section_level,
                 extra_metadata=element.metadata
             ))
         
@@ -523,37 +491,62 @@ class SemanticChunker:
         document_title: str
     ) -> List[SemanticChunk]:
         """
-        Stage 4: O(N) Context Enhancement
-        Eliminates redundant sentence splitting and searching.
+        1. Skips sentence splitting for Code/Tables (Performance + Accuracy).
+        2. Respects Section Boundaries (Prevents Hallucination).
+        3. Filters Context by Type (Prevents Code polluting Text).
         """
         enhanced_chunks = []
         cfg = self.config.context
-        
-        # 1. Pre-calculate sentences for all chunks (Single Pass)
-        # This acts as a cache so we don't re-split text for neighbors
-        chunk_sentences_map = []
-        needs_context = cfg.surrounding_sentences_before > 0 or cfg.surrounding_sentences_after > 0
-        
-        if needs_context:
-            for chunk in chunks:
-                chunk_sentences_map.append(
-                    self.sentence_splitter.split_sentences(chunk.original_content)
-                )
-        
         total_chunks = len(chunks)
+        
+        # We don't want to split code or tables into "sentences"
+        NATURAL_LANGUAGE_TYPES = {ElementType.PARAGRAPH.value, ElementType.LIST.value}
 
-        # 2. Single Loop Enhancement
+        # Instead of pre-calculating all, we store them only when needed/valid
+        chunk_sentences_cache: Dict[int, List[str]] = {}
+
+        def get_sentences(idx: int) -> List[str]:
+            """Helper to safely get sentences for NL chunks only"""
+            if idx not in chunk_sentences_cache:
+                target_chunk = chunks[idx]
+                if target_chunk.chunk_type in NATURAL_LANGUAGE_TYPES:
+                    chunk_sentences_cache[idx] = self.sentence_splitter.split_sentences(
+                        target_chunk.original_content
+                    )
+                else:
+                    chunk_sentences_cache[idx] = [] # Empty for code/tables
+            return chunk_sentences_cache[idx]
+
+        needs_context = cfg.surrounding_sentences_before > 0 or cfg.surrounding_sentences_after > 0
+
         for i, chunk in enumerate(chunks):
             context = {}
             
+            # Skip context injection for structured data (Tables/Code) 
+            # if we only want to enrich text. 
+            # (Optional: remove this if you want code to have text context, 
+            # but usually you don't want Code to have "previous sentences" injected into its body)
+            
             if needs_context:
-                # Optimized Context Before (Lookup, no splitting)
+                # --- Context BEFORE ---
                 if cfg.surrounding_sentences_before > 0 and i > 0:
                     prev_sentences = []
-                    # Look back up to 3 chunks purely for sentences
-                    lookback_start = max(0, i - 3)
-                    for j in range(i - 1, lookback_start - 1, -1):
-                        prev_sentences = chunk_sentences_map[j] + prev_sentences
+                    # Look back up to 3 chunks
+                    for j in range(i - 1, max(-1, i - 4), -1):
+                        prev_chunk = chunks[j]
+                        
+                        # BOUNDARY CHECK: Stop if we hit a different top-level section
+                        # This prevents "Chapter 1" context bleeding into "Chapter 2"
+                        if prev_chunk.section_path != chunk.section_path:
+                            # You might allow partial path matches, but strict is safer
+                            break
+                            
+                        # TYPE CHECK: Don't pull "sentences" from a table/code block
+                        if prev_chunk.chunk_type not in NATURAL_LANGUAGE_TYPES:
+                            break
+                            
+                        sents = get_sentences(j)
+                        prev_sentences = sents + prev_sentences
                         if len(prev_sentences) >= cfg.surrounding_sentences_before:
                             break
                     
@@ -561,12 +554,22 @@ class SemanticChunker:
                         relevant = prev_sentences[-cfg.surrounding_sentences_before:]
                         context['before'] = ' '.join(relevant)
                 
-                # Optimized Context After (Lookup, no splitting)
+                # --- Context AFTER ---
                 if cfg.surrounding_sentences_after > 0 and i < total_chunks - 1:
                     next_sentences = []
-                    lookahead_end = min(total_chunks, i + 3)
-                    for j in range(i + 1, lookahead_end):
-                        next_sentences.extend(chunk_sentences_map[j])
+                    for j in range(i + 1, min(total_chunks, i + 4)):
+                        next_chunk = chunks[j]
+                        
+                        # BOUNDARY CHECK
+                        if next_chunk.section_path != chunk.section_path:
+                            break
+                            
+                        # TYPE CHECK
+                        if next_chunk.chunk_type not in NATURAL_LANGUAGE_TYPES:
+                            break
+                            
+                        sents = get_sentences(j)
+                        next_sentences.extend(sents)
                         if len(next_sentences) >= cfg.surrounding_sentences_after:
                             break
                     
@@ -574,11 +577,7 @@ class SemanticChunker:
                         relevant = next_sentences[:cfg.surrounding_sentences_after]
                         context['after'] = ' '.join(relevant)
             
-            # 3. Direct Element Access (O(1))
-            # We use the reference stored in Stage 3
             element = chunk.source_element
-            
-            # Enrich
             enriched = self.context_enricher.enrich_chunk(
                 content=chunk.content,
                 chunk_type=chunk.chunk_type,
@@ -588,7 +587,6 @@ class SemanticChunker:
                 surrounding_context=context
             )
             
-            # Update fields
             chunk.content = enriched['content']
             chunk.token_count = self.token_counter.count_tokens(chunk.content)
             chunk.search_content = enriched.get('contextualized_content') or chunk.content
@@ -596,64 +594,36 @@ class SemanticChunker:
             if 'entities' in enriched.get('metadata', {}):
                 chunk.entities = enriched['metadata']['entities']
             
-            if 'representations' in enriched:
-                chunk.has_multi_representation = True
-                chunk.representations = enriched['representations']
-                # Prefer explicit descriptions if available
-                chunk.natural_language_description = (
-                    enriched['metadata'].get('table_description') or 
-                    enriched['metadata'].get('code_description')
-                )
-            
             enhanced_chunks.append(chunk)
         
         return enhanced_chunks
     
-    def _get_surrounding_context(
-        self,
-        chunks: List[SemanticChunk],
-        index: int
-    ) -> Dict[str, str]:
-        """Get context from surrounding chunks"""
-        context = {}
-        
-        cfg = self.config.context
-        
-        # Get sentences from previous chunks
-        if cfg.surrounding_sentences_before > 0 and index > 0:
-            prev_sentences = []
-            for i in range(max(0, index - 3), index):
-                sentences = self.sentence_splitter.split_sentences(
-                    chunks[i].original_content
-                )
-                prev_sentences.extend(sentences)
+    def _is_metadata_noise(self, text: str) -> bool:
+        """
+        Heuristic: Detects Table of Contents, Bibliographies, and Header dumps.
+        Returns True if the text is likely noise.
+        """
+        if not text or len(text) < 20:
+            return False  # Too short to judge, keep it just in case
             
-            if prev_sentences:
-                context['before'] = ' '.join(prev_sentences[-cfg.surrounding_sentences_before:])
+        words = text.split()
+        if not words: return True
         
-        # Get sentences from next chunks
-        if cfg.surrounding_sentences_after > 0 and index < len(chunks) - 1:
-            next_sentences = []
-            for i in range(index + 1, min(len(chunks), index + 3)):
-                sentences = self.sentence_splitter.split_sentences(
-                    chunks[i].original_content
-                )
-                next_sentences.extend(sentences)
+        # 1. Capitalization Check
+        # Bibliographies often look like: "AUTHOR TITLE. AUTHOR TITLE."
+        # If > 60% of words are Title Case or Uppercase, it's suspicious.
+        cap_words = [w for w in words if w[0].isupper()]
+        cap_ratio = len(cap_words) / len(words)
+        
+        if cap_ratio > 0.6:
+            # 2. Verb Check (The safety valve)
+            # Real content usually has common verbs (is, are, was, has, can, shows)
+            common_verbs = {'is', 'are', 'was', 'were', 'has', 'have', 'can', 'will', 'shows', 'indicates'}
+            # fast lowercase check
+            has_verbs = any(v in text.lower().split() for v in common_verbs)
             
-            if next_sentences:
-                context['after'] = ' '.join(next_sentences[:cfg.surrounding_sentences_after])
-        
-        return context
-    
-    def _find_element_for_chunk(
-        self,
-        chunk: SemanticChunk,
-        elements: List[MarkdownElement]
-    ) -> Optional[MarkdownElement]:
-        """Find the original element that generated this chunk by matching content"""
-        for element in elements:
-            # Match by content similarity since we no longer have line numbers
-            if element.content.strip() in chunk.original_content.strip() or \
-               chunk.original_content.strip() in element.content.strip():
-                return element
-        return None
+            if not has_verbs:
+                logger.debug(f"Filtered noise chunk (Cap ratio: {cap_ratio:.2f}): {text[:50]}...")
+                return True
+                
+        return False

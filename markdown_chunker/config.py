@@ -17,9 +17,6 @@ class ChunkingConfig:
     # Sentence boundaries
     use_sentence_boundaries: bool = True
     never_split_mid_sentence: bool = True
-    
-    # Recursion control
-    max_recursion_depth: int = 3
 
 
 @dataclass

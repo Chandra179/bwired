@@ -152,7 +152,7 @@ class QdrantStorage:
             return [
                 {
                     "score": result.score,
-                    "content": result.payload.get("content"),
+                    "content": result.payload.get("search_content"),
                     "metadata": {k: v for k, v in result.payload.items() if k != "content"}
                 }
                 for result in results.points
@@ -160,43 +160,3 @@ class QdrantStorage:
         except Exception as e:
             logger.error(f"Search failed: {e}")
             raise
-    
-    async def delete_document(self, document_id: str):
-        """Delete all chunks from a document"""
-        try:
-            await self.client.delete(
-                collection_name=self.config.collection_name,
-                points_selector={
-                    "filter": {
-                        "must": [
-                            {
-                                "key": "document_id",
-                                "match": {"value": document_id}
-                            }
-                        ]
-                    }
-                }
-            )
-            logger.info(f"Deleted chunks for document: {document_id}")
-        except Exception as e:
-            logger.error(f"Failed to delete document: {e}")
-            raise
-    
-    async def get_collection_info(self) -> Dict[str, Any]:
-        """Get information about the collection"""
-        try:
-            info = await self.client.get_collection(self.config.collection_name)
-            return {
-                "name": self.config.collection_name,
-                "vectors_count": info.points_count,
-                "vector_size": info.config.params.vectors.size,
-                "distance": info.config.params.vectors.distance
-            }
-        except Exception as e:
-            logger.error(f"Failed to get collection info: {e}")
-            raise
-    
-    async def close(self):
-        """Close the client connection"""
-        await self.client.close()
-        logger.info("Qdrant connection closed")

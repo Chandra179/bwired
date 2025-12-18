@@ -136,7 +136,6 @@ search_limit: 10
 | `collection_name` | Collection name | `markdown_docs` |
 | `distance_metric` | Distance metric (Cosine/Euclid/Dot) | `Cosine` |
 | `log_level` | Logging level | `INFO` |
-| `log_file` | Log file path (optional) | None |
 
 ### search.yaml
 
@@ -152,7 +151,6 @@ search_limit: 10
 | `filter_document` | Filter by document ID | None |
 | `filter_heading` | Filter by heading | None |
 | `log_level` | Logging level | `INFO` |
-| `log_file` | Log file path (optional) | None |
 
 ## Architecture
 

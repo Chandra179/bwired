@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import sys
 import logging
 
@@ -68,9 +69,8 @@ def load_configurations(config_path):
     
     # Get logging config
     log_level = config_data.get('log_level', 'INFO')
-    log_file = config_data.get('log_file')
     
-    return embedding_config, qdrant_config, search_params, log_level, log_file
+    return embedding_config, qdrant_config, search_params, log_level
 
 
 def build_filters(search_params):
@@ -122,46 +122,38 @@ def display_results(query, results, show_metadata=True):
         print(f"{'-'*80}\n")
 
 
-def main():
+async def main():
     """Main entry point"""
     args = parse_args()
     
     try:
-        # Load configurations
-        embedding_config, qdrant_config, search_params, log_level, log_file = load_configurations(args.config)
+        embedding_config, qdrant_config, search_params, log_level = load_configurations(args.config)
         
-        # Setup logging
-        setup_logging(log_level, log_file)
+        setup_logging(log_level)
         
         logger.info(f"Searching for: '{args.query}'")
         logger.info(f"Collection: {qdrant_config.collection_name}")
         
-        # Initialize embedder
         logger.info("Initializing embedding model...")
         embedder = EmbeddingGenerator(embedding_config)
         
-        # Generate query embedding
         logger.info("Generating query embedding...")
         query_embedding = embedder.generate_embeddings([args.query])[0]
         
-        # Initialize storage
         storage = QdrantStorage(qdrant_config, embedder.get_embedding_dimension())
         
-        # Build filters
         filters = build_filters(search_params)
         if filters:
             logger.info(f"Applied filters: {filters}")
         
-        # Perform search
         logger.info(f"Searching (limit: {search_params['limit']})...")
-        results = storage.search(
+        results = await storage.search(
             query_embedding=query_embedding,
             limit=search_params['limit'],
             score_threshold=search_params.get('score_threshold'),
             filters=filters
         )
         
-        # Display results
         display_results(args.query, results)
         
         return 0
@@ -176,4 +168,4 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    asyncio.run(main())
