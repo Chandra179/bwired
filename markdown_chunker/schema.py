@@ -1,0 +1,23 @@
+from dataclasses import dataclass, field
+from typing import Optional
+from .parser import MarkdownElement  # Assuming this exists in your project
+
+@dataclass
+class SemanticChunk:
+    """Represents a semantically meaningful chunk for RAG"""
+    content: str
+    token_count: int
+    chunk_type: str
+    
+    # Enhanced ancestry - full hierarchical path of headings
+    section_path: str 
+    
+    # Relationship tracking
+    is_continuation: bool = False 
+    split_sequence: Optional[str] = None 
+    
+    # Direct reference to source element
+    source_element: Optional[MarkdownElement] = field(default=None, repr=False)
+    
+    # Sticky Context
+    contextual_header: Optional[str] = None

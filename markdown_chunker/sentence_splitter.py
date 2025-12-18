@@ -99,14 +99,15 @@ class SentenceSplitter:
         for sentence in sentences:
             sentence_tokens = token_counter.count_tokens(sentence)
             
-            # If single sentence is too long, split by words
+            # If single sentence is too long, split it by clauses/words
             if sentence_tokens > max_tokens:
+                # Flush current chunk first
                 if current_chunk:
                     chunks.append(' '.join(current_chunk))
                     current_chunk = []
                     current_tokens = 0
                 
-                # Split long sentence by words
+                # Split long sentence
                 word_chunks = self._split_long_sentence(
                     sentence, max_tokens, token_counter
                 )
@@ -117,7 +118,7 @@ class SentenceSplitter:
                 current_chunk.append(sentence)
                 current_tokens += sentence_tokens
             else:
-                # Start new chunk
+                # Flush current chunk and start new
                 if current_chunk:
                     chunks.append(' '.join(current_chunk))
                 current_chunk = [sentence]
@@ -135,30 +136,39 @@ class SentenceSplitter:
         max_tokens: int,
         token_counter
     ) -> List[str]:
-        """Split a sentence that's too long by words"""
-        import re
-        if len(sentence) > 50: # Only try for reasonably long text
+        """Split a sentence that's too long by clauses then words"""
+        chunks = []
+        
+        # Try splitting by punctuation (clauses) first
+        if len(sentence) > 50:
+            import re
             # Split by punctuation but keep the delimiter
             parts = re.split(r'([,;:])', sentence)
+            
             if len(parts) > 1:
                 # Reassemble parts into chunks that fit
-                chunks = []
                 current_chunk = ""
                 for part in parts:
-                    if token_counter.count_tokens(current_chunk + part) <= max_tokens:
-                        current_chunk += part
+                    test_text = current_chunk + part
+                    if token_counter.count_tokens(test_text) <= max_tokens:
+                        current_chunk = test_text
                     else:
-                        if current_chunk: chunks.append(current_chunk.strip())
+                        if current_chunk:
+                            chunks.append(current_chunk.strip())
                         current_chunk = part
-                if current_chunk: chunks.append(current_chunk.strip())
+                
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
                 
                 # Check if we successfully reduced the size
-                if all(token_counter.count_tokens(c) <= max_tokens for c in chunks):
+                if chunks and all(token_counter.count_tokens(c) <= max_tokens for c in chunks):
                     return chunks
-
-        # Fallback to word splitting if clause splitting failed or wasn't possible
+        
+        # Fallback to word splitting if clause splitting failed
         words = sentence.split()
-    
+        current_chunk = []
+        chunks = []
+        
         for word in words:
             test_chunk = ' '.join(current_chunk + [word])
             
@@ -172,7 +182,7 @@ class SentenceSplitter:
         if current_chunk:
             chunks.append(' '.join(current_chunk))
         
-        return chunks
+        return chunks if chunks else [sentence]  # Return original if all else fails
     
     def _simple_split(self, text: str) -> List[str]:
         """Simple fallback sentence splitter using regex"""

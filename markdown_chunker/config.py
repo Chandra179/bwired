@@ -9,6 +9,8 @@ class ChunkingConfig:
     # Size parameters (in tokens)
     target_chunk_size: int = 400
     
+    overlap_tokens: int = 50  # Overlap between adjacent chunks within same section
+    
     keep_tables_intact: bool = True
     keep_code_blocks_intact: bool = True
     keep_list_items_together: bool = True
@@ -57,6 +59,12 @@ class RAGChunkingConfig:
             raise ValueError(
                 f"chunking.target_chunk_size ({self.chunking.target_chunk_size}) must be <= "
                 f"embedding.max_token_limit ({self.embedding.max_token_limit})"
+            )
+        
+        if self.chunking.overlap_tokens >= self.chunking.target_chunk_size:
+            raise ValueError(
+                f"chunking.overlap_tokens ({self.chunking.overlap_tokens}) must be < "
+                f"chunking.target_chunk_size ({self.chunking.target_chunk_size})"
             )
 
 
