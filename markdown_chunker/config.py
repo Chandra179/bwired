@@ -9,7 +9,6 @@ class ChunkingConfig:
     # Size parameters (in tokens)
     target_chunk_size: int = 400
     
-    # Semantic chunking behavior
     keep_tables_intact: bool = True
     keep_code_blocks_intact: bool = True
     keep_list_items_together: bool = True
@@ -28,22 +27,11 @@ class ContextConfig:
     
     # Hierarchical context
     include_header_path: bool = True
-    include_section_summary: bool = False  # Future: LLM-generated
     
     # Local context
     include_surrounding_context: bool = True
     surrounding_sentences_before: int = 2
     surrounding_sentences_after: int = 1
-    
-    # Entity extraction
-    extract_entities: bool = True
-    entity_types: List[str] = field(default_factory=lambda: [
-        "PERSON", "ORG", "PRODUCT", "GPE", "DATE", "MONEY"
-    ])
-    
-    # Multi-representation
-    create_table_descriptions: bool = True
-    create_code_descriptions: bool = True
 
 
 @dataclass

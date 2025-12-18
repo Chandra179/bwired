@@ -31,7 +31,7 @@ class SemanticChunk:
     # Additional metadata
     extra_metadata: Dict[str, Any] = field(default_factory=dict)
     
-    # Optimization: Direct reference to source element (Excluded from serialization/repr)
+    # Direct reference to source element (Excluded from serialization/repr)
     # This enables O(1) access to metadata without searching
     source_element: Optional[MarkdownElement] = field(default=None, repr=False)
     
@@ -112,32 +112,65 @@ class SemanticChunker:
         section: Section, 
         document_title: str
     ) -> List[SemanticChunk]:
-        """
-        Chunk a single section hierarchically
-        
-        Args:
-            section: Section to chunk
-            document_title: Document title
-            
-        Returns:
-            List of chunks for this section
-        """
         chunks = []
         header_path = section.get_header_path()
         
+        buffer_elements = []
+        buffer_tokens = 0
+        target_size = self.config.chunking.target_chunk_size
+
         for element in section.content_elements:
-            element_chunks = self._chunk_element(
-                element, 
-                header_path
-            )
-            chunks.extend(element_chunks)
+            # 1. Skip meaningful noise (optional, keep your existing logic)
+            if self._is_metadata_noise(element.content):
+                continue
+            
+            # 2. Calculate size
+            element_tokens = self.token_counter.count_tokens(element.content)
+            
+            # 3. Decision Logic
+            # If element is huge (Code Block / Table > target), flush buffer first
+            if element_tokens > target_size or element.type in [ElementType.CODE_BLOCK, ElementType.TABLE]:
+                if buffer_elements:
+                    chunks.append(self._create_chunk_from_buffer(buffer_elements, header_path))
+                    buffer_elements = []
+                    buffer_tokens = 0
+                
+                # Process the large/special element individually
+                chunks.extend(self._chunk_element(element, header_path))
+                
+            # If adding this element fits in the chunk, add to buffer
+            elif buffer_tokens + element_tokens <= target_size:
+                buffer_elements.append(element)
+                buffer_tokens += element_tokens
+                
+            # Buffer is full, flush and start new
+            else:
+                chunks.append(self._create_chunk_from_buffer(buffer_elements, header_path))
+                buffer_elements = [element]
+                buffer_tokens = element_tokens
+                
+        # Flush remaining buffer
+        if buffer_elements:
+            chunks.append(self._create_chunk_from_buffer(buffer_elements, header_path))
         
         # Recursively process subsections
         for subsection in section.subsections:
-            subsection_chunks = self._chunk_section(subsection, document_title)
-            chunks.extend(subsection_chunks)
+            chunks.extend(self._chunk_section(subsection, document_title))
         
         return chunks
+    
+    def _create_chunk_from_buffer(self, elements: List[MarkdownElement], header_path: str) -> SemanticChunk:
+        """Helper to merge multiple small elements into one coherent chunk"""
+        combined_content = "\n\n".join([e.content for e in elements])
+        return SemanticChunk(
+            content=combined_content,
+            original_content=combined_content,
+            token_count=self.token_counter.count_tokens(combined_content),
+            chunk_type="text", # Generalized type
+            chunk_index=0,     # Will be set later
+            section_path=header_path,
+            source_element=elements[0] if elements else None
+        )
     
     def _chunk_element(
         self,
@@ -577,13 +610,10 @@ class SemanticChunker:
                         relevant = next_sentences[:cfg.surrounding_sentences_after]
                         context['after'] = ' '.join(relevant)
             
-            element = chunk.source_element
             enriched = self.context_enricher.enrich_chunk(
                 content=chunk.content,
-                chunk_type=chunk.chunk_type,
                 header_path=chunk.section_path,
                 document_title=document_title,
-                element=element,
                 surrounding_context=context
             )
             

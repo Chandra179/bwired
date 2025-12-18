@@ -11,8 +11,6 @@ class ChunkMetadata:
     """Comprehensive metadata for RAG chunks"""
     
     # --- REQUIRED FIELDS (Must come first) ---
-    
-    # Identity
     chunk_id: str
     document_id: str
     document_title: str
@@ -25,12 +23,7 @@ class ChunkMetadata:
     section_path: str
     chunk_index: int
     
-    # NEW: Search & Display Content (Moved up here because they are required)
     search_content: str   # Context-rich text for Vector DB
-    
-    # --- OPTIONAL FIELDS (Must come last) ---
-    
-    entities: Optional[Dict[str, List[str]]] = None
     
     # Additional metadata
     extra: Optional[Dict[str, Any]] = None
@@ -73,6 +66,5 @@ class ChunkMetadata:
             section_path=chunk.section_path,
             chunk_index=chunk.chunk_index,
             search_content=final_search_text,
-            entities=chunk.entities,
             extra=chunk.extra_metadata
         )

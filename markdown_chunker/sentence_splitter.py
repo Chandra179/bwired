@@ -136,10 +136,29 @@ class SentenceSplitter:
         token_counter
     ) -> List[str]:
         """Split a sentence that's too long by words"""
+        import re
+        if len(sentence) > 50: # Only try for reasonably long text
+            # Split by punctuation but keep the delimiter
+            parts = re.split(r'([,;:])', sentence)
+            if len(parts) > 1:
+                # Reassemble parts into chunks that fit
+                chunks = []
+                current_chunk = ""
+                for part in parts:
+                    if token_counter.count_tokens(current_chunk + part) <= max_tokens:
+                        current_chunk += part
+                    else:
+                        if current_chunk: chunks.append(current_chunk.strip())
+                        current_chunk = part
+                if current_chunk: chunks.append(current_chunk.strip())
+                
+                # Check if we successfully reduced the size
+                if all(token_counter.count_tokens(c) <= max_tokens for c in chunks):
+                    return chunks
+
+        # Fallback to word splitting if clause splitting failed or wasn't possible
         words = sentence.split()
-        chunks = []
-        current_chunk = []
-        
+    
         for word in words:
             test_chunk = ' '.join(current_chunk + [word])
             

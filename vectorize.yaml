@@ -39,23 +39,6 @@ include_surrounding_context: true   # Add sentences before/after
 # surrounding_sentences_after: 1    # Sentences after current chunk
 
 # ==========================================
-# ENTITY EXTRACTION (requires spaCy)
-# ==========================================
-extract_entities: true  # Extract named entities (PERSON, ORG, etc.)
-# entity_types:         # Which entity types to extract
-#   - "PERSON"
-#   - "ORG"
-#   - "PRODUCT"
-#   - "GPE"
-#   - "DATE"
-
-# ==========================================
-# MULTI-REPRESENTATION (for better retrieval)
-# ==========================================
-create_table_descriptions: true  # Natural language descriptions for tables
-create_code_descriptions: true   # Natural language descriptions for code
-
-# ==========================================
 # QDRANT CONFIGURATION
 # ==========================================
 qdrant_url: "http://localhost:6333"

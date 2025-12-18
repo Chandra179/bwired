@@ -69,7 +69,6 @@ def load_configurations(config_path):
     logger.info(f"Loading config from: {config_path}")
     config_data = load_config_file(config_path)
     
-    # Create chunking config
     chunking_config = ChunkingConfig(
         target_chunk_size=config_data.get('target_chunk_size', 500),
         keep_tables_intact=config_data.get('keep_tables_intact', True),
@@ -78,20 +77,14 @@ def load_configurations(config_path):
         use_sentence_boundaries=config_data.get('use_sentence_boundaries', True),
     )
     
-    # Create context config
     context_config = ContextConfig(
         include_document_context=config_data.get('include_document_context', True),
         include_header_path=config_data.get('include_header_path', True),
         include_surrounding_context=config_data.get('include_surrounding_context', True),
         surrounding_sentences_before=config_data.get('surrounding_sentences_before', 2),
         surrounding_sentences_after=config_data.get('surrounding_sentences_after', 1),
-        extract_entities=config_data.get('extract_entities', True),
-        entity_types=config_data.get('entity_types', ["PERSON", "ORG", "PRODUCT", "GPE", "DATE", "MONEY"]),
-        create_table_descriptions=config_data.get('create_table_descriptions', True),
-        create_code_descriptions=config_data.get('create_code_descriptions', True)
     )
     
-    # Create embedding config with new performance params
     embedding_config = EmbeddingConfig(
         model_name=config_data.get('model_name', 'BAAI/bge-base-en-v1.5'),
         model_dim=config_data.get('model_dim', 768),
@@ -102,14 +95,12 @@ def load_configurations(config_path):
         show_progress_bar=config_data.get('show_progress_bar', False)
     )
     
-    # Create RAG config
     rag_config = RAGChunkingConfig(
         chunking=chunking_config,
         context=context_config,
         embedding=embedding_config
     )
     
-    # Create Qdrant config with new performance params
     qdrant_config = QdrantConfig(
         url=config_data.get('qdrant_url', 'http://localhost:6333'),
         collection_name=config_data.get('collection_name', 'markdown_chunks'),
