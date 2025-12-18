@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 import logging
-from qdrant_client import QdrantClient
+from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
 import numpy as np
 
@@ -11,28 +11,36 @@ logger = logging.getLogger(__name__)
 
 
 class QdrantStorage:
-    """Handle storage and retrieval from Qdrant vector database"""
+    """Handle storage and retrieval from Qdrant vector database (async with gRPC)"""
     
     def __init__(self, config: QdrantConfig, embedding_dim: int):
         self.config = config
         self.embedding_dim = embedding_dim
         
-        logger.info(f"Connecting to Qdrant at {config.url}")
-        
-        # Initialize client
-        if config.api_key:
-            self.client = QdrantClient(url=config.url, api_key=config.api_key)
+        if config.use_grpc:
+            host = config.url.replace("http://", "").replace("https://", "").split(":")[0]
+            self.client = AsyncQdrantClient(
+                host=host,
+                grpc_port=config.grpc_port,
+                prefer_grpc=True
+            )
+            logger.info(f"Connecting to Qdrant via gRPC at {host}:{config.grpc_port}")
+           
         else:
-            self.client = QdrantClient(url=config.url)
+            logger.info(f"Connecting to Qdrant via HTTP at {config.url}")
+            self.client = AsyncQdrantClient(url=config.url)
         
-        # Create collection if needed
-        if config.create_if_not_exists:
-            self._ensure_collection_exists()
+        logger.info(f"Storage batch size: {config.storage_batch_size}")
+        
+    async def initialize(self):
+        """Initialize the storage (must be called before use)"""
+        if self.config.create_if_not_exists:
+            await self._ensure_collection_exists()
     
-    def _ensure_collection_exists(self):
+    async def _ensure_collection_exists(self):
         """Create collection if it doesn't exist"""
-        collections = self.client.get_collections().collections
-        collection_names = [col.name for col in collections]
+        collections = await self.client.get_collections()
+        collection_names = [col.name for col in collections.collections]
         
         if self.config.collection_name not in collection_names:
             logger.info(f"Creating collection: {self.config.collection_name}")
@@ -45,7 +53,7 @@ class QdrantStorage:
             
             distance = distance_map.get(self.config.distance_metric, Distance.COSINE)
             
-            self.client.create_collection(
+            await self.client.create_collection(
                 collection_name=self.config.collection_name,
                 vectors_config=VectorParams(
                     size=self.embedding_dim,
@@ -56,28 +64,32 @@ class QdrantStorage:
         else:
             logger.info(f"Collection {self.config.collection_name} already exists")
     
-    def store_chunks(
+    # async def initialize(self):
+    #     """Initialize the storage (must be called before use)"""
+    #     if self.config.create_if_not_exists:
+    #         await self._ensure_collection_exists()
+    
+    async def store_chunks(
         self, 
         chunks: List[Any],  # List of Chunk objects
         embeddings: List[np.ndarray],
         document_id: str,
-        document_title: str,
-        batch_size: int = 100
+        document_title: str
     ):
         """
-        Store chunks with embeddings in Qdrant
+        Store chunks with embeddings in Qdrant using async batching
         
         Args:
             chunks: List of Chunk objects
             embeddings: List of embedding vectors
             document_id: Document identifier
             document_title: Document title
-            batch_size: Batch size for uploading
         """
         if len(chunks) != len(embeddings):
             raise ValueError(f"Chunks ({len(chunks)}) and embeddings ({len(embeddings)}) count mismatch")
         
         logger.info(f"Storing {len(chunks)} chunks to Qdrant collection: {self.config.collection_name}")
+        logger.info(f"Using batch size: {self.config.storage_batch_size}")
         
         points = []
         for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
@@ -94,20 +106,20 @@ class QdrantStorage:
             points.append(point)
             
             # Upload in batches
-            if len(points) >= batch_size:
-                self._upload_batch(points)
+            if len(points) >= self.config.storage_batch_size:
+                await self._upload_batch(points)
                 points = []
         
         # Upload remaining points
         if points:
-            self._upload_batch(points)
+            await self._upload_batch(points)
         
         logger.info(f"Successfully stored {len(chunks)} chunks")
     
-    def _upload_batch(self, points: List[PointStruct]):
-        """Upload a batch of points"""
+    async def _upload_batch(self, points: List[PointStruct]):
+        """Upload a batch of points asynchronously"""
         try:
-            self.client.upsert(
+            await self.client.upsert(
                 collection_name=self.config.collection_name,
                 points=points
             )
@@ -116,7 +128,7 @@ class QdrantStorage:
             logger.error(f"Failed to upload batch: {e}")
             raise
     
-    def search(
+    async def search(
         self, 
         query_embedding: np.ndarray, 
         limit: int = 10,
@@ -129,36 +141,37 @@ class QdrantStorage:
         Args:
             query_embedding: Query embedding vector
             limit: Maximum number of results
+            score_threshold: Minimum similarity score
             filters: Optional metadata filters
             
         Returns:
             List of search results with scores and metadata
         """
         try:
-            results = self.client.query_points(
+            results = await self.client.query_points(
                 collection_name=self.config.collection_name,
-                query=query_embedding.tolist(),  # Argument name changed from 'query_vector' to 'query'
+                query=query_embedding.tolist(),
                 limit=limit,
                 query_filter=filters,
                 score_threshold=score_threshold
-            ).points
+            )
             
             return [
                 {
                     "score": result.score,
-                    "content": result.payload.get("search_content"),
-                    "metadata": {k: v for k, v in result.payload.items() if k != "search_content"}
+                    "content": result.payload.get("content"),
+                    "metadata": {k: v for k, v in result.payload.items() if k != "content"}
                 }
-                for result in results
+                for result in results.points
             ]
         except Exception as e:
             logger.error(f"Search failed: {e}")
             raise
     
-    def delete_document(self, document_id: str):
+    async def delete_document(self, document_id: str):
         """Delete all chunks from a document"""
         try:
-            self.client.delete(
+            await self.client.delete(
                 collection_name=self.config.collection_name,
                 points_selector={
                     "filter": {
@@ -176,12 +189,12 @@ class QdrantStorage:
             logger.error(f"Failed to delete document: {e}")
             raise
     
-    def get_collection_info(self) -> Dict[str, Any]:
+    async def get_collection_info(self) -> Dict[str, Any]:
         """Get information about the collection"""
         try:
-            info = self.client.get_collection(self.config.collection_name)
+            info = await self.client.get_collection(self.config.collection_name)
             return {
-                "name": info.config.params.name if hasattr(info.config.params, 'name') else self.config.collection_name,
+                "name": self.config.collection_name,
                 "vectors_count": info.points_count,
                 "vector_size": info.config.params.vectors.size,
                 "distance": info.config.params.vectors.distance
@@ -189,3 +202,8 @@ class QdrantStorage:
         except Exception as e:
             logger.error(f"Failed to get collection info: {e}")
             raise
+    
+    async def close(self):
+        """Close the client connection"""
+        await self.client.close()
+        logger.info("Qdrant connection closed")

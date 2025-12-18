@@ -63,8 +63,10 @@ class EmbeddingConfig:
     # Device configuration
     device: str = "cpu"  # or "cuda"
     
-    # Batch processing
-    batch_size: int = 32
+    # Performance optimization
+    batch_size: int = 128  # Increased from 32
+    use_fp16: bool = True  # Mixed precision for faster inference on GPU
+    show_progress_bar: bool = False  # Show progress during embedding generation
 
 
 @dataclass
@@ -88,10 +90,18 @@ class RAGChunkingConfig:
 class QdrantConfig:
     """Configuration for Qdrant vector database"""
     
+    # Connection settings
     url: str = "http://localhost:6333"
     collection_name: str = "markdown_chunks"
     api_key: Optional[str] = None
     
+    # gRPC configuration for faster communication
+    use_grpc: bool = True
+    grpc_port: int = 6334
+    
     # Collection configuration
     distance_metric: str = "Cosine"
     create_if_not_exists: bool = True
+    
+    # Performance optimization
+    storage_batch_size: int = 500  # Increased from 100

@@ -1,7 +1,7 @@
 docling==2.64.1
 docling_core==2.55.0
 
-transformers>=4.30.0
+sentence-transformers>=2.3.0 
 torch>=2.0.0
 qdrant-client>=1.7.0
 numpy>=1.24.0
@@ -23,4 +23,13 @@ python-dotenv>=1.0.0
 bleach>=6.3.0
 linkify-it-py>=2.0.3
 
+numpy>=1.24.0
+tqdm>=4.65.0
+
 # Run: python -m spacy download en_core_web_sm
+
+
+# Optional: For GPU acceleration
+# torch with CUDA: pip install torch --index-url https://download.pytorch.org/whl/cu118
+numpy>=1.24.0
+tqdm>=4.65.0

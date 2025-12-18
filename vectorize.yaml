@@ -1,10 +1,29 @@
-# Embedding Model Configuration
+# ==========================================
+# EMBEDDING MODEL CONFIGURATION
+# ==========================================
 model_name: "BAAI/bge-base-en-v1.5"
 model_dim: 768
-device: "cpu"  # Options: "cpu", "cuda"
+device: "cuda"  # Options: "cpu", "cuda"
 max_token_limit: 512
 
-# Chunking Parameters
+# ==========================================
+# PERFORMANCE OPTIMIZATION
+# ==========================================
+# Embedding generation batch size (increased from 32 to 128)
+embedding_batch_size: 128
+
+# Storage batch size for Qdrant uploads (increased from 100 to 500)
+storage_batch_size: 500
+
+# Use FP16/mixed precision for faster inference on GPU (ignored on CPU)
+use_fp16: true
+
+# Show progress bar during embedding generation
+show_progress_bar: false
+
+# ==========================================
+# CHUNKING PARAMETERS
+# ==========================================
 target_chunk_size: 500  # Target size in tokens
 
 # Semantic Chunking Behavior
@@ -14,14 +33,18 @@ keep_list_items_together: true # Keep list items together
 use_sentence_boundaries: true  # Never split mid-sentence
 # max_recursion_depth: 3       # Maximum depth for recursive splitting
 
-# Context Enhancement
+# ==========================================
+# CONTEXT ENHANCEMENT
+# ==========================================
 include_document_context: true      # Add document title/metadata
 include_header_path: true           # Add hierarchical section path
 include_surrounding_context: true   # Add sentences before/after
 # surrounding_sentences_before: 2   # Sentences before current chunk
 # surrounding_sentences_after: 1    # Sentences after current chunk
 
-# Entity Extraction (requires spaCy)
+# ==========================================
+# ENTITY EXTRACTION (requires spaCy)
+# ==========================================
 extract_entities: true  # Extract named entities (PERSON, ORG, etc.)
 # entity_types:         # Which entity types to extract
 #   - "PERSON"
@@ -30,18 +53,28 @@ extract_entities: true  # Extract named entities (PERSON, ORG, etc.)
 #   - "GPE"
 #   - "DATE"
 
-# Multi-Representation (for better retrieval)
+# ==========================================
+# MULTI-REPRESENTATION (for better retrieval)
+# ==========================================
 create_table_descriptions: true  # Natural language descriptions for tables
 create_code_descriptions: true   # Natural language descriptions for code
 
-# Qdrant Configuration
+# ==========================================
+# QDRANT CONFIGURATION
+# ==========================================
 qdrant_url: "http://localhost:6333"
 collection_name: "markdown_chunks"
 distance_metric: "Cosine"  # Options: "Cosine", "Euclid", "Dot"
 
+# gRPC configuration (faster than HTTP)
+use_grpc: true        # Enable gRPC for faster communication
+grpc_port: 6334       # gRPC port (from docker-compose.yml)
+
 # Optional: Qdrant Cloud API key
 # api_key: "your-api-key-here"
 
-# Logging Configuration
+# ==========================================
+# LOGGING CONFIGURATION
+# ==========================================
 log_level: "INFO"  # Options: "DEBUG", "INFO", "WARNING", "ERROR"
 # log_file: "vectorize.log"  # Uncomment to log to file

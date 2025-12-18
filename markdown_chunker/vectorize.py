@@ -4,6 +4,7 @@ Command-line interface for RAG-optimized markdown chunking and embedding
 import argparse
 import sys
 import logging
+import asyncio
 from pathlib import Path
 
 from .config import RAGChunkingConfig, ChunkingConfig, ContextConfig, EmbeddingConfig, QdrantConfig
@@ -91,13 +92,15 @@ def load_configurations(config_path):
         create_code_descriptions=config_data.get('create_code_descriptions', True)
     )
     
-    # Create embedding config
+    # Create embedding config with new performance params
     embedding_config = EmbeddingConfig(
         model_name=config_data.get('model_name', 'BAAI/bge-base-en-v1.5'),
         model_dim=config_data.get('model_dim', 768),
         max_token_limit=config_data.get('max_token_limit', 512),
         device=config_data.get('device', 'cpu'),
-        batch_size=config_data.get('batch_size', 32)
+        batch_size=config_data.get('embedding_batch_size', 128),
+        use_fp16=config_data.get('use_fp16', True),
+        show_progress_bar=config_data.get('show_progress_bar', False)
     )
     
     # Create RAG config
@@ -107,12 +110,15 @@ def load_configurations(config_path):
         embedding=embedding_config
     )
     
-    # Create Qdrant config
+    # Create Qdrant config with new performance params
     qdrant_config = QdrantConfig(
         url=config_data.get('qdrant_url', 'http://localhost:6333'),
         collection_name=config_data.get('collection_name', 'markdown_chunks'),
         api_key=config_data.get('api_key'),
-        distance_metric=config_data.get('distance_metric', 'Cosine')
+        distance_metric=config_data.get('distance_metric', 'Cosine'),
+        use_grpc=config_data.get('use_grpc', True),
+        grpc_port=config_data.get('grpc_port', 6334),
+        storage_batch_size=config_data.get('storage_batch_size', 500)
     )
     
     # Get logging config
@@ -154,10 +160,8 @@ def print_chunk_statistics(chunks):
     print(f"    Chunks with entities: {entity_count}")
 
 
-def main():
-    """Main entry point"""
-    args = parse_args()
-    
+async def async_main(args):
+    """Main async entry point"""
     try:
         # Load configurations
         rag_config, qdrant_config, log_level, log_file = load_configurations(args.config)
@@ -166,13 +170,15 @@ def main():
         setup_logging(log_level, log_file)
         
         logger.info("=" * 80)
-        logger.info("Starting RAG-optimized markdown vectorization pipeline")
+        logger.info("Starting RAG-optimized markdown vectorization pipeline (OPTIMIZED)")
         logger.info("=" * 80)
         logger.info(f"Input file: {args.input}")
         logger.info(f"Model: {rag_config.embedding.model_name}")
         logger.info(f"Target chunk size: {rag_config.chunking.target_chunk_size} tokens")
-        logger.info(f"Sentence boundaries: {rag_config.chunking.use_sentence_boundaries}")
-        logger.info(f"Entity extraction: {rag_config.context.extract_entities}")
+        logger.info(f"Embedding batch size: {rag_config.embedding.batch_size}")
+        logger.info(f"Storage batch size: {qdrant_config.storage_batch_size}")
+        logger.info(f"FP16 enabled: {rag_config.embedding.use_fp16 and rag_config.embedding.device == 'cuda'}")
+        logger.info(f"gRPC enabled: {qdrant_config.use_grpc}")
         
         # Read markdown file
         logger.info("\n[1/5] Reading markdown file...")
@@ -210,22 +216,24 @@ def main():
         print_chunk_statistics(chunks)
         
         # Generate embeddings
-        logger.info("\n[4/5] Generating embeddings...")
+        logger.info("\n[4/5] Generating embeddings with sentence-transformers...")
         embedder = EmbeddingGenerator(rag_config.embedding)
         
         chunk_texts = [chunk.search_content for chunk in chunks]
-        embeddings = embedder.generate_embeddings(
-            chunk_texts,
-            batch_size=rag_config.embedding.batch_size
-        )
+        embeddings = embedder.generate_embeddings(chunk_texts)
+        
         logger.info(f"  Generated {len(embeddings)} embeddings")
         logger.info(f"  Embedding dimension: {embedder.get_embedding_dimension()}")
         
-        # Store in Qdrant
-        logger.info("\n[5/5] Storing in Qdrant...")
+        # Store in Qdrant (async)
+        logger.info("\n[5/5] Storing in Qdrant (async with gRPC)...")
         storage = QdrantStorage(qdrant_config, embedder.get_embedding_dimension())
         
-        storage.store_chunks(
+        # Initialize storage (create collection if needed)
+        await storage.initialize()
+        
+        # Store chunks asynchronously
+        await storage.store_chunks(
             chunks=chunks,
             embeddings=embeddings,
             document_id=document_id,
@@ -233,6 +241,9 @@ def main():
         )
         
         logger.info("  Successfully stored in vector database")
+        
+        # Close connection
+        await storage.close()
         
         # Success summary
         print("\n" + "=" * 80)
@@ -242,6 +253,7 @@ def main():
         print(f"  Document ID: {document_id}")
         print(f"  Chunks stored: {len(chunks)}")
         print(f"  Vector dimension: {embedder.get_embedding_dimension()}")
+        print(f"  Optimizations: sentence-transformers, gRPC, batch_size={qdrant_config.storage_batch_size}")
         print("=" * 80)
         
         return 0
@@ -258,6 +270,14 @@ def main():
         logger.error(f"Pipeline failed: {e}", exc_info=True)
         print(f"\n✗ Error: {e}", file=sys.stderr)
         return 1
+
+
+def main():
+    """Main entry point"""
+    args = parse_args()
+    
+    # Run async main
+    return asyncio.run(async_main(args))
 
 
 if __name__ == '__main__':
