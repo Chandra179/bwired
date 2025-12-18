@@ -79,9 +79,6 @@ def load_configurations(config_path):
     
     context_config = ContextConfig(
         include_header_path=config_data.get('include_header_path', True),
-        include_surrounding_context=config_data.get('include_surrounding_context', True),
-        surrounding_sentences_before=config_data.get('surrounding_sentences_before', 2),
-        surrounding_sentences_after=config_data.get('surrounding_sentences_after', 1),
     )
     
     embedding_config = EmbeddingConfig(
@@ -196,7 +193,7 @@ async def async_main(args):
         logger.info("\n[4/5] Generating embeddings with sentence-transformers...")
         embedder = EmbeddingGenerator(rag_config.embedding)
         
-        chunk_texts = [chunk.search_content for chunk in chunks]
+        chunk_texts = [chunk.content for chunk in chunks]
         embeddings = embedder.generate_embeddings(chunk_texts)
         
         logger.info(f"  Generated {len(embeddings)} embeddings")

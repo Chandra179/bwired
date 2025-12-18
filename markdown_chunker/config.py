@@ -20,13 +20,7 @@ class ChunkingConfig:
 class ContextConfig:
     """Configuration for context enhancement"""
     
-    # Hierarchical context
     include_header_path: bool = True
-    
-    # Local context
-    include_surrounding_context: bool = True
-    surrounding_sentences_before: int = 2
-    surrounding_sentences_after: int = 1
 
 
 @dataclass

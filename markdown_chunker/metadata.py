@@ -1,30 +1,15 @@
-"""
-Enhanced metadata for RAG-optimized chunks
-"""
-from dataclasses import dataclass, field, asdict
-from typing import List, Dict, Any, Optional
-import uuid
-
+from dataclasses import dataclass, asdict
+from typing import Dict, Any, Optional
 
 @dataclass
 class ChunkMetadata:
     """Comprehensive metadata for RAG chunks"""
     
-    # --- REQUIRED FIELDS (Must come first) ---
-    chunk_id: str
     document_id: str
-    
-    # Content characteristics
     token_count: int
     chunk_type: str
-    
-    # Hierarchy and structure
     section_path: str
-    chunk_index: int
     
-    search_content: str   # Context-rich text for Vector DB
-    
-    # Additional metadata
     extra: Optional[Dict[str, Any]] = None
     
     def to_dict(self) -> Dict[str, Any]:
@@ -50,17 +35,10 @@ class ChunkMetadata:
         document_id: str,
     ) -> 'ChunkMetadata':
         """Create metadata from a SemanticChunk object"""
-        chunk_id = f"{document_id}_{chunk.chunk_index}_{uuid.uuid4().hex[:8]}"
-        
-        # Fallback if search_content wasn't generated
-        final_search_text = getattr(chunk, 'search_content', None) or chunk.content
         
         return cls(
-            chunk_id=chunk_id,
             document_id=document_id,
             token_count=chunk.token_count,
             chunk_type=chunk.chunk_type,
             section_path=chunk.section_path,
-            chunk_index=chunk.chunk_index,
-            search_content=final_search_text
         )

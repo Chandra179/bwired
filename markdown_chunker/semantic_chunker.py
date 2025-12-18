@@ -1,14 +1,10 @@
-"""
-Semantic chunking orchestrator - combines all stages
-"""
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional
 import logging
 
 from .parser import MarkdownParser, MarkdownElement, ElementType
 from .section_analyzer import SectionAnalyzer, Section
 from .sentence_splitter import SentenceSplitter
-from .context_enricher import ContextEnricher
 from .tokenizer_utils import TokenCounter
 from .config import RAGChunkingConfig
 
@@ -19,19 +15,14 @@ logger = logging.getLogger(__name__)
 class SemanticChunk:
     """Represents a semantically meaningful chunk for RAG"""
     content: str
-    original_content: str
     token_count: int
     chunk_type: str
-    chunk_index: int
     
     section_path: str  # Full hierarchical path (e.g., "Introduction > Getting Started > Installation")
     
     # Direct reference to source element (Excluded from serialization/repr)
     # This enables O(1) access to metadata without searching
     source_element: Optional[MarkdownElement] = field(default=None, repr=False)
-    
-    # Search: "Config > Rate Limit \n Context: API... \n The limit is 50."
-    search_content: Optional[str] = None 
     
     # Sticky Context (for split code/tables)
     contextual_header: Optional[str] = None  # e.g., "function process_data(...) {"
@@ -53,7 +44,6 @@ class SemanticChunker:
         self.parser = MarkdownParser()
         self.section_analyzer = SectionAnalyzer()
         self.sentence_splitter = SentenceSplitter()
-        self.context_enricher = ContextEnricher(config.context)
         self.token_counter = TokenCounter(config.embedding.model_name)
         
         logger.info("SemanticChunker initialized with RAG optimizations")
@@ -82,21 +72,12 @@ class SemanticChunker:
         logger.info(f"Stage 2: Extracted {len(sections)} top-level sections")
         
         chunks = []
-        chunk_index = 0
         
         for section in sections:
             section_chunks = self._chunk_section(section)
             
-            # Assign indices
-            for chunk in section_chunks:
-                chunk.chunk_index = chunk_index
-                chunk_index += 1
-            
             chunks.extend(section_chunks)
         logger.info(f"Stage 3: Created {len(chunks)} semantic chunks")
-        
-        chunks = self._enhance_chunks(chunks)
-        logger.info(f"Stage 4: Enhanced {len(chunks)} chunks with context")
         
         return chunks
     
@@ -112,11 +93,9 @@ class SemanticChunker:
         target_size = self.config.chunking.target_chunk_size
 
         for element in section.content_elements:
-            # Skip meaningful noise (optional, keep your existing logic)
             if self._is_metadata_noise(element.content):
                 continue
             
-            # Calculate size
             element_tokens = self.token_counter.count_tokens(element.content)
             
             # If element is huge (Code Block / Table > target), flush buffer first
@@ -155,10 +134,8 @@ class SemanticChunker:
         combined_content = "\n\n".join([e.content for e in elements])
         return SemanticChunk(
             content=combined_content,
-            original_content=combined_content,
             token_count=self.token_counter.count_tokens(combined_content),
             chunk_type="text", # Generalized type
-            chunk_index=0,     # Will be set later
             section_path=header_path,
             source_element=elements[0] if elements else None
         )
@@ -229,10 +206,8 @@ class SemanticChunker:
             
             return [SemanticChunk(
                 content=content,
-                original_content=content,
                 token_count=token_count,
                 chunk_type="table",
-                chunk_index=0,
                 section_path=header_path
             )]
         
@@ -273,10 +248,8 @@ class SemanticChunker:
                     table_chunk = '\n'.join([header_row, separator] + current_rows)
                     chunks.append(SemanticChunk(
                         content=table_chunk,
-                        original_content=table_chunk,
                         token_count=self.token_counter.count_tokens(table_chunk),
                         chunk_type="table",
-                        chunk_index=len(chunks),
                         section_path=header_path
                     ))
                 
@@ -288,10 +261,8 @@ class SemanticChunker:
             table_chunk = '\n'.join([header_row, separator] + current_rows)
             chunks.append(SemanticChunk(
                 content=table_chunk,
-                original_content=table_chunk,
                 token_count=self.token_counter.count_tokens(table_chunk),
                 chunk_type="table",
-                chunk_index=len(chunks),
                 section_path=header_path
             ))
         
@@ -321,10 +292,8 @@ class SemanticChunker:
             
             return [SemanticChunk(
                 content=content,
-                original_content=content,
                 token_count=token_count,
                 chunk_type="code_block",
-                chunk_index=0,
                 section_path=header_path
             )]
         
@@ -364,10 +333,8 @@ class SemanticChunker:
                     
                     chunks.append(SemanticChunk(
                         content=chunk_content,
-                        original_content=chunk_content,
                         token_count=current_tokens,
                         chunk_type="code_block",
-                        chunk_index=len(chunks),
                         section_path=header_path,
                         contextual_header=sticky_header if len(chunks) > 0 else None
                     ))
@@ -389,10 +356,8 @@ class SemanticChunker:
         if token_count <= self.config.chunking.target_chunk_size:
             return [SemanticChunk(
                 content=element.content,
-                original_content=element.content,
                 token_count=token_count,
                 chunk_type="list",
-                chunk_index=0,
                 section_path=header_path
             )]
         
@@ -427,10 +392,8 @@ class SemanticChunker:
                     list_chunk = '\n'.join(current_items)
                     chunks.append(SemanticChunk(
                         content=list_chunk,
-                        original_content=list_chunk,
                         token_count=self.token_counter.count_tokens(list_chunk),
                         chunk_type="list",
-                        chunk_index=len(chunks),
                         section_path=header_path
                     ))
                 
@@ -441,10 +404,8 @@ class SemanticChunker:
             list_chunk = '\n'.join(current_items)
             chunks.append(SemanticChunk(
                 content=list_chunk,
-                original_content=list_chunk,
                 token_count=self.token_counter.count_tokens(list_chunk),
                 chunk_type="list",
-                chunk_index=len(chunks),
                 section_path=header_path
             ))
         
@@ -462,10 +423,8 @@ class SemanticChunker:
         if token_count <= self.config.chunking.target_chunk_size:
             return [SemanticChunk(
                 content=element.content,
-                original_content=element.content,
                 token_count=token_count,
                 chunk_type=element.type.value,
-                chunk_index=0,
                 section_path=header_path
             )]
         
@@ -484,146 +443,56 @@ class SemanticChunker:
         for i, text_chunk in enumerate(text_chunks):
             chunks.append(SemanticChunk(
                 content=text_chunk,
-                original_content=text_chunk,
                 token_count=self.token_counter.count_tokens(text_chunk),
                 chunk_type=element.type.value,
-                chunk_index=i,
                 section_path=header_path
             ))
         
         return chunks
     
-    def _enhance_chunks(
-        self,
-        chunks: List[SemanticChunk]
-    ) -> List[SemanticChunk]:
-        """
-        1. Skips sentence splitting for Code/Tables (Performance + Accuracy).
-        2. Respects Section Boundaries (Prevents Hallucination).
-        3. Filters Context by Type (Prevents Code polluting Text).
-        """
-        enhanced_chunks = []
-        cfg = self.config.context
-        total_chunks = len(chunks)
-        
-        # We don't want to split code or tables into "sentences"
-        NATURAL_LANGUAGE_TYPES = {ElementType.PARAGRAPH.value, ElementType.LIST.value}
-
-        # Instead of pre-calculating all, we store them only when needed/valid
-        chunk_sentences_cache: Dict[int, List[str]] = {}
-
-        def get_sentences(idx: int) -> List[str]:
-            """Helper to safely get sentences for NL chunks only"""
-            if idx not in chunk_sentences_cache:
-                target_chunk = chunks[idx]
-                if target_chunk.chunk_type in NATURAL_LANGUAGE_TYPES:
-                    chunk_sentences_cache[idx] = self.sentence_splitter.split_sentences(
-                        target_chunk.original_content
-                    )
-                else:
-                    chunk_sentences_cache[idx] = [] # Empty for code/tables
-            return chunk_sentences_cache[idx]
-
-        needs_context = cfg.surrounding_sentences_before > 0 or cfg.surrounding_sentences_after > 0
-
-        for i, chunk in enumerate(chunks):
-            context = {}
-            
-            # Skip context injection for structured data (Tables/Code) 
-            # if we only want to enrich text. 
-            # (Optional: remove this if you want code to have text context, 
-            # but usually you don't want Code to have "previous sentences" injected into its body)
-            
-            if needs_context:
-                # --- Context BEFORE ---
-                if cfg.surrounding_sentences_before > 0 and i > 0:
-                    prev_sentences = []
-                    # Look back up to 3 chunks
-                    for j in range(i - 1, max(-1, i - 4), -1):
-                        prev_chunk = chunks[j]
-                        
-                        # BOUNDARY CHECK: Stop if we hit a different top-level section
-                        # This prevents "Chapter 1" context bleeding into "Chapter 2"
-                        if prev_chunk.section_path != chunk.section_path:
-                            # You might allow partial path matches, but strict is safer
-                            break
-                            
-                        # TYPE CHECK: Don't pull "sentences" from a table/code block
-                        if prev_chunk.chunk_type not in NATURAL_LANGUAGE_TYPES:
-                            break
-                            
-                        sents = get_sentences(j)
-                        prev_sentences = sents + prev_sentences
-                        if len(prev_sentences) >= cfg.surrounding_sentences_before:
-                            break
-                    
-                    if prev_sentences:
-                        relevant = prev_sentences[-cfg.surrounding_sentences_before:]
-                        context['before'] = ' '.join(relevant)
-                
-                # --- Context AFTER ---
-                if cfg.surrounding_sentences_after > 0 and i < total_chunks - 1:
-                    next_sentences = []
-                    for j in range(i + 1, min(total_chunks, i + 4)):
-                        next_chunk = chunks[j]
-                        
-                        # BOUNDARY CHECK
-                        if next_chunk.section_path != chunk.section_path:
-                            break
-                            
-                        # TYPE CHECK
-                        if next_chunk.chunk_type not in NATURAL_LANGUAGE_TYPES:
-                            break
-                            
-                        sents = get_sentences(j)
-                        next_sentences.extend(sents)
-                        if len(next_sentences) >= cfg.surrounding_sentences_after:
-                            break
-                    
-                    if next_sentences:
-                        relevant = next_sentences[:cfg.surrounding_sentences_after]
-                        context['after'] = ' '.join(relevant)
-            
-            enriched = self.context_enricher.enrich_chunk(
-                content=chunk.content,
-                header_path=chunk.section_path,
-                surrounding_context=context
-            )
-            
-            chunk.content = enriched['content']
-            chunk.token_count = self.token_counter.count_tokens(chunk.content)
-            chunk.search_content = enriched.get('contextualized_content') or chunk.content
-            
-            enhanced_chunks.append(chunk)
-        
-        return enhanced_chunks
-    
     def _is_metadata_noise(self, text: str) -> bool:
         """
-        Heuristic: Detects Table of Contents, Bibliographies, and Header dumps.
-        Returns True if the text is likely noise.
+        Detect non-content sections like references, bibliographies, TOCs
         """
         if not text or len(text) < 20:
-            return False  # Too short to judge, keep it just in case
-            
-        words = text.split()
-        if not words: return True
+            return False
         
-        # 1. Capitalization Check
-        # Bibliographies often look like: "AUTHOR TITLE. AUTHOR TITLE."
-        # If > 60% of words are Title Case or Uppercase, it's suspicious.
-        cap_words = [w for w in words if w[0].isupper()]
+        text_lower = text.lower()
+        
+        # Explicit section markers (most reliable)
+        noise_markers = [
+            'references\n', 'bibliography\n', 'notes\n', 
+            'acknowledgement', 'acknowledgment',
+            'table of contents', 'list of figures',
+            'appendix', 'glossary'
+        ]
+        if any(marker in text_lower[:100] for marker in noise_markers):
+            return True
+        
+        # Citation pattern detection
+        # Look for multiple citations like "Author (Year)" or "Author, Year"
+        import re
+        citation_patterns = [
+            r'\([12]\d{3}\)',  # (2004), (1999)
+            r'[A-Z][a-z]+,?\s+[A-Z]\.',  # Author, N. or Author N.
+            r'et al\.',  # et al.
+        ]
+        matches = sum(len(re.findall(pattern, text)) for pattern in citation_patterns)
+        if matches > 3:  # Multiple citations = likely references
+            return True
+        
+        words = text.split()
+        if not words:
+            return True
+        
+        cap_words = [w for w in words if w and w[0].isupper()]
         cap_ratio = len(cap_words) / len(words)
         
         if cap_ratio > 0.6:
-            # 2. Verb Check (The safety valve)
-            # Real content usually has common verbs (is, are, was, has, can, shows)
-            common_verbs = {'is', 'are', 'was', 'were', 'has', 'have', 'can', 'will', 'shows', 'indicates'}
-            # fast lowercase check
-            has_verbs = any(v in text.lower().split() for v in common_verbs)
-            
+            common_verbs = {'is', 'are', 'was', 'were', 'has', 'have', 
+                        'can', 'will', 'shows', 'indicates', 'describes'}
+            has_verbs = any(v in text_lower.split() for v in common_verbs)
             if not has_verbs:
-                logger.debug(f"Filtered noise chunk (Cap ratio: {cap_ratio:.2f}): {text[:50]}...")
                 return True
-                
+        
         return False

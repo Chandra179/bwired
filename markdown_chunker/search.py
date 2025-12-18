@@ -63,33 +63,12 @@ def load_configurations(config_path):
     search_params = {
         'limit': config_data.get('search_limit', 5),
         'score_threshold': config_data.get('score_threshold'),
-        'filter_document': config_data.get('filter_document'),
-        'filter_heading': config_data.get('filter_heading')
     }
     
     # Get logging config
     log_level = config_data.get('log_level', 'INFO')
     
     return embedding_config, qdrant_config, search_params, log_level
-
-
-def build_filters(search_params):
-    """Build Qdrant filters from search parameters"""
-    filters = {"must": []}
-    
-    if search_params.get('filter_document'):
-        filters["must"].append({
-            "key": "document_id",
-            "match": {"value": search_params['filter_document']}
-        })
-    
-    if search_params.get('filter_heading'):
-        filters["must"].append({
-            "key": "heading",
-            "match": {"value": search_params['filter_heading']}
-        })
-    
-    return filters if filters["must"] else None
 
 
 def display_results(query, results, show_metadata=True):
@@ -140,16 +119,11 @@ async def main():
         
         storage = QdrantStorage(qdrant_config, embedder.get_embedding_dimension())
         
-        filters = build_filters(search_params)
-        if filters:
-            logger.info(f"Applied filters: {filters}")
-        
         logger.info(f"Searching (limit: {search_params['limit']})...")
         results = await storage.search(
             query_embedding=query_embedding,
             limit=search_params['limit'],
             score_threshold=search_params.get('score_threshold'),
-            filters=filters
         )
         
         display_results(args.query, results)

@@ -29,13 +29,7 @@ keep_code_blocks_intact: true # Keep code blocks whole if possible
 keep_list_items_together: true # Keep list items together
 use_sentence_boundaries: true  # Never split mid-sentence
 
-# ==========================================
-# CONTEXT ENHANCEMENT
-# ==========================================
 include_header_path: true           # Add hierarchical section path
-include_surrounding_context: true   # Add sentences before/after
-# surrounding_sentences_before: 2   # Sentences before current chunk
-# surrounding_sentences_after: 1    # Sentences after current chunk
 
 # ==========================================
 # QDRANT CONFIGURATION

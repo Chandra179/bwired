@@ -1,5 +1,7 @@
 from typing import List, Dict, Any
 import logging
+import uuid
+import hashlib
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
 import numpy as np
@@ -85,9 +87,12 @@ class QdrantStorage:
         points = []
         for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
             metadata = ChunkMetadata.from_chunk(chunk, document_id)
+            random_uuid = uuid.uuid4()
+            hash_bytes = hashlib.sha256(random_uuid.bytes).digest()
+            numeric_id = int.from_bytes(hash_bytes[:8], byteorder='big') % (2**63)
             
             point = PointStruct(
-                id=hash(metadata.chunk_id) % (2**63),  # Use hash as numeric ID
+                id=numeric_id,  # Use hash as numeric ID
                 vector=embedding.tolist(),
                 payload={
                     **metadata.to_dict(),
@@ -123,8 +128,7 @@ class QdrantStorage:
         self, 
         query_embedding: np.ndarray, 
         limit: int = 10,
-        score_threshold: float = 0.6,
-        filters: Dict[str, Any] = None
+        score_threshold: float = 0.6
     ) -> List[Dict[str, Any]]:
         """
         Search for similar chunks
@@ -143,14 +147,13 @@ class QdrantStorage:
                 collection_name=self.config.collection_name,
                 query=query_embedding.tolist(),
                 limit=limit,
-                query_filter=filters,
                 score_threshold=score_threshold
             )
             
             return [
                 {
                     "score": result.score,
-                    "content": result.payload.get("search_content"),
+                    "content": result.payload.get("content"),
                     "metadata": {k: v for k, v in result.payload.items() if k != "content"}
                 }
                 for result in results.points

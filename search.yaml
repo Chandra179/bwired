@@ -15,16 +15,6 @@ search_limit: 5  # Maximum number of results to return
 # Only return results with similarity score above this threshold
 # score_threshold: 0.7
 
-# Optional: Filters
-# Filter by document ID - only search within a specific document
-# filter_document: "report_2024"
-
-# Filter by chunk type - only search specific content types
-# filter_chunk_type: "paragraph"  # Options: paragraph, table, code_block, list
-
-# Filter by section - only search within a specific section path
-# filter_section_path: "Introduction > Overview"
-
 # Show Options
 show_metadata: true          # Display chunk metadata in results
 show_entities: true          # Display extracted entities
