@@ -66,8 +66,7 @@ class QdrantStorage:
         self, 
         chunks: List[Any],  # List of Chunk objects
         embeddings: List[np.ndarray],
-        document_id: str,
-        document_title: str
+        document_id: str
     ):
         """
         Store chunks with embeddings in Qdrant using async batching
@@ -76,7 +75,6 @@ class QdrantStorage:
             chunks: List of Chunk objects
             embeddings: List of embedding vectors
             document_id: Document identifier
-            document_title: Document title
         """
         if len(chunks) != len(embeddings):
             raise ValueError(f"Chunks ({len(chunks)}) and embeddings ({len(embeddings)}) count mismatch")
@@ -86,7 +84,7 @@ class QdrantStorage:
         
         points = []
         for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-            metadata = ChunkMetadata.from_chunk(chunk, document_id, document_title)
+            metadata = ChunkMetadata.from_chunk(chunk, document_id)
             
             point = PointStruct(
                 id=hash(metadata.chunk_id) % (2**63),  # Use hash as numeric ID

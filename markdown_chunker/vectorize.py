@@ -78,7 +78,6 @@ def load_configurations(config_path):
     )
     
     context_config = ContextConfig(
-        include_document_context=config_data.get('include_document_context', True),
         include_header_path=config_data.get('include_header_path', True),
         include_surrounding_context=config_data.get('include_surrounding_context', True),
         surrounding_sentences_before=config_data.get('surrounding_sentences_before', 2),
@@ -128,8 +127,6 @@ def print_chunk_statistics(chunks):
     for chunk in chunks:
         chunk_types[chunk.chunk_type] = chunk_types.get(chunk.chunk_type, 0) + 1
         total_tokens += chunk.token_count
-        if chunk.entities:
-            entity_count += 1
     
     print(f"\nChunk Statistics:")
     print(f"  Total chunks: {len(chunks)}")
@@ -172,9 +169,7 @@ async def async_main(args):
         
         # Get document metadata
         document_id = args.document_id or get_document_id_from_path(args.input)
-        document_title = args.document_title or Path(args.input).name
         logger.info(f"  Document ID: {document_id}")
-        logger.info(f"  Document title: {document_title}")
         
         # Initialize semantic chunker
         logger.info("\n[2/5] Initializing semantic chunker...")
@@ -187,7 +182,7 @@ async def async_main(args):
         logger.info("  Stage 3: Semantic chunking with sentence boundaries")
         logger.info("  Stage 4: Context enhancement and multi-representation")
         
-        chunks = chunker.chunk_document(content, document_id, document_title)
+        chunks = chunker.chunk_document(content, document_id)
         
         if not chunks:
             logger.warning("No chunks generated from document")
@@ -217,8 +212,7 @@ async def async_main(args):
         await storage.store_chunks(
             chunks=chunks,
             embeddings=embeddings,
-            document_id=document_id,
-            document_title=document_title
+            document_id=document_id
         )
         
         logger.info("  Successfully stored in vector database")

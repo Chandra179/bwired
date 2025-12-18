@@ -13,7 +13,6 @@ class ChunkMetadata:
     # --- REQUIRED FIELDS (Must come first) ---
     chunk_id: str
     document_id: str
-    document_title: str
     
     # Content characteristics
     token_count: int
@@ -49,7 +48,6 @@ class ChunkMetadata:
         cls,
         chunk,
         document_id: str,
-        document_title: str
     ) -> 'ChunkMetadata':
         """Create metadata from a SemanticChunk object"""
         chunk_id = f"{document_id}_{chunk.chunk_index}_{uuid.uuid4().hex[:8]}"
@@ -60,11 +58,9 @@ class ChunkMetadata:
         return cls(
             chunk_id=chunk_id,
             document_id=document_id,
-            document_title=document_title,
             token_count=chunk.token_count,
             chunk_type=chunk.chunk_type,
             section_path=chunk.section_path,
             chunk_index=chunk.chunk_index,
-            search_content=final_search_text,
-            extra=chunk.extra_metadata
+            search_content=final_search_text
         )

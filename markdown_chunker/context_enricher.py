@@ -18,7 +18,6 @@ class ContextEnricher:
         self,
         content: str,
         header_path: List[str],
-        document_title: str,
         surrounding_context: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         
@@ -28,10 +27,6 @@ class ContextEnricher:
             'contextualized_content': content 
         }
         
-        # --- Metadata Enrichment ---
-        if self.config.include_document_context:
-            enriched['metadata']['document_title'] = document_title
-        
         if self.config.include_header_path and header_path:
             if isinstance(header_path, str):
                 path_str = header_path
@@ -40,7 +35,6 @@ class ContextEnricher:
                 path_str = ' > '.join(header_path)
             
             enriched['metadata']['header_path'] = header_path
-            enriched['metadata']['section_context'] = path_str
             
             # Prepend header to embedding content
             enriched['contextualized_content'] = f"{path_str}\n{enriched['contextualized_content']}"

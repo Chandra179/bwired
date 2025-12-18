@@ -13,17 +13,12 @@ class ChunkingConfig:
     keep_code_blocks_intact: bool = True
     keep_list_items_together: bool = True
     
-    # Sentence boundaries
     use_sentence_boundaries: bool = True
-    never_split_mid_sentence: bool = True
 
 
 @dataclass
 class ContextConfig:
     """Configuration for context enhancement"""
-    
-    # Document-level context
-    include_document_context: bool = True
     
     # Hierarchical context
     include_header_path: bool = True

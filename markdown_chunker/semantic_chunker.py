@@ -26,11 +26,6 @@ class SemanticChunk:
     
     section_path: str  # Full hierarchical path (e.g., "Introduction > Getting Started > Installation")
     
-    entities: Optional[Dict[str, List[str]]] = None
-    
-    # Additional metadata
-    extra_metadata: Dict[str, Any] = field(default_factory=dict)
-    
     # Direct reference to source element (Excluded from serialization/repr)
     # This enables O(1) access to metadata without searching
     source_element: Optional[MarkdownElement] = field(default=None, repr=False)
@@ -66,8 +61,7 @@ class SemanticChunker:
     def chunk_document(
         self, 
         content: str, 
-        document_id: str, 
-        document_title: str = ""
+        document_id: str,
     ) -> List[SemanticChunk]:
         """
         Chunk markdown document with semantic awareness
@@ -75,7 +69,6 @@ class SemanticChunker:
         Args:
             content: Markdown content
             document_id: Unique document identifier
-            document_title: Document title
             
         Returns:
             List of semantic chunks
@@ -92,7 +85,7 @@ class SemanticChunker:
         chunk_index = 0
         
         for section in sections:
-            section_chunks = self._chunk_section(section, document_title)
+            section_chunks = self._chunk_section(section)
             
             # Assign indices
             for chunk in section_chunks:
@@ -102,15 +95,14 @@ class SemanticChunker:
             chunks.extend(section_chunks)
         logger.info(f"Stage 3: Created {len(chunks)} semantic chunks")
         
-        chunks = self._enhance_chunks(chunks, document_title)
+        chunks = self._enhance_chunks(chunks)
         logger.info(f"Stage 4: Enhanced {len(chunks)} chunks with context")
         
         return chunks
     
     def _chunk_section(
         self, 
-        section: Section, 
-        document_title: str
+        section: Section
     ) -> List[SemanticChunk]:
         chunks = []
         header_path = section.get_header_path()
@@ -120,14 +112,13 @@ class SemanticChunker:
         target_size = self.config.chunking.target_chunk_size
 
         for element in section.content_elements:
-            # 1. Skip meaningful noise (optional, keep your existing logic)
+            # Skip meaningful noise (optional, keep your existing logic)
             if self._is_metadata_noise(element.content):
                 continue
             
-            # 2. Calculate size
+            # Calculate size
             element_tokens = self.token_counter.count_tokens(element.content)
             
-            # 3. Decision Logic
             # If element is huge (Code Block / Table > target), flush buffer first
             if element_tokens > target_size or element.type in [ElementType.CODE_BLOCK, ElementType.TABLE]:
                 if buffer_elements:
@@ -155,7 +146,7 @@ class SemanticChunker:
         
         # Recursively process subsections
         for subsection in section.subsections:
-            chunks.extend(self._chunk_section(subsection, document_title))
+            chunks.extend(self._chunk_section(subsection))
         
         return chunks
     
@@ -242,8 +233,7 @@ class SemanticChunker:
                 token_count=token_count,
                 chunk_type="table",
                 chunk_index=0,
-                section_path=header_path,
-                extra_metadata=element.metadata
+                section_path=header_path
             )]
         
         # Table is too large and splitting allowed
@@ -287,11 +277,7 @@ class SemanticChunker:
                         token_count=self.token_counter.count_tokens(table_chunk),
                         chunk_type="table",
                         chunk_index=len(chunks),
-                        section_path=header_path,
-                        extra_metadata={
-                            **element.metadata,
-                            'is_partial_table': True
-                        }
+                        section_path=header_path
                     ))
                 
                 current_rows = [row]
@@ -306,11 +292,7 @@ class SemanticChunker:
                 token_count=self.token_counter.count_tokens(table_chunk),
                 chunk_type="table",
                 chunk_index=len(chunks),
-                section_path=header_path,
-                extra_metadata={
-                    **element.metadata,
-                    'is_partial_table': True
-                }
+                section_path=header_path
             ))
         
         return chunks
@@ -343,8 +325,7 @@ class SemanticChunker:
                 token_count=token_count,
                 chunk_type="code_block",
                 chunk_index=0,
-                section_path=header_path,
-                extra_metadata=element.metadata
+                section_path=header_path
             )]
         
         # Code too large - split by lines
@@ -388,8 +369,7 @@ class SemanticChunker:
                         chunk_type="code_block",
                         chunk_index=len(chunks),
                         section_path=header_path,
-                        contextual_header=sticky_header if len(chunks) > 0 else None, 
-                        extra_metadata={**element.metadata, 'is_partial_code': True}
+                        contextual_header=sticky_header if len(chunks) > 0 else None
                     ))
                 
                 current_lines = [line]
@@ -413,8 +393,7 @@ class SemanticChunker:
                 token_count=token_count,
                 chunk_type="list",
                 chunk_index=0,
-                section_path=header_path,
-                extra_metadata=element.metadata
+                section_path=header_path
             )]
         
         if self.config.chunking.keep_list_items_together:
@@ -452,8 +431,7 @@ class SemanticChunker:
                         token_count=self.token_counter.count_tokens(list_chunk),
                         chunk_type="list",
                         chunk_index=len(chunks),
-                        section_path=header_path,
-                        extra_metadata=element.metadata
+                        section_path=header_path
                     ))
                 
                 current_items = [line]
@@ -467,8 +445,7 @@ class SemanticChunker:
                 token_count=self.token_counter.count_tokens(list_chunk),
                 chunk_type="list",
                 chunk_index=len(chunks),
-                section_path=header_path,
-                extra_metadata=element.metadata
+                section_path=header_path
             ))
         
         return chunks
@@ -489,8 +466,7 @@ class SemanticChunker:
                 token_count=token_count,
                 chunk_type=element.type.value,
                 chunk_index=0,
-                section_path=header_path,
-                extra_metadata=element.metadata
+                section_path=header_path
             )]
         
         # Split by sentences if configured
@@ -512,16 +488,14 @@ class SemanticChunker:
                 token_count=self.token_counter.count_tokens(text_chunk),
                 chunk_type=element.type.value,
                 chunk_index=i,
-                section_path=header_path,
-                extra_metadata=element.metadata
+                section_path=header_path
             ))
         
         return chunks
     
     def _enhance_chunks(
         self,
-        chunks: List[SemanticChunk],
-        document_title: str
+        chunks: List[SemanticChunk]
     ) -> List[SemanticChunk]:
         """
         1. Skips sentence splitting for Code/Tables (Performance + Accuracy).
@@ -613,16 +587,12 @@ class SemanticChunker:
             enriched = self.context_enricher.enrich_chunk(
                 content=chunk.content,
                 header_path=chunk.section_path,
-                document_title=document_title,
                 surrounding_context=context
             )
             
             chunk.content = enriched['content']
             chunk.token_count = self.token_counter.count_tokens(chunk.content)
             chunk.search_content = enriched.get('contextualized_content') or chunk.content
-            
-            if 'entities' in enriched.get('metadata', {}):
-                chunk.entities = enriched['metadata']['entities']
             
             enhanced_chunks.append(chunk)
         

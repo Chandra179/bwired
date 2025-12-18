@@ -110,8 +110,6 @@ def display_results(query, results, show_metadata=True):
         print(f"Result {i} (Score: {score:.4f})")
         
         if show_metadata:
-            print(f"Document: {metadata.get('document_title', 'N/A')} (ID: {metadata.get('document_id', 'N/A')})")
-            
             if metadata.get('heading'):
                 print(f"Heading: {metadata['heading']}")
             

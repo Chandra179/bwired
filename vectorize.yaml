@@ -16,7 +16,7 @@ storage_batch_size: 500
 use_fp16: true
 
 # Show progress bar during embedding generation
-show_progress_bar: false
+show_progress_bar: true
 
 # ==========================================
 # CHUNKING PARAMETERS
@@ -32,7 +32,6 @@ use_sentence_boundaries: true  # Never split mid-sentence
 # ==========================================
 # CONTEXT ENHANCEMENT
 # ==========================================
-include_document_context: true      # Add document title/metadata
 include_header_path: true           # Add hierarchical section path
 include_surrounding_context: true   # Add sentences before/after
 # surrounding_sentences_before: 2   # Sentences before current chunk
