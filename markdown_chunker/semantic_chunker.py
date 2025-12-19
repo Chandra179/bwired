@@ -210,7 +210,7 @@ class SemanticChunker:
                 section_chunks,
                 self.config.chunking.overlap_tokens,
                 self.token_counter,
-                self.config.chunking.target_chunk_size,
+                self.config.embedding.max_token_limit,
             )
             result.extend(overlapped)
         

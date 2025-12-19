@@ -64,16 +64,19 @@ class RAGChunkingConfig:
     
     def __post_init__(self):
         """Cross-validate configurations"""
-        if self.chunking.effective_target_size > self.embedding.max_token_limit:
+        # Ensure chunks + overlap never exceed embedding limit
+        max_chunk_with_overlap = self.chunking.target_chunk_size + self.chunking.overlap_tokens
+        if max_chunk_with_overlap > self.embedding.max_token_limit:
             raise ValueError(
-                f"chunking.effective_target_chunk_size ({self.chunking.effective_target_size}) must be <= "
-                f"embedding.max_token_limit ({self.embedding.max_token_limit})"
+                f"Chunk size + overlap ({max_chunk_with_overlap}) exceeds "
+                f"embedding limit ({self.embedding.max_token_limit}). "
+                f"Reduce target_chunk_size or overlap_tokens."
             )
         
         if self.chunking.overlap_tokens >= self.chunking.effective_target_size:
             raise ValueError(
-                f"chunking.overlap_tokens ({self.chunking.overlap_tokens}) must be < "
-                f"chunking.effective_target_chunk_size ({self.chunking.effective_target_size})"
+                f"overlap_tokens ({self.chunking.overlap_tokens}) must be < "
+                f"effective_target_size ({self.chunking.effective_target_size})"
             )
 
 

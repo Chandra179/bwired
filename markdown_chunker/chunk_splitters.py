@@ -18,19 +18,13 @@ class ChunkSplitters:
         self.sentence_splitter = sentence_splitter
         self.token_counter = token_counter
     
-    def chunk_table(
-        self,
-        element: MarkdownElement,
-        header_path: str
-    ) -> List[SemanticChunk]:
+    def chunk_table(self, element: MarkdownElement, header_path: str) -> List[SemanticChunk]:
         """Chunk table - keep intact if possible"""
         
         token_count = self.token_counter.count_tokens(element.content)
-        fits_limit = token_count <= self.config.chunking.effective_target_size
-        should_keep_intact = self.config.chunking.keep_tables_intact
+        max_allowed = self.config.embedding.max_token_limit - self.config.chunking.overlap_tokens - 10
         
-        # If table fits within target, keep it whole
-        if fits_limit or should_keep_intact:
+        if token_count <= max_allowed and self.config.chunking.keep_tables_intact:
             return [SemanticChunk(
                 content=element.content,
                 token_count=token_count,
@@ -102,19 +96,13 @@ class ChunkSplitters:
         
         return chunks
     
-    def chunk_code(
-        self,
-        element: MarkdownElement,
-        header_path: str
-    ) -> List[SemanticChunk]:
+    def chunk_code(self, element: MarkdownElement, header_path: str) -> List[SemanticChunk]:
         """Chunk code block - keep intact if possible"""
         
         token_count = self.token_counter.count_tokens(element.content)
+        max_allowed = self.config.embedding.max_token_limit - self.config.chunking.overlap_tokens - 10
         
-        fits_limit = token_count <= self.config.chunking.effective_target_size
-        force_intact = self.config.chunking.keep_code_blocks_intact
-
-        if fits_limit or force_intact:
+        if token_count <= max_allowed and self.config.chunking.keep_code_blocks_intact:
             return [SemanticChunk(
                 content=element.content,
                 token_count=token_count,
@@ -124,7 +112,6 @@ class ChunkSplitters:
                 split_sequence=None
             )]
             
-        # Code too large - split by lines
         return self._split_code_by_lines(element, header_path)
     
     def _split_code_by_lines(
