@@ -74,16 +74,7 @@ class SemanticChunker:
         section: Section,
         ancestry: List[str]
     ) -> List[SemanticChunk]:
-        """
-        Chunk a section with enhanced ancestry tracking
-        
-        Args:
-            section: Section to chunk
-            ancestry: List of ancestor heading texts
-            
-        Returns:
-            List of chunks from this section and subsections
-        """
+        """Chunk a section with enhanced ancestry tracking"""
         chunks = []
         
         current_ancestry = ancestry + [section.heading.content] if section.heading else ancestry
@@ -92,7 +83,7 @@ class SemanticChunker:
         buffer_elements = []
         buffer_tokens = 0
         
-        soft_limit = self.config.chunking.effective_target_size
+        max_size = self.config.max_chunk_size
 
         for element in section.content_elements:
             if self._is_metadata_noise(element.content):
@@ -101,7 +92,7 @@ class SemanticChunker:
             element_tokens = self.token_counter.count_tokens(element.content)
             
             # Handle large/special elements individually
-            if element_tokens > soft_limit or element.type in [ElementType.CODE_BLOCK, ElementType.TABLE]:
+            if element_tokens > max_size or element.type in [ElementType.CODE_BLOCK, ElementType.TABLE]:
                 if buffer_elements:
                     chunks.append(self._create_chunk_from_buffer(buffer_elements, header_path))
                     buffer_elements = []
@@ -110,7 +101,7 @@ class SemanticChunker:
                 chunks.extend(self._chunk_element(element, header_path))
                 
             # Element fits in buffer
-            elif buffer_tokens + element_tokens <= soft_limit:
+            elif buffer_tokens + element_tokens <= max_size:
                 buffer_elements.append(element)
                 buffer_tokens += element_tokens
                 

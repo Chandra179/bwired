@@ -5,7 +5,7 @@ from .schema import SemanticChunk
 from .parser import MarkdownElement
 from .tokenizer_utils import TokenCounter
 from .sentence_splitter import SentenceSplitter
-from .config import ChunkingConfig
+from .config import RAGChunkingConfig
 
 logger = logging.getLogger(__name__)
 
@@ -13,18 +13,23 @@ logger = logging.getLogger(__name__)
 class ChunkSplitters:
     """Collection of splitting strategies for different element types"""
     
-    def __init__(self, config: ChunkingConfig, sentence_splitter: SentenceSplitter, token_counter: TokenCounter):
+    def __init__(self, config: RAGChunkingConfig, sentence_splitter: SentenceSplitter, token_counter: TokenCounter):
         self.config = config
         self.sentence_splitter = sentence_splitter
         self.token_counter = token_counter
     
+    @property
+    def max_chunk_size(self) -> int:
+        """Maximum size for a chunk before overlap"""
+        return self.config.max_chunk_size
+    
     def chunk_table(self, element: MarkdownElement, header_path: str) -> List[SemanticChunk]:
-        """Chunk table - keep intact if possible"""
+        """Chunk table - keep intact if fits within limit, otherwise split by rows"""
         
         token_count = self.token_counter.count_tokens(element.content)
-        max_allowed = self.config.embedding.max_token_limit - self.config.chunking.overlap_tokens - 10
         
-        if token_count <= max_allowed and self.config.chunking.keep_tables_intact:
+        # Keep intact if it fits
+        if token_count <= self.max_chunk_size:
             return [SemanticChunk(
                 content=element.content,
                 token_count=token_count,
@@ -50,7 +55,7 @@ class ChunkSplitters:
         data_rows = lines[2:]
         
         header_tokens = self.token_counter.count_tokens(header_row + '\n' + separator)
-        available = self.config.chunking.effective_target_size - header_tokens - 10
+        available = self.max_chunk_size - header_tokens
         
         chunks = []
         current_rows = []
@@ -71,7 +76,7 @@ class ChunkSplitters:
                         chunk_type="table",
                         section_path=header_path,
                         is_continuation=len(chunks) > 0,
-                        split_sequence=None  # Will be set later
+                        split_sequence=None
                     ))
                 
                 current_rows = [row]
@@ -86,7 +91,7 @@ class ChunkSplitters:
                 chunk_type="table",
                 section_path=header_path,
                 is_continuation=len(chunks) > 0,
-                split_sequence=None  # Will be set later
+                split_sequence=None
             ))
         
         # Set split_sequence for all chunks
@@ -97,12 +102,12 @@ class ChunkSplitters:
         return chunks
     
     def chunk_code(self, element: MarkdownElement, header_path: str) -> List[SemanticChunk]:
-        """Chunk code block - keep intact if possible"""
+        """Chunk code block - keep intact if fits within limit, otherwise split by lines"""
         
         token_count = self.token_counter.count_tokens(element.content)
-        max_allowed = self.config.embedding.max_token_limit - self.config.chunking.overlap_tokens - 10
         
-        if token_count <= max_allowed and self.config.chunking.keep_code_blocks_intact:
+        # Keep intact if it fits
+        if token_count <= self.max_chunk_size:
             return [SemanticChunk(
                 content=element.content,
                 token_count=token_count,
@@ -111,7 +116,8 @@ class ChunkSplitters:
                 is_continuation=False,
                 split_sequence=None
             )]
-            
+        
+        # Too large - split by lines
         return self._split_code_by_lines(element, header_path)
     
     def _split_code_by_lines(
@@ -124,18 +130,17 @@ class ChunkSplitters:
         lines = element.content.split('\n')
         chunks = []
         
-        # Identify Sticky Header (function/class definition)
+        # Identify sticky header (function/class definition)
         sticky_header = self._extract_code_header(lines)
         sticky_header_tokens = self.token_counter.count_tokens(sticky_header) if sticky_header else 0
         
         current_lines = []
         current_tokens = sticky_header_tokens
         
-        # Start from beginning
         for line in lines:
             line_tokens = self.token_counter.count_tokens(line)
             
-            if current_tokens + line_tokens <= self.config.chunking.effective_target_size:
+            if current_tokens + line_tokens <= self.max_chunk_size:
                 current_lines.append(line)
                 current_tokens += line_tokens
             else:
@@ -150,7 +155,7 @@ class ChunkSplitters:
                         section_path=header_path,
                         contextual_header=sticky_header if len(chunks) > 0 else None,
                         is_continuation=len(chunks) > 0,
-                        split_sequence=None  # Will be set later
+                        split_sequence=None
                     ))
                 
                 current_lines = [line]
@@ -206,12 +211,12 @@ class ChunkSplitters:
         element: MarkdownElement,
         header_path: str
     ) -> List[SemanticChunk]:
-        """Chunk list - keep items together"""
+        """Chunk list - keep intact if fits within limit, otherwise split by items"""
         
         token_count = self.token_counter.count_tokens(element.content)
         
-        # If list fits, keep whole
-        if token_count <= self.config.chunking.effective_target_size:
+        # Keep intact if it fits
+        if token_count <= self.max_chunk_size:
             return [SemanticChunk(
                 content=element.content,
                 token_count=token_count,
@@ -221,11 +226,7 @@ class ChunkSplitters:
                 split_sequence=None
             )]
         
-        if self.config.chunking.keep_list_items_together:
-            return self._split_list_by_items(element, header_path)
-        else:
-            # Treat as text
-            return self.chunk_text(element, header_path)
+        return self._split_list_by_items(element, header_path)
     
     def _split_list_by_items(
         self,
@@ -245,7 +246,7 @@ class ChunkSplitters:
             
             line_tokens = self.token_counter.count_tokens(line)
             
-            if current_tokens + line_tokens <= self.config.chunking.effective_target_size:
+            if current_tokens + line_tokens <= self.max_chunk_size:
                 current_items.append(line)
                 current_tokens += line_tokens
             else:
@@ -289,7 +290,8 @@ class ChunkSplitters:
         """Chunk text/paragraph with sentence awareness"""
         token_count = self.token_counter.count_tokens(element.content)
         
-        if token_count <= self.config.chunking.effective_target_size:
+        # Keep intact if it fits
+        if token_count <= self.max_chunk_size:
             return [SemanticChunk(
                 content=element.content,
                 token_count=token_count,
@@ -299,11 +301,11 @@ class ChunkSplitters:
                 split_sequence=None
             )]
         
-        # Split by sentences if configured
+        # Too large - split by sentences if configured
         if self.config.chunking.use_sentence_boundaries:
             text_chunks = self.sentence_splitter.split_into_chunks_by_sentences(
                 element.content,
-                self.config.chunking.effective_target_size,
+                self.max_chunk_size,
                 self.token_counter
             )
         else:

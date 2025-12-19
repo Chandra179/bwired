@@ -17,7 +17,6 @@ search_limit: 5  # Maximum number of results to return
 
 # Show Options
 show_metadata: true          # Display chunk metadata in results
-show_entities: true          # Display extracted entities
 
 # Logging Configuration
 log_level: "INFO"  # Options: "DEBUG", "INFO", "WARNING", "ERROR"

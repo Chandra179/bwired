@@ -70,10 +70,6 @@ def load_configurations(config_path):
     config_data = load_config_file(config_path)
     
     chunking_config = ChunkingConfig(
-        target_chunk_size=config_data.get('target_chunk_size', 500),
-        keep_tables_intact=config_data.get('keep_tables_intact', True),
-        keep_code_blocks_intact=config_data.get('keep_code_blocks_intact', True),
-        keep_list_items_together=config_data.get('keep_list_items_together', True),
         use_sentence_boundaries=config_data.get('use_sentence_boundaries', True),
     )
     
@@ -105,7 +101,6 @@ def load_configurations(config_path):
         storage_batch_size=config_data.get('storage_batch_size', 500)
     )
     
-    # Get logging config
     log_level = config_data.get('log_level', 'INFO')
     
     return rag_config, qdrant_config, log_level
@@ -153,7 +148,6 @@ async def async_main(args):
         logger.info("=" * 80)
         logger.info(f"Input file: {args.input}")
         logger.info(f"Model: {rag_config.embedding.model_name}")
-        logger.info(f"Target chunk size: {rag_config.chunking.target_chunk_size} tokens")
         logger.info(f"Embedding batch size: {rag_config.embedding.batch_size}")
         logger.info(f"Storage batch size: {qdrant_config.storage_batch_size}")
         logger.info(f"FP16 enabled: {rag_config.embedding.use_fp16 and rag_config.embedding.device == 'cuda'}")
