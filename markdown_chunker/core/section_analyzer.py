@@ -1,11 +1,8 @@
-"""
-Semantic section extraction from parsed markdown elements
-"""
 from dataclasses import dataclass
 from typing import List, Optional
 import logging
 
-from .parser import MarkdownElement, ElementType
+from ..parser import MarkdownElement, ElementType
 
 logger = logging.getLogger(__name__)
 

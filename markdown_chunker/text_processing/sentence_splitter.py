@@ -1,6 +1,3 @@
-"""
-Sentence boundary detection using spaCy
-"""
 from typing import List
 import logging
 

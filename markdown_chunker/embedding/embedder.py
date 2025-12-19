@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-from .config import EmbeddingConfig
+from markdown_chunker.config import EmbeddingConfig
 
 logger = logging.getLogger(__name__)
 

@@ -1,9 +1,9 @@
 from typing import List, Optional
 import logging
-from .schema import SemanticChunk
+from ..schema import SemanticChunk
 
-from .sentence_splitter import SentenceSplitter
-from .tokenizer_utils import TokenCounter
+from ..text_processing.sentence_splitter import SentenceSplitter
+from ..text_processing.tokenizer_utils import TokenCounter
 
 logger = logging.getLogger(__name__)
 

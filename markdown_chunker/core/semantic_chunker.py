@@ -2,16 +2,21 @@ from typing import List, Dict
 import logging
 import re
 
-from .parser import MarkdownParser, MarkdownElement, ElementType
+from ..parser import MarkdownParser, MarkdownElement, ElementType
 from .section_analyzer import SectionAnalyzer, Section
-from .sentence_splitter import SentenceSplitter
-from .tokenizer_utils import TokenCounter
-from .config import RAGChunkingConfig
+from ..text_processing.sentence_splitter import SentenceSplitter
+from ..text_processing.tokenizer_utils import TokenCounter
+from ..config import RAGChunkingConfig
+from ..schema import SemanticChunk
 from .overlap_handler import OverlapHandler
-from .chunk_splitters import ChunkSplitters
-from .schema import SemanticChunk
+from ..splitters.table_splitter import TableSplitter
+from ..splitters.code_splitter import CodeSplitter
+from ..splitters.list_splitter import ListSplitter
+from ..splitters.text_splitter import TextSplitter
+
 
 logger = logging.getLogger(__name__)
+
 
 class SemanticChunker:
     """
@@ -21,7 +26,9 @@ class SemanticChunker:
     - Enhanced ancestry paths
     """
     
-    def __init__(self, config: RAGChunkingConfig):
+    def __init__(self, 
+        config: RAGChunkingConfig,
+    ):
         self.config = config
         
         self.parser = MarkdownParser()
@@ -29,7 +36,11 @@ class SemanticChunker:
         self.sentence_splitter = SentenceSplitter()
         self.token_counter = TokenCounter(config.embedding.model_name)
         self.overlap_handler = OverlapHandler(self.sentence_splitter)
-        self.splitters = ChunkSplitters(config, self.sentence_splitter, self.token_counter)
+        
+        self.table_splitter = TableSplitter(config, self.sentence_splitter, self.token_counter)
+        self.code_splitter = CodeSplitter(config, self.sentence_splitter, self.token_counter)
+        self.list_splitter = ListSplitter(config, self.sentence_splitter, self.token_counter)
+        self.text_splitter = TextSplitter(config, self.sentence_splitter, self.token_counter)
         
         logger.info("SemanticChunker initialized with overlap and relationship tracking")
     
@@ -144,34 +155,37 @@ class SemanticChunker:
         header_path: str
     ) -> List[SemanticChunk]:
         """
-        Chunk a single element based on type
+        Chunk a single element based on type using specific splitters
         """
         if element.type in (ElementType.PARAGRAPH, ElementType.HEADING):
             if self._is_metadata_noise(element.content):
                 return []
         
+        chunks = []
+        
         if element.type == ElementType.TABLE:
-            chunks = self.splitters.chunk_table(element, header_path)
+            chunks = self.table_splitter.chunk(element, header_path)
         
         elif element.type == ElementType.CODE_BLOCK:
-            chunks = self.splitters.chunk_code(element, header_path)
+            chunks = self.code_splitter.chunk(element, header_path)
         
         elif element.type == ElementType.LIST:
-            chunks = self.splitters.chunk_list(element, header_path)
+            chunks = self.list_splitter.chunk(element, header_path)
         
         elif element.type == ElementType.PARAGRAPH:
-            chunks = self.splitters.chunk_text(element, header_path)
+            chunks = self.text_splitter.chunk(element, header_path)
         
         elif element.type == ElementType.HEADING:
             # Only chunk significant headings
             token_count = self.token_counter.count_tokens(element.content)
             if token_count > 50:
-                chunks = self.splitters.chunk_text(element, header_path)
+                chunks = self.text_splitter.chunk(element, header_path)
             else:
                 chunks = []
         
         else:
-            chunks = self.splitters.chunk_text(element, header_path)
+            # Default fallback
+            chunks = self.text_splitter.chunk(element, header_path)
 
         # Inject source element reference
         for chunk in chunks:

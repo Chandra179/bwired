@@ -1,6 +1,6 @@
-from dataclasses import dataclass, field
 from typing import Optional
-from .parser import MarkdownElement  # Assuming this exists in your project
+from dataclasses import dataclass, field
+from .parser import MarkdownElement
 
 @dataclass
 class SemanticChunk:

@@ -6,8 +6,8 @@ from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
 import numpy as np
 
-from .config import QdrantConfig
-from .metadata import ChunkMetadata
+from ..config import QdrantConfig
+from ..core.metadata import ChunkMetadata
 
 logger = logging.getLogger(__name__)
 
