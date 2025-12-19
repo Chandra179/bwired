@@ -1,6 +1,3 @@
-"""
-RAG-optimized semantic chunker with overlap and relationship tracking
-"""
 from typing import List, Dict
 import logging
 import re
@@ -53,15 +50,12 @@ class SemanticChunker:
         """
         logger.info(f"Processing document: {document_id}")
         
-        # Stage 1: Parse
         elements = self.parser.parse(content)
         logger.info(f"Stage 1: Parsed {len(elements)} elements")
         
-        # Stage 2: Extract sections
         sections = self.section_analyzer.analyze(elements)
         logger.info(f"Stage 2: Extracted {len(sections)} top-level sections")
         
-        # Stage 3: Create chunks
         all_chunks = []
         
         for section in sections:
@@ -70,7 +64,6 @@ class SemanticChunker:
         
         logger.info(f"Stage 3: Created {len(all_chunks)} semantic chunks")
         
-        # Stage 4: Apply overlap within sections
         all_chunks = self._apply_overlap_by_section(all_chunks)
         logger.info(f"Stage 4: Applied overlap to chunks")
         
@@ -93,14 +86,13 @@ class SemanticChunker:
         """
         chunks = []
         
-        # Build enhanced ancestry path
         current_ancestry = ancestry + [section.heading.content] if section.heading else ancestry
         header_path = " > ".join(current_ancestry)
         
-        # Chunk content elements
         buffer_elements = []
         buffer_tokens = 0
-        target_size = self.config.chunking.target_chunk_size
+        
+        soft_limit = self.config.chunking.effective_target_size
 
         for element in section.content_elements:
             if self._is_metadata_noise(element.content):
@@ -109,18 +101,16 @@ class SemanticChunker:
             element_tokens = self.token_counter.count_tokens(element.content)
             
             # Handle large/special elements individually
-            if element_tokens > target_size or element.type in [ElementType.CODE_BLOCK, ElementType.TABLE]:
-                # Flush buffer first
+            if element_tokens > soft_limit or element.type in [ElementType.CODE_BLOCK, ElementType.TABLE]:
                 if buffer_elements:
                     chunks.append(self._create_chunk_from_buffer(buffer_elements, header_path))
                     buffer_elements = []
                     buffer_tokens = 0
                 
-                # Process the large/special element
                 chunks.extend(self._chunk_element(element, header_path))
                 
             # Element fits in buffer
-            elif buffer_tokens + element_tokens <= target_size:
+            elif buffer_tokens + element_tokens <= soft_limit:
                 buffer_elements.append(element)
                 buffer_tokens += element_tokens
                 
@@ -165,12 +155,10 @@ class SemanticChunker:
         """
         Chunk a single element based on type
         """
-        # Skip metadata noise
         if element.type in (ElementType.PARAGRAPH, ElementType.HEADING):
             if self._is_metadata_noise(element.content):
                 return []
         
-        # Dispatch to appropriate chunker
         if element.type == ElementType.TABLE:
             chunks = self.splitters.chunk_table(element, header_path)
         
@@ -203,8 +191,6 @@ class SemanticChunker:
     def _apply_overlap_by_section(self, chunks: List[SemanticChunk]) -> List[SemanticChunk]:
         """
         Apply overlap to chunks, but only within same section
-        
-        Groups chunks by section and applies overlap within each group
         """
         if self.config.chunking.overlap_tokens <= 0:
             return chunks
@@ -223,7 +209,8 @@ class SemanticChunker:
             overlapped = self.overlap_handler.apply_overlap(
                 section_chunks,
                 self.config.chunking.overlap_tokens,
-                self.token_counter
+                self.token_counter,
+                self.config.chunking.target_chunk_size,
             )
             result.extend(overlapped)
         

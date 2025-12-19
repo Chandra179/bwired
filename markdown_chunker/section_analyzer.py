@@ -19,34 +19,6 @@ class Section:
     subsections: List['Section']
     start_index: int  # Index in original elements list
     end_index: int    # Index in original elements list
-    
-    def get_header_path(self) -> str:
-        """Get the hierarchical path of headers as a single string"""
-        path = []
-        current = self
-        while current and current.heading:
-            path.insert(0, current.heading.content)
-            current = getattr(current, 'parent', None)
-        return " > ".join(path)
-    
-    def get_all_content(self) -> str:
-        """Get all text content in this section"""
-        parts = []
-        if self.heading:
-            parts.append(f"{'#' * self.level} {self.heading.content}")
-        
-        for elem in self.content_elements:
-            parts.append(elem.content)
-        
-        for subsection in self.subsections:
-            parts.append(subsection.get_all_content())
-        
-        return '\n\n'.join(filter(None, parts))
-    
-    def count_tokens_estimate(self) -> int:
-        """Rough estimate of tokens (words * 1.3)"""
-        text = self.get_all_content()
-        return int(len(text.split()) * 1.3)
 
 
 class SectionAnalyzer:
@@ -70,7 +42,6 @@ class SectionAnalyzer:
         if not elements:
             return []
         
-        # Build hierarchical structure
         sections = self._build_hierarchy(elements)
         
         logger.info(f"Extracted {len(sections)} top-level sections")
@@ -93,7 +64,7 @@ class SectionAnalyzer:
         while i < len(elements):
             element = elements[i]
             
-            if element.type == ElementType.HEADING:
+            if element.type == ElementType.HEADING: 
                 # Start new section
                 section, next_index = self._extract_section(elements, i)
                 sections.append(section)
@@ -115,7 +86,6 @@ class SectionAnalyzer:
         Returns:
             (Section object, next_index to process)
         """
-        # Section with heading
         heading = elements[start_index]
         level = heading.level
         content_start = start_index + 1
@@ -129,7 +99,7 @@ class SectionAnalyzer:
             elem = elements[current_index]
             
             if elem.type == ElementType.HEADING:
-                if elem.level <= level:
+                if elem.level <= level: # could be open and close tag so we need to check the level
                     # Next section at same or higher level
                     break
                 else:

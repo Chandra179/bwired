@@ -26,7 +26,7 @@ class ChunkSplitters:
         """Chunk table - keep intact if possible"""
         
         token_count = self.token_counter.count_tokens(element.content)
-        fits_limit = token_count <= self.config.chunking.target_chunk_size
+        fits_limit = token_count <= self.config.chunking.effective_target_size
         should_keep_intact = self.config.chunking.keep_tables_intact
         
         # If table fits within target, keep it whole
@@ -40,7 +40,6 @@ class ChunkSplitters:
                 split_sequence=None
             )]
         
-        # Table is too large and splitting allowed
         return self._split_table_by_rows(element, header_path)
     
     def _split_table_by_rows(
@@ -52,16 +51,12 @@ class ChunkSplitters:
         
         lines = element.content.split('\n')
         
-        if len(lines) < 3:
-            # Too small to split
-            return self.chunk_table(element, header_path)
-        
         header_row = lines[0]
         separator = lines[1]
         data_rows = lines[2:]
         
         header_tokens = self.token_counter.count_tokens(header_row + '\n' + separator)
-        available = self.config.chunking.target_chunk_size - header_tokens - 20
+        available = self.config.chunking.effective_target_size - header_tokens - 10
         
         chunks = []
         current_rows = []
@@ -116,7 +111,7 @@ class ChunkSplitters:
         
         token_count = self.token_counter.count_tokens(element.content)
         
-        fits_limit = token_count <= self.config.chunking.target_chunk_size
+        fits_limit = token_count <= self.config.chunking.effective_target_size
         force_intact = self.config.chunking.keep_code_blocks_intact
 
         if fits_limit or force_intact:
@@ -153,7 +148,7 @@ class ChunkSplitters:
         for line in lines:
             line_tokens = self.token_counter.count_tokens(line)
             
-            if current_tokens + line_tokens <= self.config.chunking.target_chunk_size:
+            if current_tokens + line_tokens <= self.config.chunking.effective_target_size:
                 current_lines.append(line)
                 current_tokens += line_tokens
             else:
@@ -198,7 +193,6 @@ class ChunkSplitters:
         """Extract function/class definition as contextual header"""
         import re
         
-        # Patterns for common function/class definitions
         patterns = [
             r'^(def\s+\w+\s*\([^)]*\)\s*:)',  # Python function
             r'^(class\s+\w+.*:)',  # Python class
@@ -230,7 +224,7 @@ class ChunkSplitters:
         token_count = self.token_counter.count_tokens(element.content)
         
         # If list fits, keep whole
-        if token_count <= self.config.chunking.target_chunk_size:
+        if token_count <= self.config.chunking.effective_target_size:
             return [SemanticChunk(
                 content=element.content,
                 token_count=token_count,
@@ -264,7 +258,7 @@ class ChunkSplitters:
             
             line_tokens = self.token_counter.count_tokens(line)
             
-            if current_tokens + line_tokens <= self.config.chunking.target_chunk_size:
+            if current_tokens + line_tokens <= self.config.chunking.effective_target_size:
                 current_items.append(line)
                 current_tokens += line_tokens
             else:
@@ -306,11 +300,9 @@ class ChunkSplitters:
         header_path: str
     ) -> List[SemanticChunk]:
         """Chunk text/paragraph with sentence awareness"""
-        
         token_count = self.token_counter.count_tokens(element.content)
         
-        # If fits in one chunk
-        if token_count <= self.config.chunking.target_chunk_size:
+        if token_count <= self.config.chunking.effective_target_size:
             return [SemanticChunk(
                 content=element.content,
                 token_count=token_count,
@@ -324,7 +316,7 @@ class ChunkSplitters:
         if self.config.chunking.use_sentence_boundaries:
             text_chunks = self.sentence_splitter.split_into_chunks_by_sentences(
                 element.content,
-                self.config.chunking.target_chunk_size,
+                self.config.chunking.effective_target_size,
                 self.token_counter
             )
         else:

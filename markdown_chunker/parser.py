@@ -34,12 +34,6 @@ class MarkdownElement:
     metadata: Dict[str, Any] = field(default_factory=dict)
     children: List['MarkdownElement'] = field(default_factory=list)
     
-    def get_text_content(self) -> str:
-        """Get all text content including children"""
-        text_parts = [self.content] if self.content else []
-        for child in self.children:
-            text_parts.append(child.get_text_content())
-        return '\n'.join(filter(None, text_parts))
 
 class MarkdownParser:
     """Parse markdown using markdown-it-py (Optimized Single-Pass)"""

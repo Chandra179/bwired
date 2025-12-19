@@ -16,6 +16,15 @@ class ChunkingConfig:
     keep_list_items_together: bool = True
     
     use_sentence_boundaries: bool = True
+    
+    @property
+    def effective_target_size(self) -> int:
+        """
+        Calculates the space left for new content after reserving overlap space.
+        Enforces a minimum floor of 100 tokens to prevent 'micro-chunking'.
+        """
+        calculated_gap = self.target_chunk_size - self.overlap_tokens - 5 # 5 for safety/separators
+        return max(100, calculated_gap)
 
 
 @dataclass
@@ -55,16 +64,16 @@ class RAGChunkingConfig:
     
     def __post_init__(self):
         """Cross-validate configurations"""
-        if self.chunking.target_chunk_size > self.embedding.max_token_limit:
+        if self.chunking.effective_target_size > self.embedding.max_token_limit:
             raise ValueError(
-                f"chunking.target_chunk_size ({self.chunking.target_chunk_size}) must be <= "
+                f"chunking.effective_target_chunk_size ({self.chunking.effective_target_size}) must be <= "
                 f"embedding.max_token_limit ({self.embedding.max_token_limit})"
             )
         
-        if self.chunking.overlap_tokens >= self.chunking.target_chunk_size:
+        if self.chunking.overlap_tokens >= self.chunking.effective_target_size:
             raise ValueError(
                 f"chunking.overlap_tokens ({self.chunking.overlap_tokens}) must be < "
-                f"chunking.target_chunk_size ({self.chunking.target_chunk_size})"
+                f"chunking.effective_target_chunk_size ({self.chunking.effective_target_size})"
             )
 
 

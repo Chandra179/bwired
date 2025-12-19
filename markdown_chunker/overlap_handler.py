@@ -1,6 +1,3 @@
-"""
-Sliding window overlap handler for chunk continuity
-"""
 from typing import List, Optional
 import logging
 from .schema import SemanticChunk
@@ -21,7 +18,8 @@ class OverlapHandler:
         self, 
         chunks: List[SemanticChunk],
         overlap_tokens: int,
-        token_counter: TokenCounter
+        token_counter: TokenCounter,
+        max_tokens: int
     ) -> List[SemanticChunk]:
         """
         Apply sliding window overlap to chunks within same section
@@ -52,7 +50,20 @@ class OverlapHandler:
                 result.append(chunk)
                 continue
             
-            # Extract overlap text from previous chunk
+            # Check against the HARD limit (e.g. 400), not the soft limit (350).
+            # If we checked soft_limit here, (350 - 350) = 0 space available!
+            # By checking hard limit: (400 - 350) = 50 tokens space available.
+            available_space = max_tokens - chunk.token_count - 5 # 5 buffer
+            
+            # Only take what fits.
+            # If a table is huge (390 tokens), available_space is 5.
+            # min(50, 5) = 5. We safely add only 5 tokens.
+            safe_overlap = min(overlap_tokens, available_space)
+            
+            if safe_overlap <= 0:
+                result.append(chunk)
+                continue
+            
             overlap_text = self._extract_overlap_suffix(
                 prev_chunk.content,
                 overlap_tokens,
@@ -60,10 +71,8 @@ class OverlapHandler:
             )
             
             if overlap_text:
-                # Prepend overlap to current chunk
                 overlapped_content = f"{overlap_text}\n\n{chunk.content}"
                 
-                # Create new chunk with overlap
                 from .semantic_chunker import SemanticChunk
                 overlapped_chunk = SemanticChunk(
                     content=overlapped_content,
@@ -106,7 +115,6 @@ class OverlapHandler:
         if not text or target_tokens <= 0:
             return None
         
-        # Split into sentences
         sentences = self.sentence_splitter.split_sentences(text)
         
         if not sentences:
