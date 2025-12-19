@@ -8,7 +8,7 @@ class ChunkMetadata:
     document_id: str
     token_count: int
     chunk_type: str
-    section_path: str  # Enhanced ancestry path
+    section_path: str
     
     # Relationship tracking
     is_continuation: bool = False

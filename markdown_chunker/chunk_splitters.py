@@ -1,11 +1,11 @@
-"""
-Element-specific chunking strategies for different markdown types
-"""
 from typing import List
 import logging
 from .schema import SemanticChunk
 
 from .parser import MarkdownElement
+from .tokenizer_utils import TokenCounter
+from .sentence_splitter import SentenceSplitter
+from .config import ChunkingConfig
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class ChunkSplitters:
     """Collection of splitting strategies for different element types"""
     
-    def __init__(self, config, sentence_splitter, token_counter):
+    def __init__(self, config: ChunkingConfig, sentence_splitter: SentenceSplitter, token_counter: TokenCounter):
         self.config = config
         self.sentence_splitter = sentence_splitter
         self.token_counter = token_counter
@@ -26,23 +26,13 @@ class ChunkSplitters:
         """Chunk table - keep intact if possible"""
         
         token_count = self.token_counter.count_tokens(element.content)
+        fits_limit = token_count <= self.config.chunking.target_chunk_size
+        should_keep_intact = self.config.chunking.keep_tables_intact
         
         # If table fits within target, keep it whole
-        if token_count <= self.config.chunking.target_chunk_size or \
-           self.config.chunking.keep_tables_intact:
-            
-            # If exceeds target, truncate
-            if token_count > self.config.chunking.target_chunk_size:
-                content = self.token_counter.truncate_to_tokens(
-                    element.content,
-                    self.config.chunking.target_chunk_size
-                )
-                token_count = self.config.chunking.target_chunk_size
-            else:
-                content = element.content
-            
+        if fits_limit or should_keep_intact:
             return [SemanticChunk(
-                content=content,
+                content=element.content,
                 token_count=token_count,
                 chunk_type="table",
                 section_path=header_path,
@@ -59,7 +49,6 @@ class ChunkSplitters:
         header_path: str
     ) -> List[SemanticChunk]:
         """Split large table by rows"""
-        from .semantic_chunker import SemanticChunk
         
         lines = element.content.split('\n')
         
@@ -124,33 +113,22 @@ class ChunkSplitters:
         header_path: str
     ) -> List[SemanticChunk]:
         """Chunk code block - keep intact if possible"""
-        from .semantic_chunker import SemanticChunk
         
         token_count = self.token_counter.count_tokens(element.content)
         
-        # Try to keep code intact
-        if token_count <= self.config.chunking.target_chunk_size or \
-           self.config.chunking.keep_code_blocks_intact:
-            
-            # Truncate if necessary
-            if token_count > self.config.chunking.target_chunk_size:
-                content = self.token_counter.truncate_to_tokens(
-                    element.content,
-                    self.config.chunking.target_chunk_size
-                )
-                token_count = self.config.chunking.target_chunk_size
-            else:
-                content = element.content
-            
+        fits_limit = token_count <= self.config.chunking.target_chunk_size
+        force_intact = self.config.chunking.keep_code_blocks_intact
+
+        if fits_limit or force_intact:
             return [SemanticChunk(
-                content=content,
+                content=element.content,
                 token_count=token_count,
                 chunk_type="code_block",
                 section_path=header_path,
                 is_continuation=False,
                 split_sequence=None
             )]
-        
+            
         # Code too large - split by lines
         return self._split_code_by_lines(element, header_path)
     
@@ -160,7 +138,6 @@ class ChunkSplitters:
         header_path: str
     ) -> List[SemanticChunk]:
         """Split large code block by lines with contextual header"""
-        from .semantic_chunker import SemanticChunk
         
         lines = element.content.split('\n')
         chunks = []
@@ -249,7 +226,6 @@ class ChunkSplitters:
         header_path: str
     ) -> List[SemanticChunk]:
         """Chunk list - keep items together"""
-        from .semantic_chunker import SemanticChunk
         
         token_count = self.token_counter.count_tokens(element.content)
         
@@ -276,7 +252,6 @@ class ChunkSplitters:
         header_path: str
     ) -> List[SemanticChunk]:
         """Split list by items"""
-        from .semantic_chunker import SemanticChunk
         
         lines = element.content.split('\n')
         chunks = []
@@ -331,7 +306,6 @@ class ChunkSplitters:
         header_path: str
     ) -> List[SemanticChunk]:
         """Chunk text/paragraph with sentence awareness"""
-        from .semantic_chunker import SemanticChunk
         
         token_count = self.token_counter.count_tokens(element.content)
         

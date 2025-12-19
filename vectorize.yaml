@@ -22,6 +22,7 @@ show_progress_bar: true
 # CHUNKING PARAMETERS
 # ==========================================
 target_chunk_size: 512  # Target size in tokens (same as token limit)
+overlap_tokens: 50 
 
 # Semantic Chunking Behavior
 keep_tables_intact: true      # Keep tables whole if possible

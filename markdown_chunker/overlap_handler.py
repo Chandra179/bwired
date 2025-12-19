@@ -6,6 +6,7 @@ import logging
 from .schema import SemanticChunk
 
 from .sentence_splitter import SentenceSplitter
+from .tokenizer_utils import TokenCounter
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ class OverlapHandler:
         self, 
         chunks: List[SemanticChunk],
         overlap_tokens: int,
-        token_counter
+        token_counter: TokenCounter
     ) -> List[SemanticChunk]:
         """
         Apply sliding window overlap to chunks within same section
