@@ -10,7 +10,7 @@ from .display import ChunkStatistics, VectorizeOutputFormatter
 from ..core.semantic_chunker import SemanticChunker
 from ..embedding.embedder import EmbeddingGenerator
 from ..storage.qdrant_storage import QdrantStorage
-from ..utils import setup_logging, read_markdown_file, get_document_id_from_path
+from ..logger import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class VectorizeCommand:
             file_size = Path(self.args.input).stat().st_size
             
             # Get document metadata
-            document_id = self.args.document_id or get_document_id_from_path(self.args.input)
+            document_id = self.args.document_id or Path(self.args.input).stem
             self.output_formatter.print_file_info(file_size, document_id)
             
             # Initialize semantic chunker
@@ -175,6 +175,29 @@ Examples:
     
     return parser.parse_args()
 
+
+def read_markdown_file(file_path: str) -> str:
+    """
+    Read markdown file content
+    
+    Args:
+        file_path: Path to markdown file
+        
+    Returns:
+        File content as string
+    """
+    path = Path(file_path)
+    
+    if not path.exists():
+        raise FileNotFoundError(f"File not found: {file_path}")
+    
+    if not path.suffix.lower() in ['.md', '.markdown']:
+        raise ValueError(f"Not a markdown file: {file_path}")
+    
+    with open(path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    return content
 
 def main():
     """Main entry point"""

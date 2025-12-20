@@ -144,7 +144,6 @@ class SemanticChunker:
             token_count=self.token_counter.count_tokens(combined_content),
             chunk_type="text",
             section_path=header_path,
-            source_element=elements[0] if elements else None,
             is_continuation=False,
             split_sequence=None
         )
@@ -186,10 +185,6 @@ class SemanticChunker:
         else:
             # Default fallback
             chunks = self.text_splitter.chunk(element, header_path)
-
-        # Inject source element reference
-        for chunk in chunks:
-            chunk.source_element = element
             
         return chunks
     

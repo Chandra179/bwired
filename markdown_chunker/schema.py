@@ -15,9 +15,3 @@ class SemanticChunk:
     # Relationship tracking
     is_continuation: bool = False 
     split_sequence: Optional[str] = None 
-    
-    # Direct reference to source element
-    source_element: Optional[MarkdownElement] = field(default=None, repr=False)
-    
-    # Sticky Context
-    contextual_header: Optional[str] = None

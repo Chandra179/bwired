@@ -14,8 +14,6 @@ class Section:
     content_elements: List[MarkdownElement]
     level: int  # Heading level (0 for root, 1-6 for h1-h6)
     subsections: List['Section']
-    start_index: int  # Index in original elements list
-    end_index: int    # Index in original elements list
 
 
 class SectionAnalyzer:
@@ -113,9 +111,7 @@ class SectionAnalyzer:
             heading=heading,
             content_elements=content_elements,
             level=level,
-            subsections=subsections,
-            start_index=start_index,
-            end_index=current_index - 1
+            subsections=subsections
         )
         
         return section, current_index

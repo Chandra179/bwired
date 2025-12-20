@@ -14,21 +14,11 @@ class ChunkMetadata:
     is_continuation: bool = False
     split_sequence: Optional[str] = None  # e.g., "2/5"
     
-    # Contextual information
-    contextual_header: Optional[str] = None
-    
     extra: Optional[Dict[str, Any]] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for storage"""
         data = asdict(self)
-        
-        # Flatten extra metadata into main dict
-        if self.extra:
-            extra = data.pop('extra')
-            data.update(extra)
-        else:
-            data.pop('extra', None)
         
         # Handle None values - remove them for cleaner storage
         data = {k: v for k, v in data.items() if v is not None}
@@ -50,5 +40,4 @@ class ChunkMetadata:
             section_path=chunk.section_path,
             is_continuation=chunk.is_continuation,
             split_sequence=chunk.split_sequence,
-            contextual_header=chunk.contextual_header,
         )

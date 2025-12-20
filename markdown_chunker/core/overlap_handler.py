@@ -43,6 +43,10 @@ class OverlapHandler:
                 result.append(chunk)
                 continue
             
+            if chunk.chunk_type == "table":
+                result.append(chunk)
+                continue
+            
             prev_chunk = chunks[i - 1]
             
             # Only apply overlap if chunks are in same section
@@ -71,8 +75,6 @@ class OverlapHandler:
                     token_count=token_counter.count_tokens(overlapped_content),
                     chunk_type=chunk.chunk_type,
                     section_path=chunk.section_path,
-                    source_element=chunk.source_element,
-                    contextual_header=chunk.contextual_header,
                     is_continuation=chunk.is_continuation,
                     split_sequence=chunk.split_sequence
                 )

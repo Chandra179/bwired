@@ -1,5 +1,7 @@
 import logging
 from typing import Tuple
+from pathlib import Path
+import yaml
 
 from ..config import (
     RAGChunkingConfig, 
@@ -8,7 +10,6 @@ from ..config import (
     EmbeddingConfig,    
     QdrantConfig
 )
-from ..utils import load_config_file
 
 logger = logging.getLogger(__name__)
 
@@ -80,26 +81,43 @@ class ConfigurationLoader:
         logger.info(f"Loading search config from: {config_path}")
         config_data = load_config_file(config_path)
         
-        # Create embedding config (for query embedding)
         embedding_config = EmbeddingConfig(
             model_name=config_data.get('model_name', 'BAAI/bge-base-en-v1.5'),
             max_token_limit=config_data.get('max_token_limit', 512),
             device=config_data.get('device', 'cpu')
         )
         
-        # Create Qdrant config
         qdrant_config = QdrantConfig(
             url=config_data.get('qdrant_url', 'http://localhost:6333'),
             collection_name=config_data.get('collection_name', 'markdown_chunks'),
         )
         
-        # Get search parameters
         search_params = {
             'limit': config_data.get('search_limit', 5),
             'score_threshold': config_data.get('score_threshold'),
         }
         
-        # Get logging config
         log_level = config_data.get('log_level', 'INFO')
         
         return embedding_config, qdrant_config, search_params, log_level
+
+
+def load_config_file(config_path: str) -> dict:
+    """
+    Load configuration from YAML file
+    
+    Args:
+        config_path: Path to config file
+        
+    Returns:
+        Configuration dictionary
+    """
+    path = Path(config_path)
+    
+    if not path.exists():
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+    
+    with open(path, 'r', encoding='utf-8') as f:
+        config = yaml.safe_load(f)
+    
+    return config or {}

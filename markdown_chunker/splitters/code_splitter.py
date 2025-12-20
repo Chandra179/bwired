@@ -58,7 +58,6 @@ class CodeSplitter(BaseSplitter):
                         token_count=current_tokens,
                         chunk_type="code_block",
                         section_path=header_path,
-                        contextual_header=sticky_header if len(chunks) > 0 else None,
                         is_continuation=len(chunks) > 0,
                         split_sequence=None
                     ))
@@ -74,7 +73,6 @@ class CodeSplitter(BaseSplitter):
                 token_count=current_tokens,
                 chunk_type="code_block",
                 section_path=header_path,
-                contextual_header=sticky_header if len(chunks) > 0 else None,
                 is_continuation=len(chunks) > 0,
                 split_sequence=None
             ))

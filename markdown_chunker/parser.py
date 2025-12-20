@@ -28,10 +28,8 @@ class MarkdownElement:
     type: ElementType
     content: str
     level: Optional[int] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
     children: List['MarkdownElement'] = field(default_factory=list)
     
-
 class MarkdownParser:
     """Parse markdown using markdown-it-py (Optimized Single-Pass)"""
     
@@ -117,8 +115,7 @@ class MarkdownParser:
         return MarkdownElement(
             type=ElementType.HEADING,
             content=text_content,
-            level=level,
-            metadata={'tag': token.tag}
+            level=level
         ), index + 3
 
     def _process_paragraph(self, tokens: List[Token], index: int) -> Tuple[MarkdownElement, int]:
@@ -129,24 +126,16 @@ class MarkdownParser:
         inline_token = tokens[index + 1]
         text_content = self._extract_text_from_inline(inline_token)
         
-        has_image = any(child.type == 'image' for child in inline_token.children or [])
-        
         return MarkdownElement(
             type=ElementType.PARAGRAPH,
-            content=text_content,
-            metadata={'has_image': has_image}
+            content=text_content
         ), index + 3
 
     def _process_code_block(self, token: Token) -> MarkdownElement:
         """Process code block (Atomic token)"""
-        language = token.info.strip() if token.info else ''
         return MarkdownElement(
             type=ElementType.CODE_BLOCK,
-            content=token.content.rstrip('\n'),
-            metadata={
-                'language': language,
-                'is_fenced': token.type == 'fence'
-            }
+            content=token.content.rstrip('\n')
         )
 
     def _process_table(self, tokens: List[Token], start_index: int, content: str) -> Tuple[MarkdownElement, int]:
@@ -178,12 +167,7 @@ class MarkdownParser:
         
         return MarkdownElement(
             type=ElementType.TABLE,
-            content=table_content,
-            metadata={
-                'num_rows': rows,
-                'num_cols': cols,
-                'has_header': True
-            }
+            content=table_content
         ), current_idx
 
     def _process_list(self, tokens: List[Token], start_index: int, content: str) -> Tuple[MarkdownElement, int]:
@@ -212,11 +196,7 @@ class MarkdownParser:
         
         return MarkdownElement(
             type=ElementType.LIST,
-            content=list_content,
-            metadata={
-                'is_ordered': is_ordered,
-                'item_count': item_count
-            }
+            content=list_content
         ), current_idx
 
     def _process_blockquote(self, tokens: List[Token], start_index: int, content: str) -> Tuple[MarkdownElement, int]:

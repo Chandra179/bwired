@@ -1,6 +1,5 @@
 from typing import List, Dict, Any
 
-
 class ChunkStatistics:
     """Calculate and display chunk statistics"""
     

@@ -8,7 +8,7 @@ from .display import SearchResultsDisplay
 
 from ..embedding.embedder import EmbeddingGenerator
 from ..storage.qdrant_storage import QdrantStorage
-from ..utils import setup_logging
+from ..logger import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,6 @@ class SearchCommand:
             Exit code (0 for success, non-zero for error)
         """
         try:
-            # Load configurations
             embedding_config, qdrant_config, search_params, log_level = \
                 self.config_loader.load_search_config(self.args.config)
             
@@ -38,18 +37,14 @@ class SearchCommand:
             logger.info(f"Searching for: '{self.args.query}'")
             logger.info(f"Collection: {qdrant_config.collection_name}")
             
-            # Initialize embedding model
             logger.info("Initializing embedding model...")
             embedder = EmbeddingGenerator(embedding_config)
             
-            # Generate query embedding
             logger.info("Generating query embedding...")
             query_embedding = embedder.generate_embeddings([self.args.query])[0]
             
-            # Initialize storage
             storage = QdrantStorage(qdrant_config, embedder.get_embedding_dimension())
             
-            # Search
             logger.info(f"Searching (limit: {search_params['limit']})...")
             results = await storage.search(
                 query_embedding=query_embedding,
@@ -57,7 +52,6 @@ class SearchCommand:
                 score_threshold=search_params.get('score_threshold'),
             )
             
-            # Display results
             self.results_display.display_results(self.args.query, results)
             
             return 0
