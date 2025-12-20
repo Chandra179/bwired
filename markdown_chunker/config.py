@@ -1,85 +1,67 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass
 class ChunkingConfig:
-    """Default configuration for semantic chunking"""
-    
-    overlap_tokens: int = 50
-    
-    # Sentence-aware splitting for text
+    """Configuration for chunking behavior"""
+    chunk_size: int = 512  # NEW: Target size for chunks (must be <= embedding_token_limit)
+    overlap_tokens: int = 0
     use_sentence_boundaries: bool = True
-    
-    @property
-    def safety_buffer(self) -> int:
-        """Buffer tokens for separators and safety margin"""
-        return 10
 
 
 @dataclass
 class ContextConfig:
-    """Configuration for context enhancement"""
-    
+    """Configuration for context enrichment"""
     include_header_path: bool = True
 
 
 @dataclass
 class EmbeddingConfig:
     """Configuration for embedding model"""
-    
     model_name: str = "BAAI/bge-base-en-v1.5"
     model_dim: int = 768
-    
-    max_token_limit: int = 512
-    
-    device: str = "cpu"  # or "cuda"
-    
-    batch_size: int = 128
-    use_fp16: bool = True
-    show_progress_bar: bool = False
-
-
-@dataclass
-class RAGChunkingConfig:
-    """Complete RAG chunking configuration"""
-    
-    chunking: ChunkingConfig = field(default_factory=ChunkingConfig)
-    context: ContextConfig = field(default_factory=ContextConfig)
-    embedding: EmbeddingConfig = field(default_factory=EmbeddingConfig)
-    
-    @property
-    def max_chunk_size(self) -> int:
-        """
-        Maximum size for a single chunk (before overlap is added).
-        Reserves space for overlap that will be added later.
-        """
-        return self.embedding.max_token_limit - self.chunking.overlap_tokens - self.chunking.safety_buffer
-    
-    def __post_init__(self):
-        """Cross-validate configurations"""
-        if self.chunking.overlap_tokens >= self.embedding.max_token_limit:
-            raise ValueError(
-                f"overlap_tokens ({self.chunking.overlap_tokens}) must be < "
-                f"max_token_limit ({self.embedding.max_token_limit})"
-            )
-        
-        if self.max_chunk_size < 100:
-            raise ValueError(
-                f"max_chunk_size ({self.max_chunk_size}) is too small. "
-                f"Reduce overlap_tokens or increase max_token_limit."
-            )
+    embedding_token_limit: int = 512
+    device: str = "cpu"
+    batch_size: int = 32
+    use_fp16: bool = False
+    show_progress_bar: bool = True
 
 
 @dataclass
 class QdrantConfig:
-    """Configuration for Qdrant vector database"""
-    
+    """Configuration for Qdrant vector store"""
     url: str = "http://localhost:6333"
     collection_name: str = "markdown_chunks"
-    
-    grpc_port: int = 6334
-    
     distance_metric: str = "Cosine"
     create_if_not_exists: bool = True
+    grpc_port: int = 6334
+    storage_batch_size: int = 100
+
+
+@dataclass
+class RAGChunkingConfig:
+    """Main configuration container with validation"""
+    chunking: ChunkingConfig
+    context: ContextConfig
+    embedding: EmbeddingConfig
     
-    storage_batch_size: int = 500
+    def __post_init__(self):
+        """Validate configuration after initialization"""
+        # Ensure chunk_size doesn't exceed embedding model's limit
+        if self.chunking.chunk_size > self.embedding.embedding_token_limit:
+            raise ValueError(
+                f"chunk_size ({self.chunking.chunk_size}) cannot exceed "
+                f"embedding_token_limit ({self.embedding.embedding_token_limit})"
+            )
+        
+        # Warn if overlap is too large relative to chunk size
+        if self.chunking.overlap_tokens >= self.chunking.chunk_size:
+            raise ValueError(
+                f"overlap_tokens ({self.chunking.overlap_tokens}) must be "
+                f"smaller than chunk_size ({self.chunking.chunk_size})"
+            )
+    
+    @property
+    def max_chunk_size(self) -> int:
+        """Maximum chunk size for backward compatibility"""
+        return self.chunking.chunk_size

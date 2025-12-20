@@ -31,7 +31,12 @@ class ConfigurationLoader:
         logger.info(f"Loading vectorize config from: {config_path}")
         config_data = load_config_file(config_path)
         
+        embedding_token_limit = config_data.get('embedding_token_limit', 512  )
+        chunk_size = config_data.get('chunk_size', 400)
+        
         chunking_config = ChunkingConfig(
+            chunk_size=chunk_size,
+            overlap_tokens=config_data.get('overlap_tokens', 0),
             use_sentence_boundaries=config_data.get('use_sentence_boundaries', True),
         )
         
@@ -42,7 +47,7 @@ class ConfigurationLoader:
         embedding_config = EmbeddingConfig(
             model_name=config_data.get('model_name', 'BAAI/bge-base-en-v1.5'),
             model_dim=config_data.get('model_dim', 768),
-            max_token_limit=config_data.get('max_token_limit', 512),
+            embedding_token_limit=embedding_token_limit,
             device=config_data.get('device', 'cpu'),
             batch_size=config_data.get('embedding_batch_size', 128),
             use_fp16=config_data.get('use_fp16', True),
@@ -81,9 +86,12 @@ class ConfigurationLoader:
         logger.info(f"Loading search config from: {config_path}")
         config_data = load_config_file(config_path)
         
+        # Backward compatibility for embedding_token_limit
+        embedding_token_limit = config_data.get('embedding_token_limit', 512)
+        
         embedding_config = EmbeddingConfig(
             model_name=config_data.get('model_name', 'BAAI/bge-base-en-v1.5'),
-            max_token_limit=config_data.get('max_token_limit', 512),
+            embedding_token_limit=embedding_token_limit,
             device=config_data.get('device', 'cpu')
         )
         

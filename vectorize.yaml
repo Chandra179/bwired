@@ -4,7 +4,9 @@
 model_name: "BAAI/bge-base-en-v1.5"
 model_dim: 768
 device: "cuda"  # Options: "cpu", "cuda"
-max_token_limit: 512
+
+# Maximum tokens the embedding model can handle
+embedding_token_limit: 512
 
 # Embedding generation batch size (increased from 32 to 128)
 embedding_batch_size: 128
@@ -20,10 +22,17 @@ show_progress_bar: true
 # ==========================================
 # CHUNKING PARAMETERS
 # ==========================================
-overlap_tokens: 50 
-use_sentence_boundaries: true  # Never split mid-sentence
+# Target size for each chunk (must be <= embedding_token_limit)
+chunk_size: 400
 
-include_header_path: true           # Add hierarchical section path
+# Overlap between adjacent chunks in the same section
+overlap_tokens: 50 
+
+# Never split mid-sentence when chunking text
+use_sentence_boundaries: true
+
+# Add hierarchical section path to chunks
+include_header_path: true
 
 # ==========================================
 # QDRANT CONFIGURATION
