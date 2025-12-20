@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 from docling.document_converter import DocumentConverter, PdfFormatOption
-from docling.datamodel.pipeline_options import PdfPipelineOptions
+from docling.datamodel.pipeline_options import PdfPipelineOptions, TableFormerMode
 from docling_core.types.doc.base import ImageRefMode
 from docling.datamodel.base_models import InputFormat
 
@@ -22,6 +22,10 @@ def convert_pdf_nuclear(pdf_path, output_dir=None):
     pipeline_options.do_table_structure = True
     pipeline_options.generate_picture_images = True
     pipeline_options.generate_page_images = True
+    pipeline_options.do_layout_analysis = True
+    pipeline_options.table_structure_options.do_cell_matching = True
+    pipeline_options.table_structure_options.mode = TableFormerMode.ACCURATE  # vs FAST
+    
     pipeline_options.images_scale = 2.0 
 
     converter = DocumentConverter(
