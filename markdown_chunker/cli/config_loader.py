@@ -45,7 +45,7 @@ class ConfigurationLoader:
         )
         
         embedding_config = EmbeddingConfig(
-            model_name=config_data.get('model_name', 'BAAI/bge-base-en-v1.5'),
+            dense_model_name=config_data.get('model_name', 'BAAI/bge-base-en-v1.5'),
             model_dim=config_data.get('model_dim', 768),
             embedding_token_limit=embedding_token_limit,
             device=config_data.get('device', 'cpu'),
@@ -90,7 +90,7 @@ class ConfigurationLoader:
         embedding_token_limit = config_data.get('embedding_token_limit', 512)
         
         embedding_config = EmbeddingConfig(
-            model_name=config_data.get('model_name', 'BAAI/bge-base-en-v1.5'),
+            dense_model_name=config_data.get('model_name', 'BAAI/bge-base-en-v1.5'),
             embedding_token_limit=embedding_token_limit,
             device=config_data.get('device', 'cpu')
         )

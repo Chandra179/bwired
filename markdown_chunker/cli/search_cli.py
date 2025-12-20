@@ -41,7 +41,7 @@ class SearchCommand:
             embedder = EmbeddingGenerator(embedding_config)
             
             logger.info("Generating query embedding...")
-            query_embedding = embedder.generate_embeddings([self.args.query])[0]
+            query_embedding = embedder.generate_dense_embeddings([self.args.query])[0]
             
             storage = QdrantStorage(qdrant_config, embedder.get_embedding_dimension())
             

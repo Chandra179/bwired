@@ -70,7 +70,7 @@ class VectorizeCommand:
             embedder = EmbeddingGenerator(rag_config.embedding)
             
             chunk_texts = [chunk.content for chunk in chunks]
-            embeddings = embedder.generate_embeddings(chunk_texts)
+            embeddings = embedder.generate_dense_embeddings(chunk_texts)
             
             logger.info(f"  Generated {len(embeddings)} embeddings")
             logger.info(f"  Embedding dimension: {embedder.get_embedding_dimension()}")
