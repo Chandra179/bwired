@@ -1,11 +1,10 @@
 # ==========================================
 # EMBEDDING MODEL CONFIGURATION
 # ==========================================
-model_name: "BAAI/bge-base-en-v1.5"
+dense_model_name: "BAAI/bge-base-en-v1.5"
 model_dim: 768
 device: "cuda"  # Options: "cpu", "cuda"
 
-# Maximum tokens the embedding model can handle
 embedding_token_limit: 512
 
 # Embedding generation batch size (increased from 32 to 128)

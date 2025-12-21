@@ -41,15 +41,18 @@ class SearchCommand:
             embedder = EmbeddingGenerator(embedding_config)
             
             logger.info("Generating query embedding...")
-            query_embedding = embedder.generate_dense_embeddings([self.args.query])[0]
-            
-            storage = QdrantStorage(qdrant_config, embedder.get_embedding_dimension())
+            query_dense = embedder.generate_dense_embeddings([self.args.query])[0]
+            query_sparse = embedder.generate_sparse_embeddings([self.args.query])[0]
+      
+            storage = QdrantStorage(qdrant_config, embedder.get_dense_embedding_dimension())
             
             logger.info(f"Searching (limit: {search_params['limit']})...")
             results = await storage.search(
-                query_embedding=query_embedding,
+                query_text=self.args.query,
+                query_dense_embedding=query_dense,
+                query_sparse_embedding=query_sparse,
+                reranker_model=embedder.reranker,
                 limit=search_params['limit'],
-                score_threshold=search_params.get('score_threshold'),
             )
             
             self.results_display.display_results(self.args.query, results)

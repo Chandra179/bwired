@@ -1,22 +1,15 @@
 
-model_name: "BAAI/bge-base-en-v1.5"
+dense_model_name: "BAAI/bge-base-en-v1.5"
 model_dim: 768
 device: "cpu"  # Options: "cpu", "cuda"
 embedding_token_limit: 512
 
-# Qdrant Configuration
 qdrant_url: "http://localhost:6333"
 collection_name: "markdown_chunk"
 
-# Search Parameters
 search_limit: 5  # Maximum number of results to return
 
-# Optional: Score threshold (0.0 to 1.0)
-# Only return results with similarity score above this threshold
-# score_threshold: 0.7
-
 # Show Options
-show_metadata: true          # Display chunk metadata in results
+show_metadata: true 
 
-# Logging Configuration
 log_level: "INFO"  # Options: "DEBUG", "INFO", "WARNING", "ERROR"

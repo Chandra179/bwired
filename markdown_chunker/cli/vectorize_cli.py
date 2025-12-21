@@ -43,18 +43,13 @@ class VectorizeCommand:
             content = read_markdown_file(self.args.input)
             file_size = Path(self.args.input).stat().st_size
             
-            # Get document metadata
             document_id = self.args.document_id or Path(self.args.input).stem
             self.output_formatter.print_file_info(file_size, document_id)
             
-            # Initialize semantic chunker
             logger.info("\n[2/5] Initializing semantic chunker...")
             chunker = SemanticChunker(rag_config)
             
-            # Parse and chunk document
             logger.info("\n[3/5] Parsing and chunking document...")
-            self._print_chunking_stages()
-            
             chunks = chunker.chunk_document(content, document_id)
             
             if not chunks:
@@ -65,35 +60,34 @@ class VectorizeCommand:
             logger.info(f"  Generated {len(chunks)} semantic chunks")
             self.stats_printer.print_statistics(chunks)
             
-            # Generate embeddings
             logger.info("\n[4/5] Generating embeddings with sentence-transformers...")
             embedder = EmbeddingGenerator(rag_config.embedding)
             
             chunk_texts = [chunk.content for chunk in chunks]
-            embeddings = embedder.generate_dense_embeddings(chunk_texts)
+            dense_embeddings = embedder.generate_dense_embeddings(chunk_texts)
+            sparse_embeddings = embedder.generate_sparse_embeddings(chunk_texts)
             
-            logger.info(f"  Generated {len(embeddings)} embeddings")
-            logger.info(f"  Embedding dimension: {embedder.get_embedding_dimension()}")
+            logger.info(f"  Generated {len(dense_embeddings)} embeddings")
+            logger.info(f"  Embedding dimension: {embedder.get_dense_embedding_dimension()}")
             
-            # Store in Qdrant
             logger.info("\n[5/5] Storing in Qdrant (async with gRPC)...")
-            storage = QdrantStorage(qdrant_config, embedder.get_embedding_dimension())
+            storage = QdrantStorage(qdrant_config, embedder.get_dense_embedding_dimension())
             
             await storage.initialize()
             await storage.store_chunks(
                 chunks=chunks,
-                embeddings=embeddings,
+                dense_vectors=dense_embeddings,
+                sparse_vectors=sparse_embeddings,
                 document_id=document_id
             )
             
             logger.info("  Successfully stored in vector database")
             
-            # Print completion message
             self.output_formatter.print_completion(
                 qdrant_config.collection_name,
                 document_id,
                 len(chunks),
-                embedder.get_embedding_dimension(),
+                embedder.get_dense_embedding_dimension(),
                 qdrant_config.storage_batch_size
             )
             
@@ -121,16 +115,9 @@ class VectorizeCommand:
         }
         self.output_formatter.print_pipeline_start(
             self.args.input,
-            rag_config.embedding.model_name,
+            rag_config.embedding.dense_model_name,
             config_info
         )
-    
-    def _print_chunking_stages(self):
-        """Print chunking stage information"""
-        logger.info("  Stage 1: Parsing markdown (markdown-it-py)")
-        logger.info("  Stage 2: Extracting semantic sections")
-        logger.info("  Stage 3: Semantic chunking with sentence boundaries")
-        logger.info("  Stage 4: Context enhancement and multi-representation")
 
 
 def parse_args():

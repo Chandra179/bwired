@@ -94,7 +94,8 @@ class SectionAnalyzer:
             elem = elements[current_index]
             
             if elem.type == ElementType.HEADING:
-                if elem.level <= level: # could be open and close tag so we need to check the level
+                if elem.level <= level: 
+                    # could be open and close tag so we need to check the level
                     # Next section at same or higher level
                     break
                 else:

@@ -14,4 +14,4 @@ v:
 	python -m markdown_chunker.cli.vectorize_cli --config vectorize.yaml --input econ_nuclear.md
 
 s:
-	python -m markdown_chunker.cli.search_cli --config search.yaml --query "info"
+	python -m markdown_chunker.cli.search_cli --config search.yaml --query "what is the current political situation between china and india"

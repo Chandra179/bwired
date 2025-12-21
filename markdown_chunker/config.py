@@ -20,6 +20,7 @@ class EmbeddingConfig:
     """Configuration for embedding model"""
     dense_model_name: str = "BAAI/bge-base-en-v1.5"
     sparse_model_name: str = "prithivida/Splade_PP_en_v1"
+    reranker_model_name: str = "BAAI/bge-reranker-v2-m3"
     model_dim: int = 768
     embedding_token_limit: int = 512
     device: str = "cpu"
