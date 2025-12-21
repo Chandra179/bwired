@@ -2,7 +2,7 @@ from typing import List, Dict
 import logging
 from fastembed import SparseTextEmbedding
 
-from markdown_chunker.config import SparseEmbeddingConfig
+from internal.config import SparseEmbeddingConfig
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,5 @@
 """
-Embedding components for the markdown_chunker package.
+Embedding components for the internal package.
 
 This package provides three independent components for embedding and reranking:
 - DenseEmbedder: Generate dense semantic embeddings using SentenceTransformer

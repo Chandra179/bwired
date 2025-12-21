@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from sentence_transformers import CrossEncoder
 
-from markdown_chunker.config import RerankerConfig
+from internal.config import RerankerConfig
 
 logger = logging.getLogger(__name__)
 

@@ -136,19 +136,7 @@ def parse_args():
     """Parse command-line arguments"""
     parser = argparse.ArgumentParser(
         description='Chunk markdown documents with RAG optimization and store embeddings in Qdrant',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Basic usage with config file
-  python -m markdown_chunker.vectorize --input report.md --config vectorize.yaml
-  
-  # Override document title
-  python -m markdown_chunker.vectorize --input report.md --config vectorize.yaml --document-title "Q4 Report"
-  
-  # Process with custom document ID
-  python -m markdown_chunker.vectorize -i report.md -c vectorize.yaml --document-id "q4_2024"
-        """
-    )
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     
     parser.add_argument(
         '--input', '-i',

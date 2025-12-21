@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-from markdown_chunker.config import DenseEmbeddingConfig
+from internal.config import DenseEmbeddingConfig
 
 logger = logging.getLogger(__name__)
 

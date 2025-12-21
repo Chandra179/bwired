@@ -89,16 +89,7 @@ def parse_args():
     """Parse command-line arguments"""
     parser = argparse.ArgumentParser(
         description='Search for similar chunks in Qdrant vector database',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Basic search
-  python -m markdown_chunker.search --config search.yaml --query "what is the political situation"
-  
-  # Search with custom query
-  python -m markdown_chunker.search -c search.yaml -q "climate change impacts"
-        """
-    )
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     
     parser.add_argument(
         '--config', '-c',
