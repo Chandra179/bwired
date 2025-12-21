@@ -6,11 +6,16 @@ import logging
 from .config_loader import ConfigurationLoader
 from .display import SearchResultsDisplay
 
-from ..embedding.embedder import EmbeddingGenerator
+from ..embedding.dense_embedder import DenseEmbedder
+from ..embedding.sparse_embedder import SparseEmbedder
+from ..embedding.reranker import Reranker
 from ..storage.qdrant_storage import QdrantStorage
 from ..logger import setup_logging
 
 logger = logging.getLogger(__name__)
+
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 class SearchCommand:
@@ -29,7 +34,7 @@ class SearchCommand:
             Exit code (0 for success, non-zero for error)
         """
         try:
-            embedding_config, qdrant_config, search_params, log_level = \
+            embedding_config, reranker_config, qdrant_config, search_params, log_level = \
                 self.config_loader.load_search_config(self.args.config)
             
             setup_logging(log_level)
@@ -37,21 +42,33 @@ class SearchCommand:
             logger.info(f"Searching for: '{self.args.query}'")
             logger.info(f"Collection: {qdrant_config.collection_name}")
             
-            logger.info("Initializing embedding model...")
-            embedder = EmbeddingGenerator(embedding_config)
+            # Initialize dense embedder
+            logger.info("Initializing dense embedding model...")
+            dense_embedder = DenseEmbedder(embedding_config.dense)
             
-            logger.info("Generating query embedding...")
-            query_dense = embedder.generate_dense_embeddings([self.args.query])[0]
-            query_sparse = embedder.generate_sparse_embeddings([self.args.query])[0]
-      
-            storage = QdrantStorage(qdrant_config, embedder.get_dense_embedding_dimension())
+            # Initialize sparse embedder
+            logger.info("Initializing sparse embedding model...")
+            sparse_embedder = SparseEmbedder(embedding_config.sparse)
             
+            # Initialize reranker
+            logger.info("Initializing reranker model...")
+            reranker = Reranker(reranker_config)
+            
+            # Generate query embeddings
+            logger.info("Generating query embeddings...")
+            query_dense = dense_embedder.encode([self.args.query])[0]
+            query_sparse = sparse_embedder.encode([self.args.query])[0]
+            
+            # Initialize storage
+            storage = QdrantStorage(qdrant_config, dense_embedder.get_dimension())
+            
+            # Perform search with reranking
             logger.info(f"Searching (limit: {search_params['limit']})...")
             results = await storage.search(
                 query_text=self.args.query,
                 query_dense_embedding=query_dense,
                 query_sparse_embedding=query_sparse,
-                reranker_model=embedder.reranker,
+                reranker=reranker,
                 limit=search_params['limit'],
             )
             

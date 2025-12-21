@@ -1,15 +1,29 @@
-
 dense_model_name: "BAAI/bge-base-en-v1.5"
-model_dim: 768
-device: "cpu"  # Options: "cpu", "cuda"
-embedding_token_limit: 512
+device: "cpu"                      # Options: cpu, cuda, mps
+embedding_batch_size: 10           # Batch size for query embedding
+use_fp16: false                    # Use FP16 precision (CUDA only)
+show_progress_bar: false           # Show progress during encoding
 
+# Sparse embedding configuration
+sparse_model_name: "prithivida/Splade_PP_en_v1"
+sparse_batch_size: 2               # Batch size for sparse embeddings
+sparse_threads: 2                  # Number of CPU threads
+
+# Reranker configuration (ONLY needed for search)
+reranker_model_name: "BAAI/bge-reranker-v2-m3"
+reranker_batch_size: 10            # Batch size for reranking
+
+# Model configuration
+embedding_token_limit: 512         # Max tokens per chunk
+model_dim: 768                     # Dense embedding dimension
+
+# Qdrant configuration
 qdrant_url: "http://localhost:6333"
-collection_name: "markdown_chunk"
+collection_name: "markdown_chunks"
 
-search_limit: 5  # Maximum number of results to return
+# Search parameters
+search_limit: 5                    # Number of results to return
+score_threshold: null              # Optional minimum score threshold
 
-# Show Options
-show_metadata: true 
-
-log_level: "INFO"  # Options: "DEBUG", "INFO", "WARNING", "ERROR"
+# Logging
+log_level: "INFO"                  # Options: DEBUG, INFO, WARNING, ERROR

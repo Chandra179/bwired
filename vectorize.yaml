@@ -1,48 +1,32 @@
-# ==========================================
-# EMBEDDING MODEL CONFIGURATION
-# ==========================================
+chunk_size: 400                    # Target chunk size in tokens
+overlap_tokens: 50                 # Overlap between chunks
+use_sentence_boundaries: true      # Respect sentence boundaries
+
+# Context enrichment
+include_header_path: true          # Include header hierarchy in chunks
+
+# Dense embedding configuration
 dense_model_name: "BAAI/bge-base-en-v1.5"
-model_dim: 768
-device: "cuda"  # Options: "cpu", "cuda"
+device: "cuda"                      # Options: cpu, cuda, mps
+embedding_batch_size: 30          # Batch size for dense embeddings
+use_fp16: true                     # Use FP16 precision (CUDA only)
+show_progress_bar: false           # Show progress during encoding
 
-embedding_token_limit: 512
+# Sparse embedding configuration
+sparse_model_name: "prithivida/Splade_PP_en_v1"
+sparse_batch_size: 5               # Batch size for sparse embeddings
+sparse_threads: 2                  # Number of CPU threads
 
-# Embedding generation batch size (increased from 32 to 128)
-embedding_batch_size: 128
+# Model configuration
+embedding_token_limit: 512         # Max tokens per chunk
+model_dim: 768                     # Dense embedding dimension
 
-# Storage batch size for Qdrant uploads (increased from 100 to 500)
-storage_batch_size: 500
-
-# Use FP16/mixed precision for faster inference on GPU (ignored on CPU)
-use_fp16: true
-
-show_progress_bar: true
-
-# ==========================================
-# CHUNKING PARAMETERS
-# ==========================================
-# Target size for each chunk (must be <= embedding_token_limit)
-chunk_size: 400
-
-# Overlap between adjacent chunks in the same section
-overlap_tokens: 50 
-
-# Never split mid-sentence when chunking text
-use_sentence_boundaries: true
-
-# Add hierarchical section path to chunks
-include_header_path: true
-
-# ==========================================
-# QDRANT CONFIGURATION
-# ==========================================
+# Qdrant configuration
 qdrant_url: "http://localhost:6333"
-collection_name: "markdown_chunk"
-distance_metric: "Cosine"  # Options: "Cosine", "Euclid", "Dot"
+collection_name: "markdown_chunks"
+distance_metric: "Cosine"
+grpc_port: 6334
+storage_batch_size: 500            # Batch size for storing in Qdrant
 
-grpc_port: 6334       # gRPC port (from docker-compose.yml)
-
-# ==========================================
-# LOGGING CONFIGURATION
-# ==========================================
-log_level: "INFO"  # Options: "DEBUG", "INFO", "WARNING", "ERROR"
+# Logging
+log_level: "INFO"                  # Options: DEBUG, INFO, WARNING, ERROR

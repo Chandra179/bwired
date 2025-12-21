@@ -2,7 +2,6 @@ from typing import List, Dict, Any
 import logging
 import uuid
 import hashlib
-from sentence_transformers import CrossEncoder
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import (
     Distance, VectorParams, PointStruct, SparseVectorParams, SparseIndexParams,
@@ -12,11 +11,13 @@ import numpy as np
 
 from ..config import QdrantConfig
 from ..core.metadata import ChunkMetadata
+from ..embedding.reranker import Reranker
 
 logger = logging.getLogger(__name__)
 
 
 class QdrantStorage:
+    """Handles storage and retrieval from Qdrant vector database"""
     
     def __init__(self, config: QdrantConfig, dense_embedding_dim: int):
         self.config = config
@@ -32,6 +33,7 @@ class QdrantStorage:
         
         
     async def initialize(self):
+        """Initialize Qdrant collection if it doesn't exist"""
         collections = await self.client.get_collections()
         collection_names = [col.name for col in collections.collections]
         
@@ -66,6 +68,15 @@ class QdrantStorage:
         sparse_vectors: List[Dict[str, Any]], 
         document_id: str
     ):
+        """
+        Store chunks with their embeddings in Qdrant
+        
+        Args:
+            chunks: List of document chunks
+            dense_vectors: List of dense embedding vectors
+            sparse_vectors: List of sparse embedding vectors
+            document_id: ID of the source document
+        """
         if len(chunks) != len(dense_vectors) or len(chunks) != len(sparse_vectors):
             raise ValueError("Mismatch between chunks, dense embeddings, or sparse vectors count")
         
@@ -104,6 +115,7 @@ class QdrantStorage:
     
     
     async def _upload_batch(self, points: List[PointStruct]):
+        """Upload a batch of points to Qdrant"""
         try:
             await self.client.upsert(
                 collection_name=self.config.collection_name,
@@ -120,26 +132,28 @@ class QdrantStorage:
         query_text: str,
         query_dense_embedding: np.ndarray, 
         query_sparse_embedding: Dict[str, Any],
-        reranker_model: CrossEncoder,
+        reranker: Reranker,
         limit: int = 10,
     ) -> List[Dict[str, Any]]:
         """
-        Search for similar chunks using Hybrid Search (Dense + Sparse) with RRF
+        Search for similar chunks using Hybrid Search (Dense + Sparse) with RRF and reranking
         
         Args:
-            query_dense_embedding: Dense embedding vector
-            query_sparse_indices: Indices for the sparse vector
-            query_sparse_values: Values for the sparse vector
-            limit: Maximum number of results
+            query_text: Original query text
+            query_dense_embedding: Dense embedding vector for the query
+            query_sparse_embedding: Sparse embedding for the query
+            reranker: Reranker instance for scoring results
+            limit: Maximum number of results to return
             
         Returns:
-            List of search results with RRF scores and metadata
+            List of search results with reranked scores and metadata
         """
         try:
             sparse_indices = query_sparse_embedding.get("indices", [])
             sparse_values = query_sparse_embedding.get("values", [])
             candidate_pool_limit = 10
             
+            # Perform hybrid search with RRF
             results = await self.client.query_points(
                 collection_name=self.config.collection_name,
                 prefetch=[
@@ -165,11 +179,14 @@ class QdrantStorage:
             if not points:
                 return []
             
+            # Extract document texts for reranking
             doc_texts = [p.payload.get("content", "") for p in points]
             query_doc_pairs = [[query_text, doc] for doc in doc_texts]
             
-            rerank_scores = reranker_model.predict(query_doc_pairs)
+            # Rerank using the provided reranker
+            rerank_scores = reranker.predict(query_doc_pairs)
 
+            # Build final results with reranker scores
             final_candidates = []
             for i, score in enumerate(rerank_scores):
                 final_candidates.append({
@@ -178,7 +195,7 @@ class QdrantStorage:
                     "metadata": {k: v for k, v in points[i].payload.items() if k != "content"}
                 })
 
-            # Sort by the new reranker score in descending order
+            # Sort by reranker score in descending order
             final_candidates.sort(key=lambda x: x["score"], reverse=True)
 
             return final_candidates[:limit]

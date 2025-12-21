@@ -34,7 +34,7 @@ class SemanticChunker:
         self.parser = MarkdownParser()
         self.section_analyzer = SectionAnalyzer()
         self.sentence_splitter = SentenceSplitter()
-        self.token_counter = TokenCounter(config.embedding.dense_model_name)
+        self.token_counter = TokenCounter(config.embedding.dense.model_name)
         self.overlap_handler = OverlapHandler(self.sentence_splitter)
         
         self.table_splitter = TableSplitter(config, self.sentence_splitter, self.token_counter)

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 @dataclass
 class ChunkingConfig:
     """Configuration for chunking behavior"""
-    chunk_size: int = 512  # NEW: Target size for chunks (must be <= embedding_token_limit)
+    chunk_size: int = 512
     overlap_tokens: int = 0
     use_sentence_boundaries: bool = True
 
@@ -16,17 +16,38 @@ class ContextConfig:
 
 
 @dataclass
-class EmbeddingConfig:
-    """Configuration for embedding model"""
-    dense_model_name: str = "BAAI/bge-base-en-v1.5"
-    sparse_model_name: str = "prithivida/Splade_PP_en_v1"
-    reranker_model_name: str = "BAAI/bge-reranker-v2-m3"
-    model_dim: int = 768
-    embedding_token_limit: int = 512
+class DenseEmbeddingConfig:
+    """Configuration for dense embedding model (SentenceTransformer)"""
+    model_name: str = "BAAI/bge-base-en-v1.5"
     device: str = "cpu"
     batch_size: int = 32
     use_fp16: bool = False
     show_progress_bar: bool = True
+
+
+@dataclass
+class SparseEmbeddingConfig:
+    """Configuration for sparse embedding model (SPLADE)"""
+    model_name: str = "prithivida/Splade_PP_en_v1"
+    batch_size: int = 8
+    threads: int = 4
+
+
+@dataclass
+class RerankerConfig:
+    """Configuration for reranker model (CrossEncoder)"""
+    model_name: str = "BAAI/bge-reranker-v2-m3"
+    device: str = "cpu"
+    batch_size: int = 32
+
+
+@dataclass
+class EmbeddingConfig:
+    """Configuration for all embedding components"""
+    dense: DenseEmbeddingConfig
+    sparse: SparseEmbeddingConfig
+    embedding_token_limit: int = 512
+    model_dim: int = 768
 
 
 @dataclass

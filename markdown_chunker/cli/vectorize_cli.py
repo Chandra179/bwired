@@ -8,12 +8,15 @@ from .config_loader import ConfigurationLoader
 from .display import ChunkStatistics, VectorizeOutputFormatter
 
 from ..core.semantic_chunker import SemanticChunker
-from ..embedding.embedder import EmbeddingGenerator
+from ..embedding.dense_embedder import DenseEmbedder
+from ..embedding.sparse_embedder import SparseEmbedder
 from ..storage.qdrant_storage import QdrantStorage
 from ..logger import setup_logging
 
 logger = logging.getLogger(__name__)
 
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 class VectorizeCommand:
     """Encapsulates vectorize command logic"""
@@ -60,18 +63,27 @@ class VectorizeCommand:
             logger.info(f"  Generated {len(chunks)} semantic chunks")
             self.stats_printer.print_statistics(chunks)
             
-            logger.info("\n[4/5] Generating embeddings with sentence-transformers...")
-            embedder = EmbeddingGenerator(rag_config.embedding)
+            logger.info("\n[4/5] Generating embeddings...")
             
+            # Initialize dense embedder
+            logger.info("  Loading dense embedding model...")
+            dense_embedder = DenseEmbedder(rag_config.embedding.dense)
+            
+            # Initialize sparse embedder
+            logger.info("  Loading sparse embedding model...")
+            sparse_embedder = SparseEmbedder(rag_config.embedding.sparse)
+            
+            # Generate embeddings
             chunk_texts = [chunk.content for chunk in chunks]
-            dense_embeddings = embedder.generate_dense_embeddings(chunk_texts)
-            sparse_embeddings = embedder.generate_sparse_embeddings(chunk_texts)
+            dense_embeddings = dense_embedder.encode(chunk_texts)
+            sparse_embeddings = sparse_embedder.encode(chunk_texts)
             
-            logger.info(f"  Generated {len(dense_embeddings)} embeddings")
-            logger.info(f"  Embedding dimension: {embedder.get_dense_embedding_dimension()}")
+            logger.info(f"  Generated {len(dense_embeddings)} dense embeddings")
+            logger.info(f"  Generated {len(sparse_embeddings)} sparse embeddings")
+            logger.info(f"  Dense embedding dimension: {dense_embedder.get_dimension()}")
             
             logger.info("\n[5/5] Storing in Qdrant (async with gRPC)...")
-            storage = QdrantStorage(qdrant_config, embedder.get_dense_embedding_dimension())
+            storage = QdrantStorage(qdrant_config, dense_embedder.get_dimension())
             
             await storage.initialize()
             await storage.store_chunks(
@@ -87,7 +99,7 @@ class VectorizeCommand:
                 qdrant_config.collection_name,
                 document_id,
                 len(chunks),
-                embedder.get_dense_embedding_dimension(),
+                dense_embedder.get_dimension(),
                 qdrant_config.storage_batch_size
             )
             
@@ -109,13 +121,13 @@ class VectorizeCommand:
     def _print_start_info(self, rag_config, qdrant_config):
         """Print startup information"""
         config_info = {
-            'embedding_batch_size': rag_config.embedding.batch_size,
+            'embedding_batch_size': rag_config.embedding.dense.batch_size,
             'storage_batch_size': qdrant_config.storage_batch_size,
-            'fp16_enabled': rag_config.embedding.use_fp16 and rag_config.embedding.device == 'cuda'
+            'fp16_enabled': rag_config.embedding.dense.use_fp16 and rag_config.embedding.dense.device == 'cuda'
         }
         self.output_formatter.print_pipeline_start(
             self.args.input,
-            rag_config.embedding.dense_model_name,
+            rag_config.embedding.dense.model_name,
             config_info
         )
 
