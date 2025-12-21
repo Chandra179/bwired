@@ -5,21 +5,27 @@ import hashlib
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import (
     Distance, VectorParams, PointStruct, SparseVectorParams, SparseIndexParams,
-    Prefetch, Fusion, SparseVector, FusionQuery
+    Prefetch, Fusion, SparseVector, FusionQuery, QueryResponse
 )
 import numpy as np
 
 from ..config import QdrantConfig
 from ..core.metadata import ChunkMetadata
-from ..embedding.reranker import Reranker
 
 logger = logging.getLogger(__name__)
 
 
-class QdrantStorage:
-    """Handles storage and retrieval from Qdrant vector database"""
+class QdrantClient:
+    """Low-level Qdrant operations for vector storage and retrieval"""
     
     def __init__(self, config: QdrantConfig, dense_embedding_dim: int):
+        """
+        Initialize Qdrant client
+        
+        Args:
+            config: Qdrant configuration
+            dense_embedding_dim: Dimension of dense embeddings
+        """
         self.config = config
         self.dense_embedding_dim = dense_embedding_dim
         host = config.url.replace("http://", "").replace("https://", "").split(":")[0]
@@ -127,26 +133,22 @@ class QdrantStorage:
             raise
     
     
-    async def search(
+    async def query_points(
         self, 
-        query_text: str,
         query_dense_embedding: np.ndarray, 
         query_sparse_embedding: Dict[str, Any],
-        reranker: Reranker,
         limit: int = 10,
-    ) -> List[Dict[str, Any]]:
+    ) -> QueryResponse:
         """
-        Search for similar chunks using Hybrid Search (Dense + Sparse) with RRF and reranking
+        Perform hybrid search using dense and sparse vectors with RRF fusion
         
         Args:
-            query_text: Original query text
             query_dense_embedding: Dense embedding vector for the query
             query_sparse_embedding: Sparse embedding for the query
-            reranker: Reranker instance for scoring results
             limit: Maximum number of results to return
             
         Returns:
-            List of search results with reranked scores and metadata
+            QueryResponse from Qdrant containing search results
         """
         try:
             sparse_indices = query_sparse_embedding.get("indices", [])
@@ -175,30 +177,7 @@ class QdrantStorage:
                 limit=limit
             )
             
-            points = results.points
-            if not points:
-                return []
-            
-            # Extract document texts for reranking
-            doc_texts = [p.payload.get("content", "") for p in points]
-            query_doc_pairs = [[query_text, doc] for doc in doc_texts]
-            
-            # Rerank using the provided reranker
-            rerank_scores = reranker.predict(query_doc_pairs)
-
-            # Build final results with reranker scores
-            final_candidates = []
-            for i, score in enumerate(rerank_scores):
-                final_candidates.append({
-                    "score": float(score),
-                    "content": points[i].payload.get("content"),
-                    "metadata": {k: v for k, v in points[i].payload.items() if k != "content"}
-                })
-
-            # Sort by reranker score in descending order
-            final_candidates.sort(key=lambda x: x["score"], reverse=True)
-
-            return final_candidates[:limit]
+            return results
     
         except Exception as e:
             logger.error(f"Hybrid search failed: {e}")

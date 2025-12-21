@@ -32,25 +32,44 @@ A modular Python system for intelligently parsing, chunking, and embedding markd
 ├── internal/
 │   ├── cli/                      # Command-line interface logic
 │   │   ├── config_loader.py      # Handles CLI-specific configurations
-│   │   ├── display.py            # Formatting for terminal output
+│   │   ├── display.py            # Formatting for terminal output 
 │   │   ├── search_cli.py         # Entry point for search queries
-│   │   └── vectorize_cli.py      # Entry point for document processing/indexing
+│   │   └── vectorize_cli.py      # Entry point for document processing
+│   │
 │   ├── core/                     # Shared business logic and orchestration
+│   │   ├── metadata.py           # (existing)
+│   │   └── search_engine.py      # High-level search orchestration
+│   │
 │   ├── embedding/                # Embedding & Ranking models
-│   │   ├── dense_embedder.py     # Logic for dense vectors (e.g., OpenAI, HuggingFace)
-│   │   ├── reranker.py           # Cross-encoder logic for result refinement
-│   │   └── sparse_embedder.py    # Logic for sparse vectors (e.g., SPLADE, BM25)
+│   │   ├── dense_embedder.py     # Logic for dense vectors
+│   │   ├── reranker.py           # Cross-encoder logic for result
+│   │   └── sparse_embedder.py    # Logic for sparse vectors
+│   │
+│   ├── processing/               # Result processing
+│   │   ├── __init__.py           # Module initialization
+│   │   ├── base_processor.py     # Abstract base class for processors
+│   │   └── compressor.py         # LLMLingua compression implementation
+│   │
 │   ├── splitters/                # Document chunking strategies
 │   │   ├── base_splitter.py      # Abstract base class for all splitters
 │   │   ├── code_splitter.py      # Specialized splitting for source code
 │   │   ├── list_splitter.py      # Handles bulleted/numbered lists
 │   │   ├── table_splitter.py     # Preserves structure of tabular data
 │   │   └── text_splitter.py      # Recursive/character-based text splitting
+│   │
 │   ├── storage/                  # Vector database integrations
-│   │   └── qdrant_storage.py     # Qdrant-specific implementation
+│   │   └── qdrant_client.py      # Low-level Qdrant operations
+│   │
 │   ├── text_processing/          # Global utilities for text cleanup
+│   │
 │   ├── config.py                 # Main application configuration
 │   ├── logger.py                 # Centralized logging setup
 │   ├── parser.py                 # Document loading and parsing logic
 │   └── schema.py                 # Data models and Pydantic types
+│
+├── vectorize.yaml                # Configuration for chunking and embedding
+├── search.yaml                   # Configuration for search and processing (UPDATED)
+├── Makefile
+├── docker-compose.yml
+└── README.md
 ```
