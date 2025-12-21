@@ -3,26 +3,19 @@ from typing import Dict, Any, Optional
 
 @dataclass
 class ChunkMetadata:
-    """Comprehensive metadata for RAG chunks with relationship tracking"""
-    
     document_id: str
     token_count: int
     chunk_type: str
     section_path: str
     
-    # Relationship tracking
+    # Chunk relationship tracking
     is_continuation: bool = False
     split_sequence: Optional[str] = None  # e.g., "2/5"
     
     extra: Optional[Dict[str, Any]] = None
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for storage"""
-        data = asdict(self)
-        
-        # Handle None values - remove them for cleaner storage
-        data = {k: v for k, v in data.items() if v is not None}
-        
+        data = asdict(self)        
         return data
     
     @classmethod
@@ -31,8 +24,6 @@ class ChunkMetadata:
         chunk,
         document_id: str,
     ) -> 'ChunkMetadata':
-        """Create metadata from a SemanticChunk object"""
-        
         return cls(
             document_id=document_id,
             token_count=chunk.token_count,

@@ -17,7 +17,6 @@ class ChunkStatistics:
         chunk_types = {}
         total_tokens = 0
         multi_repr_count = 0
-        entity_count = 0
         
         for chunk in chunks:
             chunk_types[chunk.chunk_type] = chunk_types.get(chunk.chunk_type, 0) + 1
@@ -34,7 +33,6 @@ class ChunkStatistics:
         
         print(f"\n  RAG features:")
         print(f"    Chunks with multi-representation: {multi_repr_count}")
-        print(f"    Chunks with entities: {entity_count}")
 
 
 class SearchResultsDisplay:

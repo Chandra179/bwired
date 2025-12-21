@@ -18,7 +18,9 @@ class ContextConfig:
 @dataclass
 class EmbeddingConfig:
     """Configuration for embedding model"""
-    model_name: str = "BAAI/bge-base-en-v1.5"
+    dense_model_name: str = "BAAI/bge-base-en-v1.5"
+    sparse_model_name: str = "prithivida/Splade_PP_en_v1"
+    reranker_model_name: str = "BAAI/bge-reranker-v2-m3"
     model_dim: int = 768
     embedding_token_limit: int = 512
     device: str = "cpu"
@@ -33,7 +35,6 @@ class QdrantConfig:
     url: str = "http://localhost:6333"
     collection_name: str = "markdown_chunks"
     distance_metric: str = "Cosine"
-    create_if_not_exists: bool = True
     grpc_port: int = 6334
     storage_batch_size: int = 100
 

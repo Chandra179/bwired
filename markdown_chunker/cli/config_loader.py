@@ -45,7 +45,9 @@ class ConfigurationLoader:
         )
         
         embedding_config = EmbeddingConfig(
-            model_name=config_data.get('model_name', 'BAAI/bge-base-en-v1.5'),
+            dense_model_name=config_data.get('dense_model_name', 'BAAI/bge-base-en-v1.5'),
+            sparse_model_name=config_data.get('sparse_model_name', 'prithivida/Splade_PP_en_v1'),
+            reranker_model_name=config_data.get('reranker_model_name', 'BAAI/bge-reranker-v2-m3'),
             model_dim=config_data.get('model_dim', 768),
             embedding_token_limit=embedding_token_limit,
             device=config_data.get('device', 'cpu'),
@@ -86,11 +88,10 @@ class ConfigurationLoader:
         logger.info(f"Loading search config from: {config_path}")
         config_data = load_config_file(config_path)
         
-        # Backward compatibility for embedding_token_limit
         embedding_token_limit = config_data.get('embedding_token_limit', 512)
         
         embedding_config = EmbeddingConfig(
-            model_name=config_data.get('model_name', 'BAAI/bge-base-en-v1.5'),
+            dense_model_name=config_data.get('model_name', 'BAAI/bge-base-en-v1.5'),
             embedding_token_limit=embedding_token_limit,
             device=config_data.get('device', 'cpu')
         )

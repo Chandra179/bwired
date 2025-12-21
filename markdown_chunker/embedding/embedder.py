@@ -1,80 +1,98 @@
-from typing import List
+from typing import List, Dict
+import os
 import logging
 import numpy as np
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer, CrossEncoder
+from fastembed import SparseTextEmbedding
 
 from markdown_chunker.config import EmbeddingConfig
 
 logger = logging.getLogger(__name__)
 
+# Handle OpenMP conflicts before other imports if possible, 
+# or set this inside the class before loading models
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 class EmbeddingGenerator:
-    """Generate embeddings using sentence-transformers (optimized)"""
+    """Generate Dense (SentenceTransformer) and Sparse (SPLADE) embeddings"""
     
     def __init__(self, config: EmbeddingConfig):
         self.config = config
+    
+        logger.info(f"Loading dense model: {config.dense_model_name}")
+        self.dense_model = SentenceTransformer(config.dense_model_name, device=config.device)
         
-        logger.info(f"Loading embedding model: {config.model_name}")
-        logger.info(f"Device: {config.device}")
-        logger.info(f"Batch size: {config.batch_size}")
-        logger.info(f"FP16 enabled: {config.use_fp16 and config.device == 'cuda'}")
+        logger.info(f"Loading reranker model: {config.reranker_model_name}")
+        self.reranker = CrossEncoder(config.reranker_model_name, device=config.device)
         
-        # Load model using sentence-transformers (more optimized)
-        self.model = SentenceTransformer(config.model_name, device=config.device)
-        
-        # Enable FP16 if on GPU and requested
         if config.device == "cuda" and config.use_fp16:
             try:
-                self.model = self.model.half()
-                logger.info("Model converted to FP16 for faster inference")
+                self.dense_model = self.dense_model.half()
+                logger.info("Dense model converted to FP16")
             except Exception as e:
-                logger.warning(f"Could not convert to FP16: {e}. Using FP32.")
+                logger.warning(f"FP16 failed: {e}")
         
-        logger.info(f"Model loaded successfully")
+        sparse_model_name = getattr(config, "sparse_model_name", "prithivida/Splade_PP_en_v1")
+        logger.info(f"Loading sparse model: {sparse_model_name}")
+        
+        self.sparse_model = SparseTextEmbedding(
+            model_name=sparse_model_name, 
+            threads=4,
+            providers=["CPUExecutionProvider"]
+        )
+        
+        logger.info("Models loaded successfully")
     
-    def generate_embedding(self, text: str) -> np.ndarray:
-        """
-        Generate embedding for a single text
-        
-        Args:
-            text: Input text
-            
-        Returns:
-            Embedding vector as numpy array
-        """
-        return self.generate_embeddings([text])[0]
-    
-    def generate_embeddings(self, texts: List[str]) -> List[np.ndarray]:
-        """
-        Generate embeddings for multiple texts using optimized batch processing
-        
-        Args:
-            texts: List of input texts
-            
-        Returns:
-            List of embedding vectors as numpy arrays
-        """
+    def generate_dense_embeddings(self, texts: List[str]) -> List[np.ndarray]:
+        """Generate Dense Embeddings (unchanged)"""
         if not texts:
             return []
         
-        logger.info(f"Generating embeddings for {len(texts)} texts")
-        logger.debug(f"Using batch size: {self.config.batch_size}")
-        
-        # Use sentence-transformers encode method (handles batching internally)
-        # This is significantly faster than manual batching with raw transformers
-        embeddings = self.model.encode(
+        logger.info(f"Generating dense embeddings for {len(texts)} texts")
+        embeddings = self.dense_model.encode(
             texts,
             batch_size=self.config.batch_size,
             show_progress_bar=self.config.show_progress_bar,
             convert_to_numpy=True,
-            normalize_embeddings=True  # Already normalized by sentence-transformers
+            normalize_embeddings=True
         )
-        
-        logger.info(f"Generated {len(embeddings)} embeddings")
-        
-        # Convert to list of numpy arrays for consistency
         return [embedding for embedding in embeddings]
+
+    def generate_sparse_embeddings(self, texts: List[str]) -> List[Dict[str, List]]:
+        """
+        Generate Sparse Embeddings (SPLADE) for Hybrid Search.
+        """
+        if not texts:
+            return []
+            
+        logger.info(f"Generating sparse embeddings for {len(texts)} texts")
+        
+        # fastembed returns a generator, so we convert to list
+        # We process in batches to avoid high RAM usage if texts list is huge
+        results = []
+        safe_batch_size = 8
+        
+        for i in range(0, len(texts), safe_batch_size):
+            batch = texts[i : i + safe_batch_size]
+            batch_generator = self.sparse_model.embed(batch, batch_size=safe_batch_size)
+            for sparse_vec in batch_generator:
+                results.append({
+                    "indices": sparse_vec.indices.tolist(),
+                    "values": sparse_vec.values.tolist()
+                })
+                
+        logger.info(f"Generated {len(results)} sparse vectors")
+        return results
+
+    def get_dense_embedding_dimension(self) -> int:
+        return self.dense_model.get_sentence_embedding_dimension()
     
-    def get_embedding_dimension(self) -> int:
-        """Get the dimension of the embedding vectors"""
-        return self.model.get_sentence_embedding_dimension()
+    
+    def get_sparse_embedding_dimension(self) -> int:
+        """
+        Returns the dimension (vocabulary size) of the sparse model.
+        In SPLADE, the dimension is the size of the tokenizer's vocabulary.
+        """
+        # fastembed stores the underlying model information in the .model attribute
+        # The dimension corresponds to the number of tokens in the vocabulary
+        return self.sparse_model.model.tokenizer.vocab_size
