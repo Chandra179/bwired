@@ -65,15 +65,12 @@ class VectorizeCommand:
             
             logger.info("\n[4/5] Generating embeddings...")
             
-            # Initialize dense embedder
             logger.info("  Loading dense embedding model...")
             dense_embedder = DenseEmbedder(rag_config.embedding.dense)
             
-            # Initialize sparse embedder
             logger.info("  Loading sparse embedding model...")
             sparse_embedder = SparseEmbedder(rag_config.embedding.sparse)
             
-            # Generate embeddings
             chunk_texts = [chunk.content for chunk in chunks]
             dense_embeddings = dense_embedder.encode(chunk_texts)
             sparse_embeddings = sparse_embedder.encode(chunk_texts)

@@ -14,4 +14,4 @@ class SemanticChunk:
     
     # Relationship tracking
     is_continuation: bool = False 
-    split_sequence: Optional[str] = None 
+    split_sequence: Optional[str] = None
