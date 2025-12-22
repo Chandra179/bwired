@@ -2,6 +2,7 @@ llm:
   model: "llama3.2"
   temperature: 0.1
   system_prompt_path: "prompts/system_prompt.j2"
+  user_prompt_path: "prompts/user_prompt.j2"
   max_tokens: 1000
 
 # Embedding Models

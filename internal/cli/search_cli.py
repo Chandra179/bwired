@@ -36,8 +36,7 @@ class SearchCommand:
             Exit code (0 for success, non-zero for error)
         """
         try:
-            # Load configurations
-            embedding_config, reranker_config, qdrant_config, search_params, log_level, processor_config = \
+            embedding_config, reranker_config, qdrant_config, search_params, log_level, processor_config, llm_config = \
                 self.config_loader.load_search_config(self.args.config)
             
             setup_logging(log_level)
@@ -45,15 +44,12 @@ class SearchCommand:
             logger.info(f"Searching for: '{self.args.query}'")
             logger.info(f"Collection: {qdrant_config.collection_name}")
             
-            # Initialize dense embedder
             logger.info("Initializing dense embedding model...")
             dense_embedder = DenseEmbedder(embedding_config.dense)
             
-            # Initialize sparse embedder
             logger.info("Initializing sparse embedding model...")
             sparse_embedder = SparseEmbedder(embedding_config.sparse)
             
-            # Initialize reranker
             logger.info("Initializing reranker model...")
             reranker = Reranker(reranker_config)
             
@@ -71,22 +67,24 @@ class SearchCommand:
             search_engine = SearchEngine(
                 qdrant_client=qdrant_client,
                 reranker=reranker,
+                llm_config=llm_config,
                 processor=processor
             )
             
             logger.info(f"Searching (limit: {search_params['limit']})...")
-            result = await search_engine.search(
+            response = await search_engine.search(
                 query_text=self.args.query,
                 query_dense_embedding=query_dense,
                 query_sparse_embedding=query_sparse,
                 limit=search_params['limit']
             )
             
-            self.results_display.display_results(
-                query=self.args.query,
-                results=result["results"],
-                compressed_context=result.get("compressed_context")
-            )
+            # Display the LLM response
+            print("\n" + "="*80)
+            print("ANSWER:")
+            print("="*80)
+            print(response)
+            print("="*80 + "\n")
             
             return 0
             
