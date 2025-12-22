@@ -9,7 +9,9 @@ from .display import SearchResultsDisplay
 from ..embedding.dense_embedder import DenseEmbedder
 from ..embedding.sparse_embedder import SparseEmbedder
 from ..embedding.reranker import Reranker
-from ..storage.qdrant_storage import QdrantStorage
+from ..storage.qdrant_client import QdrantClient
+from ..core.search_engine import SearchEngine
+from ..processing.compressor import LLMLinguaCompressor
 from ..logger import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -34,7 +36,8 @@ class SearchCommand:
             Exit code (0 for success, non-zero for error)
         """
         try:
-            embedding_config, reranker_config, qdrant_config, search_params, log_level = \
+            # Load configurations
+            embedding_config, reranker_config, qdrant_config, search_params, log_level, processor_config = \
                 self.config_loader.load_search_config(self.args.config)
             
             setup_logging(log_level)
@@ -54,25 +57,39 @@ class SearchCommand:
             logger.info("Initializing reranker model...")
             reranker = Reranker(reranker_config)
             
-            # Generate query embeddings
+            # Initialize processor (if enabled)
+            processor = None
+            if processor_config and processor_config.enabled:
+                logger.info("Initializing compressor...")
+                processor = LLMLinguaCompressor(processor_config)
+            
             logger.info("Generating query embeddings...")
             query_dense = dense_embedder.encode([self.args.query])[0]
             query_sparse = sparse_embedder.encode([self.args.query])[0]
             
-            # Initialize storage
-            storage = QdrantStorage(qdrant_config, dense_embedder.get_dimension())
+            qdrant_client = QdrantClient(qdrant_config, dense_embedder.get_dimension())
             
-            # Perform search with reranking
+            search_engine = SearchEngine(
+                qdrant_client=qdrant_client,
+                reranker=reranker,
+                processor=processor
+            )
+            
+            # Perform search with reranking and optional compression
             logger.info(f"Searching (limit: {search_params['limit']})...")
-            results = await storage.search(
+            result = await search_engine.search(
                 query_text=self.args.query,
                 query_dense_embedding=query_dense,
                 query_sparse_embedding=query_sparse,
-                reranker=reranker,
-                limit=search_params['limit'],
+                limit=search_params['limit']
             )
             
-            self.results_display.display_results(self.args.query, results)
+            # Display results
+            self.results_display.display_results(
+                query=self.args.query,
+                results=result["results"],
+                compressed_context=result.get("compressed_context")
+            )
             
             return 0
             

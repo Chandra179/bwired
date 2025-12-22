@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -48,6 +49,22 @@ class EmbeddingConfig:
     sparse: SparseEmbeddingConfig
     embedding_token_limit: int = 512
     model_dim: int = 768
+
+
+@dataclass
+class CompressionConfig:
+    """Configuration for LLMLingua compression"""
+    model_name: str = "microsoft/llmlingua-2-bert-base-multilingual-cased-meetingbank"
+    compression_ratio: Optional[float] = None  # e.g., 0.5 for 50% compression
+    token_limit: Optional[int] = None  # Alternative: absolute token target
+    device: str = "cpu"
+
+
+@dataclass
+class ProcessorConfig:
+    """Configuration for result processors"""
+    enabled: bool = False
+    compression: Optional[CompressionConfig] = None
 
 
 @dataclass

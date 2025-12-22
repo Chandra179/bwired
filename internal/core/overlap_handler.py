@@ -28,7 +28,7 @@ class OverlapHandler:
             chunks: List of chunks to process
             overlap_tokens: Number of tokens to overlap
             token_counter: TokenCounter instance
-            
+            max_tokens: Maximum tokens allowed per chunk
         Returns:
             Chunks with overlap applied
         """
@@ -58,17 +58,31 @@ class OverlapHandler:
             safe_overlap = min(overlap_tokens, available_space)
             
             if safe_overlap <= 0:
+                logger.debug(f"Skipping overlap for chunk {i}: no space available")
                 result.append(chunk)
                 continue
             
             overlap_text = self._extract_overlap_suffix(
                 prev_chunk.content,
-                overlap_tokens,
+                safe_overlap,
                 token_counter
             )
             
             if overlap_text:
                 overlapped_content = f"{overlap_text}\n\n{chunk.content}"
+                chunk_token_count = token_counter.count_tokens(chunk.content)
+                overlap_token_count = token_counter.count_tokens(overlap_text)
+                final_token_count = token_counter.count_tokens(overlapped_content)
+                if final_token_count > max_tokens:
+                    logger.warning(
+                        f"Overlap caused chunk to exceed limit: {final_token_count} > {max_tokens}. \n"
+                        f"Chunk token size: {chunk_token_count} \n"
+                        f"Chunk length: {len(chunk.content)} \n"
+                        f"Overlap token size: {overlap_token_count} \n"
+                        f"Skipping overlap for this chunk."
+                    )
+                    result.append(chunk)
+                    continue
                 
                 overlapped_chunk = SemanticChunk(
                     content=overlapped_content,

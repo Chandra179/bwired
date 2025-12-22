@@ -3,6 +3,7 @@ import logging
 from fastembed import SparseTextEmbedding
 
 from internal.config import SparseEmbeddingConfig
+from internal.utils.token_counter import TokenCounter
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,17 @@ class SparseEmbedder:
             threads=config.threads,
             providers=["CPUExecutionProvider"]
         )
-        logger.info(f"Sparse model loaded successfully (vocab size: {self.get_dimension()})")
+        
+        # Get tokenizer for validation
+        self.tokenizer = TokenCounter.get_tokenizer(config.model_name)
+        self.max_seq_length = TokenCounter.get_max_sequence_length(
+            config.model_name, 
+            self.tokenizer
+        )
+        
+        logger.info(f"Sparse model loaded successfully")
+        logger.info(f"  Vocab size: {self.get_dimension()}")
+        logger.info(f"  Max sequence length: {self.max_seq_length}")
     
     def encode(self, texts: List[str]) -> List[Dict[str, List]]:
         """
@@ -36,12 +47,20 @@ class SparseEmbedder:
         
         logger.info(f"Generating sparse embeddings for {len(texts)} texts")
         
+        validated_texts = TokenCounter.validate_and_truncate_batch(
+            texts=texts,
+            max_tokens=self.max_seq_length,
+            model_name=self.config.model_name,
+            tokenizer=self.tokenizer,
+            warn_on_truncation=True
+        )
+        
         results = []
         batch_size = self.config.batch_size
         
         # Process in batches to avoid high RAM usage
-        for i in range(0, len(texts), batch_size):
-            batch = texts[i:i + batch_size]
+        for i in range(0, len(validated_texts), batch_size):
+            batch = validated_texts[i:i + batch_size]
             batch_generator = self.model.embed(batch, batch_size=batch_size)
             
             for sparse_vec in batch_generator:

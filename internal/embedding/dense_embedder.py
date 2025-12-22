@@ -4,6 +4,7 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 
 from internal.config import DenseEmbeddingConfig
+from internal.utils.token_counter import TokenCounter
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,12 @@ class DenseEmbedder:
             except Exception as e:
                 logger.warning(f"FP16 conversion failed: {e}")
         
-        logger.info(f"Dense model loaded successfully (dimension: {self.get_dimension()})")
+        self.tokenizer = TokenCounter.get_tokenizer(config.model_name)
+        self.max_seq_length = self.model.max_seq_length
+        
+        logger.info(f"Dense model loaded successfully")
+        logger.info(f"  Dimension: {self.get_dimension()}")
+        logger.info(f"  Max sequence length: {self.max_seq_length}")
     
     def encode(self, texts: List[str]) -> List[np.ndarray]:
         """
@@ -40,8 +46,17 @@ class DenseEmbedder:
             return []
         
         logger.info(f"Generating dense embeddings for {len(texts)} texts")
+        
+        validated_texts = TokenCounter.validate_and_truncate_batch(
+            texts=texts,
+            max_tokens=self.max_seq_length,
+            model_name=self.config.model_name,
+            tokenizer=self.tokenizer,
+            warn_on_truncation=True
+        )
+        
         embeddings = self.model.encode(
-            texts,
+            validated_texts,
             batch_size=self.config.batch_size,
             show_progress_bar=self.config.show_progress_bar,
             convert_to_numpy=True,

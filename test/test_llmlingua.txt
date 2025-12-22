@@ -1,0 +1,67 @@
+================================================================================
+Query: what is the current political situation between china and india
+================================================================================
+
+Found 5 results:
+
+────────────────────────────────────────────────────────────────────────────────
+Result #1 | Score: 0.1486
+────────────────────────────────────────────────────────────────────────────────
+Document: N/A
+Section: 1 The Political Economy of SOEs in China and India
+Chunk: N/A
+
+Xu Yi-chong
+
+China and India have attracted overwhelming attention lately not only because of their fast economic growth but also because of their idiosyncratic patterns of development, which are not always easy to categorise. They have not followed the same development path as those countries which industrialised in the nineteenth and first half of the twentieth century; neither have they trotted along exactly the same route as the so-called 'Asian tigers', even though both models of developmen...
+
+────────────────────────────────────────────────────────────────────────────────
+Result #2 | Score: 0.0847
+────────────────────────────────────────────────────────────────────────────────
+Document: N/A
+Section: 2.  Institutional background
+Chunk: N/A
+
+Meanwhile, in contrast to the chaotic situation in China - where government agencies are competing among themselves and with SOEs, - in India, seldom is any government agency challenged by its counterparts or CPSEs. Opposition is expressed and heard in parliament, but there seems to be unison among bureaucracies in discussing government policies.
+
+More importantly, CPSEs, as the remnants of the old planning system, are under a direct line of authority of ministries of the central government. Ove...
+
+────────────────────────────────────────────────────────────────────────────────
+Result #3 | Score: 0.0539
+────────────────────────────────────────────────────────────────────────────────
+Document: N/A
+Section: 1 The Political Economy of SOEs in China and India
+Chunk: N/A
+
+To others, both China and India are moving closer to the 'Washington model' identified by John Williamson some 20 years ago (1989). They have made solid progress on eight of Williamson's 'ten commandments', including fiscal discipline, trade liberalisation, openness to foreign investment and tax reform.
+
+One stand-out feature of their development, however, is their stateowned enterprises,  (SOEs)  or  public  sector  undertakings  (later  called public sector enterprises, PSEs). In both China an...
+
+────────────────────────────────────────────────────────────────────────────────
+Result #4 | Score: 0.0214
+────────────────────────────────────────────────────────────────────────────────
+Document: N/A
+Section: 14 Xu Yi-chong
+Chunk: N/A
+
+Both China and India followed the first view, maintaining a strong government presence in the banking sector. China's banking sector consists of many institutions - policy banks, state-owned commercial banks, joint-stock banks, commercial banks
+
+and credit cooperatives, and so forth. The big four state-owned commercial banks control the lion's share of the banking market. In India, 16 public sector banks control a significant portion of the banking activities. In both countries, the state-owned ...
+
+────────────────────────────────────────────────────────────────────────────────
+Result #5 | Score: 0.0003
+────────────────────────────────────────────────────────────────────────────────
+Document: N/A
+Section: Inclusive of the years 1998-2000 only > 1991 reforms: competing with constraints
+Chunk: N/A
+
+India's reforms in 1991 were more the result of a serious external sector crisis rather than outcomes of a planned and prepared exercise. It was not only the macro economy that was under stress following the accumulation of large fiscal and current account deficits financed by internal and external borrowings; the political environment in India, too, was somewhat fragile and unstable. Following the ousting of the Congress government in the 1989 Parliament elections, India had two short-lived, un...
+
+
+================================================================================
+COMPRESSED CONTEXT
+================================================================================
+
+Political Economy SOEs China India Xu Yi - chong attracted attention fast economic growth idiosyncratic patterns development followed same development path Asian tigers development state capitalism state - backed capitalism Washington model Williamson fiscal discipline trade liberalisation foreign investment tax reform Institutional background CPSEs Opposition unison CPSEs central government developed interests CPSEs CPSE resources subsidies pricing labour forces Political Economy SOEs China India Washington model fiscal trade liberalisation foreign investment tax reformstateowned enterprises public sector China India private sector economic growth private sector accounts two - thirds economy China India private enterprises grew 30 % 2000 - 09 India family firm backbone private sector Tata Reliance Industries Global Fortune 500 private entrepreneurship vibrant public enterprises dominant sectors China India government presence banking sector credit cooperatives banks control 16 public sector banks banks fostered mismanagement loss - making SOEs central government equity capital private foreign banks 1998 - 2000 1991 1991 external sector crisismacro economy deficits political environment fragile unstable Congress 1989 governments V Singh Chandra Shekhar Congress Narasimha Rao June 1991 reforms Industrial Policy Statement 1991 removed barriers industrial licensing investment MRTP Act public sector impact
+
+================================================================================

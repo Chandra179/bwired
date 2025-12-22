@@ -5,12 +5,12 @@ import asyncio
 from pathlib import Path
 
 from .config_loader import ConfigurationLoader
-from .display import ChunkStatistics, VectorizeOutputFormatter
+from ..cli.display import ChunkStatistics, VectorizeOutputFormatter
 
 from ..core.semantic_chunker import SemanticChunker
 from ..embedding.dense_embedder import DenseEmbedder
 from ..embedding.sparse_embedder import SparseEmbedder
-from ..storage.qdrant_storage import QdrantStorage
+from ..storage.qdrant_client import QdrantClient
 from ..logger import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ class VectorizeCommand:
             logger.info(f"  Dense embedding dimension: {dense_embedder.get_dimension()}")
             
             logger.info("\n[5/5] Storing in Qdrant (async with gRPC)...")
-            storage = QdrantStorage(qdrant_config, dense_embedder.get_dimension())
+            storage = QdrantClient(qdrant_config, dense_embedder.get_dimension())
             
             await storage.initialize()
             await storage.store_chunks(
