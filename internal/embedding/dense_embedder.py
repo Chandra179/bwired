@@ -25,7 +25,6 @@ class DenseEmbedder:
             except Exception as e:
                 logger.warning(f"FP16 conversion failed: {e}")
         
-        # Get tokenizer and max sequence length
         self.tokenizer = TokenCounter.get_tokenizer(config.model_name)
         self.max_seq_length = self.model.max_seq_length
         
@@ -48,7 +47,6 @@ class DenseEmbedder:
         
         logger.info(f"Generating dense embeddings for {len(texts)} texts")
         
-        # Validate and truncate texts if necessary
         validated_texts = TokenCounter.validate_and_truncate_batch(
             texts=texts,
             max_tokens=self.max_seq_length,

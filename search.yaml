@@ -33,7 +33,7 @@ qdrant:
 
 # Search Parameters
 search:
-  limit: 10  # Number of results to return
+  limit: 5  # Number of results to return
 
 # Result Processor (Optional)
 processor:

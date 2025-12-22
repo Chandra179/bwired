@@ -65,14 +65,12 @@ class LLMLinguaCompressor(BaseProcessor):
             Combined text with separators
         """
         combined_parts = []
-        total_chunks = len(results)
         
         for idx, result in enumerate(results, 1):
             metadata = result.get("metadata", {})
-            doc_path = metadata.get("document_path", "unknown")
             section = metadata.get("section_path", "unknown")
             
-            separator = f"=== Document: {doc_path} | Section: {section} | Chunk {idx}/{total_chunks} ==="
+            separator = f"Section: {section}"
             combined_parts.append(separator)
             combined_parts.append(result.get("content", ""))
             combined_parts.append("")  # Empty line between chunks
@@ -250,10 +248,7 @@ class LLMLinguaCompressor(BaseProcessor):
         
         logger.info(f"Compressing {len(results)} chunks")
         
-        # Combine all chunks with separators
         combined_text = self._combine_chunks(results)
-        
-        # Compress the combined text
         compressed_text = self._compress(combined_text)
         
         return {

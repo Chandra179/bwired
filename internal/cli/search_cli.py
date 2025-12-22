@@ -63,15 +63,12 @@ class SearchCommand:
                 logger.info("Initializing compressor...")
                 processor = LLMLinguaCompressor(processor_config)
             
-            # Generate query embeddings
             logger.info("Generating query embeddings...")
             query_dense = dense_embedder.encode([self.args.query])[0]
             query_sparse = sparse_embedder.encode([self.args.query])[0]
             
-            # Initialize Qdrant client
             qdrant_client = QdrantClient(qdrant_config, dense_embedder.get_dimension())
             
-            # Initialize search engine
             search_engine = SearchEngine(
                 qdrant_client=qdrant_client,
                 reranker=reranker,

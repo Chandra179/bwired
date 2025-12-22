@@ -55,7 +55,6 @@ class SearchEngine:
         Returns:
             Dictionary containing search results and optional processed output
         """
-        # Step 1: Retrieve candidates using hybrid search
         logger.info(f"Retrieving candidates (limit: {limit})...")
         query_response = await self.qdrant_client.query_points(
             query_dense_embedding=query_dense_embedding,
@@ -73,11 +72,9 @@ class SearchEngine:
         
         logger.info(f"Retrieved {len(points)} candidates")
         
-        # Step 2: Rerank results
         logger.info("Reranking results...")
         reranked_results = self._rerank_results(query_text, points)
         
-        # Step 3: Apply processor if configured
         if self.processor and self.processor.is_enabled():
             logger.info("Applying processor...")
             processed_output = self.processor.process(reranked_results)
