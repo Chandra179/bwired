@@ -1,4 +1,4 @@
-chunk_size: 300                    # Target chunk size in tokens
+chunk_size: 256                    # Target chunk size in tokens
 overlap_tokens: 50                 # Overlap between chunks
 use_sentence_boundaries: true      # Respect sentence boundaries
 

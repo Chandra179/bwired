@@ -85,7 +85,7 @@ class OverlapHandler:
                     continue
                 
                 overlapped_chunk = SemanticChunk(
-                    content=final_token_count,
+                    content=overlapped_content,
                     token_count=token_counter.count_tokens(overlapped_content),
                     chunk_type=chunk.chunk_type,
                     section_path=chunk.section_path,
