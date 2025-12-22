@@ -1,4 +1,8 @@
-# Search Configuration
+llm:
+  model: "llama3.2"
+  temperature: 0.1
+  system_prompt_path: "prompts/system_prompt.j2"
+  max_tokens: 1000
 
 # Embedding Models
 embedding:

@@ -75,16 +75,14 @@ class SearchEngine:
         logger.info("Reranking results...")
         reranked_results = self._rerank_results(query_text, points)
         
-        if self.processor and self.processor.is_enabled():
+        is_processing_enabled = self.processor and self.processor.is_enabled()
+        if is_processing_enabled:
             logger.info("Applying processor...")
-            processed_output = self.processor.process(reranked_results)
-            return processed_output
+            output = self.processor.process(reranked_results)
         else:
-            # No processor, return results only
-            return {
-                "results": reranked_results,
-                "compressed_context": None
-            }
+            output = {"results": reranked_results}
+            
+        return self.llm_engine.generate(output)
     
     def _rerank_results(self, query_text: str, points: List[Any]) -> List[Dict[str, Any]]:
         """

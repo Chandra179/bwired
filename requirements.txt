@@ -15,5 +15,7 @@ numpy>=1.24.0
 fastembed
 
 llmlingua
+jinja2
+ollama
 
 # Run: python -m spacy download en_core_web_sm

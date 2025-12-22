@@ -57,7 +57,6 @@ class SearchCommand:
             logger.info("Initializing reranker model...")
             reranker = Reranker(reranker_config)
             
-            # Initialize processor (if enabled)
             processor = None
             if processor_config and processor_config.enabled:
                 logger.info("Initializing compressor...")
@@ -75,7 +74,6 @@ class SearchCommand:
                 processor=processor
             )
             
-            # Perform search with reranking and optional compression
             logger.info(f"Searching (limit: {search_params['limit']})...")
             result = await search_engine.search(
                 query_text=self.args.query,
@@ -84,7 +82,6 @@ class SearchCommand:
                 limit=search_params['limit']
             )
             
-            # Display results
             self.results_display.display_results(
                 query=self.args.query,
                 results=result["results"],
