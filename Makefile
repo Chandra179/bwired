@@ -1,5 +1,5 @@
 e:
-	python extract_docs.py econ.pdf
+	python extract_docs.py consum.pdf
 
 req:
 	pipreqs . --force
@@ -11,7 +11,7 @@ up:
 	docker compose up -d
 
 v:
-	python -m internal.cli.vectorize_cli --config vectorize.yaml --input econ_nuclear.md
+	python -m internal.cli.vectorize_cli --config vectorize.yaml --input example.md
 
 s:
-	python -m internal.cli.search_cli --config search.yaml --query "what is the current political situation between china and india"
+	python -m internal.cli.search_cli --config search.yaml --query "labor market trends"

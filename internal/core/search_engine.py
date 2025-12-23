@@ -168,14 +168,11 @@ class SearchEngine:
         """
         # Render system prompt
         system_prompt = self.system_template.render()
-        
-        # Render user prompt with query and context
         user_prompt = self.user_template.render(
             query=query,
             context=context
         )
         
-        # Generate response
         response = self.llm_engine.generate(
             prompt=user_prompt,
             system_message=system_prompt
