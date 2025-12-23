@@ -20,12 +20,10 @@ def convert_pdf_nuclear(pdf_path, output_dir=None):
     pipeline_options = PdfPipelineOptions()
     pipeline_options.do_ocr = True 
     pipeline_options.do_table_structure = True
-    pipeline_options.generate_picture_images = True
-    pipeline_options.generate_page_images = True
-    pipeline_options.do_layout_analysis = True
     pipeline_options.table_structure_options.do_cell_matching = True
     pipeline_options.table_structure_options.mode = TableFormerMode.ACCURATE  # vs FAST
-    
+    pipeline_options.generate_picture_images = True
+    pipeline_options.generate_page_images = True
     pipeline_options.images_scale = 2.0 
 
     converter = DocumentConverter(

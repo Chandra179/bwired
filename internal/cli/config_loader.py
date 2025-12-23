@@ -13,7 +13,8 @@ from ..config import (
     ProcessorConfig,
     RerankerConfig,
     QdrantConfig,
-    CompressionConfig
+    CompressionConfig,
+    LLMConfig
 )
 
 logger = logging.getLogger(__name__)
@@ -95,7 +96,7 @@ class ConfigurationLoader:
     @staticmethod
     def load_search_config(
         config_path: str
-    ) -> Tuple[EmbeddingConfig, RerankerConfig, QdrantConfig, Dict[str, Any], str, Optional[ProcessorConfig]]:
+    ) -> Tuple[EmbeddingConfig, RerankerConfig, QdrantConfig, Dict[str, Any], str, Optional[ProcessorConfig], LLMConfig]:
         """
         Load search configuration from YAML file
         
@@ -103,7 +104,7 @@ class ConfigurationLoader:
             config_path: Path to search.yaml configuration file
             
         Returns:
-            Tuple of (embedding_config, reranker_config, qdrant_config, search_params, log_level, processor_config)
+            Tuple of (embedding_config, reranker_config, qdrant_config, search_params, log_level, processor_config, llm_config)
         """
         with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
@@ -184,7 +185,19 @@ class ConfigurationLoader:
         else:
             logger.info("No processor configuration found")
         
-        return embedding_config, reranker_config, qdrant_config, search_params, log_level, processor_config
+        # Load LLM config
+        llm_cfg = config.get('llm', {})
+        llm_config = LLMConfig(
+            model=llm_cfg.get('model', 'llama3.2'),
+            temperature=llm_cfg.get('temperature', 0.1),
+            system_prompt_path=llm_cfg.get('system_prompt_path', 'prompts/system_prompt.j2'),
+            user_prompt_path=llm_cfg.get('user_prompt_path', 'prompts/user_prompt.j2'),
+            max_tokens=llm_cfg.get('max_tokens', 1000)
+        )
+        
+        logger.info(f"LLM config loaded: model={llm_config.model}")
+        
+        return embedding_config, reranker_config, qdrant_config, search_params, log_level, processor_config, llm_config
 
 
 def load_config_file(config_path: str) -> dict:

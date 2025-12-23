@@ -68,6 +68,16 @@ class ProcessorConfig:
 
 
 @dataclass
+class LLMConfig:
+    """Configuration for LLM generation"""
+    model: str = "llama3.2"
+    temperature: float = 0.1
+    system_prompt_path: str = "prompts/system_prompt.j2"
+    user_prompt_path: str = "prompts/user_prompt.j2"
+    max_tokens: int = 1000
+
+
+@dataclass
 class QdrantConfig:
     """Configuration for Qdrant vector store"""
     url: str = "http://localhost:6333"

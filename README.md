@@ -71,6 +71,10 @@ From docs extraction to retrieval
 │   ├── parser.py                 # Document loading and parsing logic
 │   └── schema.py                 # Data models and Pydantic types
 │
+├── prompts/                      # LLM prompt template
+│   ├── user_prompt.j2            
+│   └── system_prompt.j2
+│
 ├── vectorize.yaml                # Configuration for chunking and embedding
 ├── search.yaml                   # Configuration for search and processing (UPDATED)
 ├── Makefile
