@@ -27,10 +27,29 @@ From docs extraction to retrieval
 3. rerank the result
 4. compress the result using llm lingua
 
+## Generation Architecture
+1. have system and user template for LLM
+2. use Ollama for LLM chat
+
 ## Directory structure
 ```
 .
 ├── internal/
+│   ├── chunkers/                 # Document chunking system (format-based)
+│   │   ├── __init__.py           # Exports BaseDocumentChunker, ChunkerFactory
+│   │   ├── base_chunker.py       # Abstract interface for all chunkers
+│   │   ├── chunker_factory.py    # Factory for creating format-specific chunkers
+│   │   └── markdown/             # Markdown-specific chunking (all-in-one)
+│   │       ├── __init__.py       # Exports markdown components
+│   │       ├── markdown_chunker.py    # Main markdown document chunker
+│   │       ├── markdown_parser.py     # Parses markdown into elements
+│   │       ├── section_analyzer.py    # Builds hierarchical sections
+│   │       ├── overlap_handler.py     # Manages chunk overlap
+│   │       ├── table_splitter.py      # Splits large tables by rows
+│   │       ├── code_splitter.py       # Splits code blocks by lines
+│   │       ├── list_splitter.py       # Splits lists by items
+│   │       └── text_splitter.py       # Splits text by sentences
+│   │
 │   ├── cli/                      # Command-line interface logic
 │   │   ├── config_loader.py      # Handles CLI-specific configurations
 │   │   ├── display.py            # Formatting for terminal output 
@@ -38,15 +57,13 @@ From docs extraction to retrieval
 │   │   └── vectorize_cli.py      # Entry point for document processing
 │   │
 │   ├── core/                     # Shared business logic and orchestration
-│   │   ├── metadata.py          
-│   │   ├── overlap_handler.py    
-│   │   ├── search_engine.py      
-│   │   ├── semantic_chunker.py     
-│   │   └── section_analyzer.py      
+│   │   ├── metadata.py           # Metadata management
+│   │   ├── search_engine.py      # Search orchestration logic
+│   │   └── semantic_chunker.py   # DEPRECATED: Use ChunkerFactory instead
 │   │
 │   ├── embedding/                # Embedding & Ranking models
 │   │   ├── dense_embedder.py     # Logic for dense vectors
-│   │   ├── reranker.py           # Cross-encoder logic for result
+│   │   ├── reranker.py           # Cross-encoder logic for result reranking
 │   │   └── sparse_embedder.py    # Logic for sparse vectors
 │   │
 │   ├── processing/               # Result processing
@@ -54,29 +71,23 @@ From docs extraction to retrieval
 │   │   ├── base_processor.py     # Abstract base class for processors
 │   │   └── compressor.py         # LLMLingua compression implementation
 │   │
-│   ├── splitters/                # Document chunking strategies
-│   │   ├── base_splitter.py      # Abstract base class for all splitters
-│   │   ├── code_splitter.py      # Specialized splitting for source code
-│   │   ├── list_splitter.py      # Handles bulleted/numbered lists
-│   │   ├── table_splitter.py     # Preserves structure of tabular data
-│   │   └── text_splitter.py      # Recursive/character-based text splitting
-│   │
 │   ├── storage/                  # Vector database integrations
 │   │   └── qdrant_client.py      # Low-level Qdrant operations
 │   │
 │   ├── text_processing/          # Global utilities for text cleanup
+│   │   ├── sentence_splitter.py  # Sentence boundary detection
+│   │   └── tokenizer_utils.py    # Token counting utilities
 │   │
 │   ├── config.py                 # Main application configuration
 │   ├── logger.py                 # Centralized logging setup
-│   ├── parser.py                 # Document loading and parsing logic
 │   └── schema.py                 # Data models and Pydantic types
 │
-├── prompts/                      # LLM prompt template
+├── prompts/                      # LLM prompt templates
 │   ├── user_prompt.j2            
 │   └── system_prompt.j2
 │
 ├── vectorize.yaml                # Configuration for chunking and embedding
-├── search.yaml                   # Configuration for search and processing (UPDATED)
+├── search.yaml                   # Configuration for search and processing
 ├── Makefile
 ├── docker-compose.yml
 └── README.md
