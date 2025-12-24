@@ -2,7 +2,7 @@
 from typing import List
 import logging
 
-from ...schema import SemanticChunk
+from ..schema import SemanticChunk
 from .markdown_parser import MarkdownElement
 from ...text_processing.tokenizer_utils import TokenCounter
 from ...text_processing.sentence_splitter import SentenceSplitter
@@ -27,7 +27,7 @@ class TableSplitter:
     @property
     def max_chunk_size(self) -> int:
         """Maximum size for a chunk before overlap"""
-        return self.config.max_chunk_size
+        return self.config.chunking.max_chunk_size
     
     def chunk(self, element: MarkdownElement, header_path: str) -> List[SemanticChunk]:
         """

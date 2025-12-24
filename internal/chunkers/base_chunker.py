@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List
 import logging
 
-from ..schema import SemanticChunk
+from .schema import SemanticChunk
 from ..config import RAGChunkingConfig
 
 logger = logging.getLogger(__name__)

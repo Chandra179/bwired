@@ -3,7 +3,7 @@ from typing import List
 import re
 import logging
 
-from ...schema import SemanticChunk
+from ..schema import SemanticChunk
 from .markdown_parser import MarkdownElement
 from ...text_processing.tokenizer_utils import TokenCounter
 from ...text_processing.sentence_splitter import SentenceSplitter

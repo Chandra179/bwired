@@ -14,7 +14,7 @@ from .text_splitter import TextSplitter
 from ...text_processing.sentence_splitter import SentenceSplitter
 from ...text_processing.tokenizer_utils import TokenCounter
 from ...config import RAGChunkingConfig
-from ...schema import SemanticChunk
+from ..schema import SemanticChunk
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +98,7 @@ class MarkdownDocumentChunker(BaseDocumentChunker):
         buffer_elements = []
         buffer_tokens = 0
         
-        max_size = self.config.max_chunk_size
+        max_size = self.config.chunking.max_chunk_size
 
         for element in section.content_elements:
             if self._is_metadata_noise(element.content):
