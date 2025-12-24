@@ -90,7 +90,6 @@ class OverlapHandler:
                     token_count=token_counter.count_tokens(overlapped_content),
                     chunk_type=chunk.chunk_type,
                     section_path=chunk.section_path,
-                    is_continuation=chunk.is_continuation,
                     split_sequence=chunk.split_sequence
                 )
                 result.append(overlapped_chunk)

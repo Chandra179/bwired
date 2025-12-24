@@ -139,7 +139,6 @@ class ListSplitter:
             token_count=self.token_counter.count_tokens(content),
             chunk_type="list",
             section_path=header_path,
-            is_continuation=False,
             split_sequence=None
         )
     
@@ -151,4 +150,3 @@ class ListSplitter:
         total_parts = len(chunks)
         for i, chunk in enumerate(chunks, 1):
             chunk.split_sequence = f"{i}/{total_parts}"
-            chunk.is_continuation = i > 1

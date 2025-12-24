@@ -8,11 +8,7 @@ class ChunkMetadata:
     chunk_type: str
     section_path: str
     
-    # Chunk relationship tracking
-    is_continuation: bool = False
     split_sequence: Optional[str] = None  # e.g., "2/5"
-    
-    extra: Optional[Dict[str, Any]] = None
     
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)        
@@ -29,6 +25,5 @@ class ChunkMetadata:
             token_count=chunk.token_count,
             chunk_type=chunk.chunk_type,
             section_path=chunk.section_path,
-            is_continuation=chunk.is_continuation,
             split_sequence=chunk.split_sequence,
         )

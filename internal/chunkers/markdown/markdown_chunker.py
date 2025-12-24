@@ -148,7 +148,6 @@ class MarkdownDocumentChunker(BaseDocumentChunker):
             token_count=self.token_counter.count_tokens(combined_content),
             chunk_type="text",
             section_path=header_path,
-            is_continuation=False,
             split_sequence=None
         )
     

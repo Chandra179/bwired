@@ -112,7 +112,6 @@ class TextSplitter:
             token_count=self.token_counter.count_tokens(content),
             chunk_type="text",
             section_path=header_path,
-            is_continuation=False,
             split_sequence=None
         )
     
@@ -124,4 +123,3 @@ class TextSplitter:
         total_parts = len(chunks)
         for i, chunk in enumerate(chunks, 1):
             chunk.split_sequence = f"{i}/{total_parts}"
-            chunk.is_continuation = i > 1
