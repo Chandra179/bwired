@@ -1,17 +1,34 @@
-"""List splitter for markdown lists - moved to splitters/markdown/"""
+"""List splitter for markdown lists"""
 from typing import List
 import re
 import logging
 
 from ...schema import SemanticChunk
-from ...parsers.markdown_parser import MarkdownElement  # UPDATED import path
-from ..base_splitter import BaseSplitter  # UPDATED import path
+from .markdown_parser import MarkdownElement
+from ...text_processing.tokenizer_utils import TokenCounter
+from ...text_processing.sentence_splitter import SentenceSplitter
+from ...config import RAGChunkingConfig
 
 logger = logging.getLogger(__name__)
 
 
-class ListSplitter(BaseSplitter):
+class ListSplitter:
     """Splitter for markdown lists - preserves item boundaries"""
+    
+    def __init__(
+        self, 
+        config: RAGChunkingConfig, 
+        sentence_splitter: SentenceSplitter, 
+        token_counter: TokenCounter
+    ):
+        self.config = config
+        self.sentence_splitter = sentence_splitter
+        self.token_counter = token_counter
+    
+    @property
+    def max_chunk_size(self) -> int:
+        """Maximum size for a chunk before overlap"""
+        return self.config.max_chunk_size
     
     def chunk(self, element: MarkdownElement, header_path: str) -> List[SemanticChunk]:
         """
@@ -26,15 +43,15 @@ class ListSplitter(BaseSplitter):
         
         # List fits in one chunk
         if token_count <= self.max_chunk_size:
-            chunk = self._create_single_chunk(content, "list", header_path)
+            chunk = self._create_chunk(content, header_path)
             logger.debug(f"List chunked as single unit: {token_count} tokens")
             return [chunk]
         
         # Split large list by items
         logger.debug(f"Splitting large list: {token_count} tokens")
-        return self._split_list_by_items(content, header_path)
+        return self._split_by_items(content, header_path)
     
-    def _split_list_by_items(
+    def _split_by_items(
         self, 
         list_content: str, 
         header_path: str
@@ -43,7 +60,7 @@ class ListSplitter(BaseSplitter):
         items = self._extract_list_items(list_content)
         
         if not items:
-            return [self._create_single_chunk(list_content, "list", header_path)]
+            return [self._create_chunk(list_content, header_path)]
         
         chunks = []
         current_items = []
@@ -56,7 +73,7 @@ class ListSplitter(BaseSplitter):
             if current_tokens + item_tokens > self.max_chunk_size and current_items:
                 # Flush current chunk
                 chunk_content = '\n'.join(current_items)
-                chunks.append(self._create_single_chunk(chunk_content, "list", header_path))
+                chunks.append(self._create_chunk(chunk_content, header_path))
                 
                 # Start new chunk
                 current_items = [item]
@@ -68,7 +85,7 @@ class ListSplitter(BaseSplitter):
         # Flush remaining items
         if current_items:
             chunk_content = '\n'.join(current_items)
-            chunks.append(self._create_single_chunk(chunk_content, "list", header_path))
+            chunks.append(self._create_chunk(chunk_content, header_path))
         
         # Set split sequences
         self._set_split_sequences(chunks)
@@ -114,3 +131,24 @@ class ListSplitter(BaseSplitter):
             return True
         
         return False
+    
+    def _create_chunk(self, content: str, header_path: str) -> SemanticChunk:
+        """Helper to create a single chunk"""
+        return SemanticChunk(
+            content=content,
+            token_count=self.token_counter.count_tokens(content),
+            chunk_type="list",
+            section_path=header_path,
+            is_continuation=False,
+            split_sequence=None
+        )
+    
+    def _set_split_sequences(self, chunks: List[SemanticChunk]) -> None:
+        """Set split_sequence metadata for all chunks"""
+        if len(chunks) <= 1:
+            return
+        
+        total_parts = len(chunks)
+        for i, chunk in enumerate(chunks, 1):
+            chunk.split_sequence = f"{i}/{total_parts}"
+            chunk.is_continuation = i > 1

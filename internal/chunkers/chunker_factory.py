@@ -3,7 +3,7 @@ from typing import Literal
 import logging
 
 from .base_chunker import BaseDocumentChunker
-from .markdown_chunker import MarkdownDocumentChunker
+from .markdown import MarkdownDocumentChunker
 from ..config import RAGChunkingConfig
 
 logger = logging.getLogger(__name__)
@@ -39,6 +39,7 @@ class ChunkerFactory:
         
         # Future formats can be added here:
         # elif format == 'html':
+        #     from .html import HTMLDocumentChunker
         #     return HTMLDocumentChunker(config)
         
         raise ValueError(

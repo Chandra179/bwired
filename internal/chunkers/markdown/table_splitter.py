@@ -1,16 +1,33 @@
-"""Table splitter for markdown tables - moved to splitters/markdown/"""
+"""Table splitter for markdown tables"""
 from typing import List
 import logging
 
 from ...schema import SemanticChunk
-from ...parsers.markdown_parser import MarkdownElement  # UPDATED import path
-from ..base_splitter import BaseSplitter  # UPDATED import path
+from .markdown_parser import MarkdownElement
+from ...text_processing.tokenizer_utils import TokenCounter
+from ...text_processing.sentence_splitter import SentenceSplitter
+from ...config import RAGChunkingConfig
 
 logger = logging.getLogger(__name__)
 
 
-class TableSplitter(BaseSplitter):
+class TableSplitter:
     """Splitter for markdown tables - preserves structure"""
+    
+    def __init__(
+        self, 
+        config: RAGChunkingConfig, 
+        sentence_splitter: SentenceSplitter, 
+        token_counter: TokenCounter
+    ):
+        self.config = config
+        self.sentence_splitter = sentence_splitter
+        self.token_counter = token_counter
+    
+    @property
+    def max_chunk_size(self) -> int:
+        """Maximum size for a chunk before overlap"""
+        return self.config.max_chunk_size
     
     def chunk(self, element: MarkdownElement, header_path: str) -> List[SemanticChunk]:
         """
@@ -25,15 +42,15 @@ class TableSplitter(BaseSplitter):
         
         # Table fits in one chunk
         if token_count <= self.max_chunk_size:
-            chunk = self._create_single_chunk(content, "table", header_path)
+            chunk = self._create_chunk(content, header_path)
             logger.debug(f"Table chunked as single unit: {token_count} tokens")
             return [chunk]
         
         # Split large table by rows
         logger.debug(f"Splitting large table: {token_count} tokens")
-        return self._split_table_by_rows(content, header_path)
+        return self._split_by_rows(content, header_path)
     
-    def _split_table_by_rows(
+    def _split_by_rows(
         self, 
         table_content: str, 
         header_path: str
@@ -43,7 +60,7 @@ class TableSplitter(BaseSplitter):
         
         if len(lines) < 3:
             # Not enough for header + separator + data
-            return [self._create_single_chunk(table_content, "table", header_path)]
+            return [self._create_chunk(table_content, header_path)]
         
         # Extract header and separator
         header_line = lines[0]
@@ -56,7 +73,7 @@ class TableSplitter(BaseSplitter):
         # Safety check
         if header_tokens > self.max_chunk_size * 0.8:
             logger.warning("Table header too large, returning as single chunk")
-            return [self._create_single_chunk(table_content, "table", header_path)]
+            return [self._create_chunk(table_content, header_path)]
         
         chunks = []
         current_rows = []
@@ -69,7 +86,7 @@ class TableSplitter(BaseSplitter):
             if current_tokens + row_tokens > self.max_chunk_size and current_rows:
                 # Flush current chunk
                 chunk_content = f"{header_block}\n" + "\n".join(current_rows)
-                chunks.append(self._create_single_chunk(chunk_content, "table", header_path))
+                chunks.append(self._create_chunk(chunk_content, header_path))
                 
                 # Start new chunk
                 current_rows = [row]
@@ -81,10 +98,31 @@ class TableSplitter(BaseSplitter):
         # Flush remaining rows
         if current_rows:
             chunk_content = f"{header_block}\n" + "\n".join(current_rows)
-            chunks.append(self._create_single_chunk(chunk_content, "table", header_path))
+            chunks.append(self._create_chunk(chunk_content, header_path))
         
         # Set split sequences
         self._set_split_sequences(chunks)
         
         logger.debug(f"Split table into {len(chunks)} chunks")
         return chunks
+    
+    def _create_chunk(self, content: str, header_path: str) -> SemanticChunk:
+        """Helper to create a single chunk"""
+        return SemanticChunk(
+            content=content,
+            token_count=self.token_counter.count_tokens(content),
+            chunk_type="table",
+            section_path=header_path,
+            is_continuation=False,
+            split_sequence=None
+        )
+    
+    def _set_split_sequences(self, chunks: List[SemanticChunk]) -> None:
+        """Set split_sequence metadata for all chunks"""
+        if len(chunks) <= 1:
+            return
+        
+        total_parts = len(chunks)
+        for i, chunk in enumerate(chunks, 1):
+            chunk.split_sequence = f"{i}/{total_parts}"
+            chunk.is_continuation = i > 1
