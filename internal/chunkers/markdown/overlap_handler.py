@@ -89,6 +89,9 @@ class OverlapHandler:
                     content=overlapped_content,
                     token_count=token_counter.count_tokens(overlapped_content),
                     chunk_type=chunk.chunk_type,
+                    prev_chunk_id=chunk.prev_chunk_id,
+                    next_chunk_id=chunk.next_chunk_id,
+                    parent_section=chunk.parent_section,
                     section_path=chunk.section_path,
                     split_sequence=chunk.split_sequence
                 )

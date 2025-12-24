@@ -1,5 +1,6 @@
 """Markdown-specific document chunker with integrated section analysis"""
 from typing import List, Dict
+import uuid
 import logging
 import re
 
@@ -77,11 +78,7 @@ class MarkdownDocumentChunker(BaseDocumentChunker):
             all_chunks.extend(section_chunks)
         
         logger.info(f"Stage 3: Created {len(all_chunks)} semantic chunks")
-        
-        # Stage 4: Apply overlap
-        all_chunks = self._apply_overlap_by_section(all_chunks)
-        logger.info(f"Stage 4: Applied overlap to chunks")
-        
+                
         return all_chunks
     
     def _chunk_section(
@@ -141,14 +138,19 @@ class MarkdownDocumentChunker(BaseDocumentChunker):
         elements: List[MarkdownElement], 
         header_path: str
     ) -> SemanticChunk:
-        """Helper to merge multiple small elements into one coherent chunk"""
+        """Updated to satisfy the new SemanticChunk dataclass requirements"""
         combined_content = "\n\n".join([e.content for e in elements])
+        
+        # Extract parent_section from header_path
+        parent_section = header_path.split(" > ")[-1] if " > " in header_path else header_path
+        
         return SemanticChunk(
+            id=str(uuid.uuid4()),
             content=combined_content,
             token_count=self.token_counter.count_tokens(combined_content),
             chunk_type="text",
-            section_path=header_path,
-            split_sequence=None
+            parent_section=parent_section,
+            section_path=header_path
         )
     
     def _chunk_element(
