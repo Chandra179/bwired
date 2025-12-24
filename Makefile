@@ -1,5 +1,5 @@
 e:
-	python extract_docs.py consum.pdf
+	python extract_docs.py example.pdf
 
 req:
 	pipreqs . --force

@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 import logging
 
 from ..schema import SemanticChunk
-from ..parser import MarkdownElement
+from ..parsers.markdown_parser import MarkdownElement  # UPDATED import path
 from ..text_processing.tokenizer_utils import TokenCounter
 from ..text_processing.sentence_splitter import SentenceSplitter
 from ..config import RAGChunkingConfig

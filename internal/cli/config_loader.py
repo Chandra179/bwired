@@ -5,7 +5,8 @@ import yaml
 
 from ..config import (
     RAGChunkingConfig,
-    ChunkingConfig,
+    BaseSplitterConfig,
+    MarkdownSplitterConfig,
     ContextConfig,
     EmbeddingConfig,
     DenseEmbeddingConfig,
@@ -37,8 +38,8 @@ class ConfigurationLoader:
         logger.info(f"Loading vectorize config from: {config_path}")
         config_data = load_config_file(config_path)
         
-        # Chunking configuration
-        chunking_config = ChunkingConfig(
+        # Markdown splitter configuration
+        splitter_config = MarkdownSplitterConfig(
             chunk_size=config_data.get('chunk_size', 400),
             overlap_tokens=config_data.get('overlap_tokens', 0),
             use_sentence_boundaries=config_data.get('use_sentence_boundaries', True),
@@ -75,7 +76,7 @@ class ConfigurationLoader:
         
         # RAG configuration
         rag_config = RAGChunkingConfig(
-            chunking=chunking_config,
+            splitter=splitter_config,
             context=context_config,
             embedding=embedding_config
         )

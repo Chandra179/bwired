@@ -7,7 +7,7 @@ from pathlib import Path
 from .config_loader import ConfigurationLoader
 from ..cli.display import ChunkStatistics, VectorizeOutputFormatter
 
-from ..core.semantic_chunker import SemanticChunker
+from ..chunkers import ChunkerFactory
 from ..embedding.dense_embedder import DenseEmbedder
 from ..embedding.sparse_embedder import SparseEmbedder
 from ..storage.qdrant_client import QdrantClient
@@ -19,7 +19,6 @@ import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 class VectorizeCommand:
-    """Encapsulates vectorize command logic"""
     
     def __init__(self, args):
         self.args = args
@@ -49,8 +48,8 @@ class VectorizeCommand:
             document_id = self.args.document_id or Path(self.args.input).stem
             self.output_formatter.print_file_info(file_size, document_id)
             
-            logger.info("\n[2/5] Initializing semantic chunker...")
-            chunker = SemanticChunker(rag_config)
+            logger.info("\n[2/5] Initializing markdown chunker...")
+            chunker = ChunkerFactory.create(format='markdown', config=rag_config)
             
             logger.info("\n[3/5] Parsing and chunking document...")
             chunks = chunker.chunk_document(content, document_id)

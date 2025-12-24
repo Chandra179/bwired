@@ -18,7 +18,7 @@ The material in this work is subject to copyright. Because The World Bank encour
 
 Any  queries  on  rights  and  licenses,  including  subsidiary  rights,  should  be  addressed  to  World  Bank Publications, The World Bank Group, 1818 H Street NW, Washington, DC 20433, USA; fax: 202-522-2625; e-mail: pubrights@worldbank.org.
 
-## Cover Photo :  ©  Eastfenceimage / Shutterstock
+### Cover Photo :  ©  Eastfenceimage / Shutterstock
 
 ## Acknowledgements
 
@@ -150,23 +150,23 @@ The authorities have responded to the domestic and external headwinds with macro
 
 directly  targets  households  is  small,  about  0.5  percent  of  GDP  in  2025,  while  the  remainder largely consists of public investment. A sustained improvement in household consumption will require greater reform ambition. First, redirecting fiscal resources towards healthcare and social protection to broaden coverage and raise benefits can reduce precautionary savings, encouraging  households  to  spend  more.  Second,  a ddressing  local  governments'  financial constraints  through  enhanced  transfers  and  sustainable  revenue  reforms  will  help  maintain public services and drive public consumption. Third, pursuing a more progressive fiscal system, anchored in equitable taxation, can stimulate consumption as lower-income households have a higher  propensity  to  spend.  Finally, addressing  the  property  sector's  debt  ove rhang  while implementing targeted support to lower-tier cities can lead to a more sustained recovery and boost consumer sentiment.
 
-## Special Focus:  Jobs in Transition
+### Special Focus:  Jobs in Transition
 
 This edition's special focus examines the factors -both short- and long-term -that are reshaping China's labor market. China's economic growth has long driven strong job creation, but this link has weakened in recent years. Between 2015 and 2019, GDP grew by an average of 6.7 percent annually, while urban employment increased by 2.7 percent. 55.5 million net new urban jobs were  created.  Between  2020  to  2024,  GDP  growth  was  4.9  percent,  while  average  urban employment grew by just 0.9 percent. Only 21.0 million net new jobs created during these five years.  Employment  growth has  slowed, particularly  in  construction  amid  the  property  sector downturn  and  in  services  due  to  subdued  consumer  demand  and  economic  and  policy uncertainty. Manufacturing jobs have benefited from strong exports and policy support since 2020 but now face growing external risks. At the same time, technological change -automation, AI,  and  digitalization -is  displacing  low-skilled  jobs  while  increasing  demand  for  high-skilled talent. These trends have disproportionally affected informal, migrant, and temporary workers due to limited job security and social protection.
 
 Navigating these labor market transitions will require reforms along three key dimensions. First, enhancing the enabling environment for private sector job creation -anchored in predictable regulations and a level playing field -could expand employment opportunities. Second, targeted investments  in  skills  development  would  prepare  workers  for  a  dynamic,  technology-driven economy and help them seize emerging opportunities. Third, stronger social protection coverage and active labor market policies would support workers during the transition.
 
-## The China Economic Update at a glance
+#### The China Economic Update at a glance
 
 Growth  was  robust  in  early  2025,  supported  by  policy easing …
 
-## A. GDP demand components
+##### A. GDP demand components
 
 But the property sector downturn remains a drag to growth, generating a negative wealth effect …
 
 ![Image](images/image_000002_63f43db66cbb5e00d21773ee0e2590c6bb5e23b4ad1cb1833e6bc1e801593b9e.png)
 
-## C. New housing sales in cities
+##### C. New housing sales in cities
 
 To support domestic activity, the authorities have reduced
 
@@ -174,13 +174,13 @@ To support domestic activity, the authorities have reduced
 
 the key policy rate, though real rate remains high, …
 
-## E. Real and nominal policy rates
+##### E. Real and nominal policy rates
 
 ![Image](images/image_000004_22e890529a278ffc2a56480b0b3dff45ce9827047aa930adccb41cd4e2800459.png)
 
 - … and  export strength due  in part to  shipment frontloading.
 
-## B. Export and import growth
+##### B. Export and import growth
 
 ![Image](images/image_000005_20047401209ec2c3447e5e5020aa70869a25877b9980f9a3f9e3abe588d7dd18.png)
 
@@ -196,7 +196,7 @@ The labor market has been soft in recent years, especially in urban areas …
 
 ![Image](images/image_000008_02e8cb9639414b1d923b826dc7aac0db9d38df55eb6a362d6f2446edde198a63.png)
 
-## I. GDP and employment growth
+##### I. GDP and employment growth
 
 ![Image](images/image_000009_5587bfafccd098455b347023aa7e4aefbfd132d3ad3db43e20329ec6888772a6.png)
 
@@ -222,13 +222,13 @@ May-25
 
 and in services and construction.
 
-## J. Sectoral  employment  compared  to  pre-pandemic trend
+##### J. Sectoral  employment  compared  to  pre-pandemic trend
 
 … while demand for high-skilled labor is expected to rise.
 
 ![Image](images/image_000011_ef647d8b6c95f06d9b72a25f120a6e1b6c93956bf9e8d233c33f6e788bd96970.png)
 
-## L. Estimate of AI impact in changes of skill demand in Chinese manufacturing firms
+##### L. Estimate of AI impact in changes of skill demand in Chinese manufacturing firms
 
 ![Image](images/image_000012_e37f5255c614641186dbcc8d3ec3dcfcd8e1e499425c6d4699a17e64effe83f3.png)
 
@@ -238,7 +238,7 @@ Source: NBS, PBC, WIND, MoF, Xie et al. (2021), World Bank staff estimates.
 
 ## I. Recent Economic Developments
 
-## Growth was resilient but remained constrained by subdued consumer demand
+### Growth was resilient but remained constrained by subdued consumer demand
 
 China's economy maintained its growth momentum in early 2025, supported by accommodative  macroeconomic  policies  and  export  strength. Real  GDP  expanded  by  5.4 percent year-on-year (y/y) in the first quarter of 2025, matching the pace of the previous quarter (Figure  1A).  Robust  growth  was  partly  driven  by  monetary,  fiscal,  and  property  sector  policy easing. Consumption growth, supported by fiscal subsidies, improved, though it remained below pre-COVID levels. Consumption contributed 2.8 percentage points (ppts) to year-on-year growth, compared to an average of 3.6 ppts in 2019, underscoring still-weak household confidence. Policy stimulus also supported  investment,  which  added  0.5  ppts  to growth,  as strength in infrastructure and manufacturing offset the contraction in the property sector. Meanwhile, net exports contributed 2.1 ppts to growth, benefitting from shipment frontloading in anticipation of trade policy shifts.
 
@@ -260,7 +260,7 @@ Source: China NBS, PBC, World Bank staff estimates.
 
 Note: Figure B. Red bar denotes the items supported by consumer trade-in subsidies
 
-## A larger current account surplus only partly offset increased net capital outflows
+### A larger current account surplus only partly offset increased net capital outflows
 
 Export  growth  remained  resilient  in  the  first  five  months  of  2025,  supported  by  robust shipments to emerging markets and the global technology upcycle. Merchandise exports in value terms increased by 6.0 percent y/y in January-May, marginally up from 5.9 percent in 2024 (Figure 2A), as stronger exports to emerging markets, as well as to advanced countries in East Asia and Europe, offset contractions in US-bound shipments. Exports to ASEAN, Brazil, and India rose by over 10 percent y/y (Figure 2B). By product category, exports of medium- and high-tech manufactured goods, particularly semiconductors and electronics, underpinned export growth,
 
@@ -272,13 +272,13 @@ Figure 2. Robust shipments to emerging markets contributed to a higher current a
 
 Source: General Administration of Customs, SAFE, World Bank staff estimates.
 
-## Goods imports contracted, reflecting both lower commodity prices and weak domestic demand.
+#### Goods imports contracted, reflecting both lower commodity prices and weak domestic demand.
 
 Merchandise imports contracted by 4.9 percent y/y in value terms in the first five months, after expanding by 1.1 percent in 2024. The contraction was driven by the lower global commodity prices and import volumes of key industrial and energy inputs such as iron ore, crude oil, and coal,  signaling  continued  weakness  in  domestic  demand,  especially  in  commodity-intensive sectors like construction. Moreover, consumer goods imports also stayed subdued. In contrast, inventory  stockpiling  ahead  of  anticipated  trade  policy  shifts  supported  higher  imports  of electronic and other high-tech components. Mirroring the contraction in goods imports, subdued imports for transport services contributed to the deceleration of overall services import growth.
 
 A wider current account surplus was offset by high net capital outflows. Resilient exports and subdued imports increased the current account surplus to 3.7 percent of GDP in the first quarter of 2025. However, larger net capital outflows (including errors and omissions) outweighed the current  account  surplus,  resulting  in  a  US$  31  billion  (0.7  percent  of  GDP)  decline  in  foreign exchange reserves (Figure 2D). The financial account deficit reflects net outflows of portfolio and other investment, with Mainland-Hong Kong Stock Connect data indicating US$ 57.3 billion in equity market outflows in Q1 2025. In contrast, net foreign direct investment (FDI) outflows declined, supported by a modest recovery in FDI inflows.
 
-## The property sector remained weak despite higher demand in first-tier cities
+### The property sector remained weak despite higher demand in first-tier cities
 
 Demand picked up in top-tier cities, though a broad-based recovery has yet to emerge. In the first four months, the contraction in new housing sales across 70 major cities -both in value and volume -narrowed to about 3 percent y/y, compared to double-digit declines in 2024. Home sales in April were around 50 percent below their peak level in 2021 (Figure 3A). The narrower home sales contraction was driven by higher demand in top-tier cities after easing measures introduced in 2024. However, the property sector remains weak in lower-tier cities which face a more  acute  housing  supply-demand  imbalance.  The  period  necessary  to  destock  housing inventories 3 in tier-3 cities was 34 months in April, which was 14 months longer than in tier-1 cities and 20 months above the 2017-2020 average. Meanwhile, home prices in primary markets declined further, particularly in lower-tier cities (Figure 3B). To further stimulate housing demand, the authorities cut mortgage rates by an additional 25 basis points in May, bringing the average rate down to 2.8 percent.
 
@@ -292,15 +292,15 @@ Figure 3. The property sector remains weak despite demand rebound in top tier ci
 
 Source: NBS, WIND, World Bank staff estimates.
 
-## More renewables and slower power demand growth reduced carbon emissions
+### More renewables and slower power demand growth reduced carbon emissions
 
 Carbon emissions decreased in the first quarter, as renewable electricity generation outpaced growth in demand. China's carbon dioxide emissions declined by an estimated 3.4 percent y/y in the first quarter of 2025 (Figure 4A), even as GDP grew by 5.4 percent. Lower emissions were driven by stronger growth in renewable energy generation meeting slower electricity demand growth,  the  latter  partly  due  to  warmer  weather  compared  to  last  year.  Thermal  power generation,  mainly  fueled  by  coal,  contracted  (Figure  4B).  Meanwhile,  industrial  emissions continued to fall, due to the weakness in the property sector.
 
 Figure 4. Carbon emissions declined amid accelerated growth in renewable energy production
 
-## A. Carbon emissions
+#### A. Carbon emissions
 
-## B. Contribution to electricity generation, Q1 2025
+#### B. Contribution to electricity generation, Q1 2025
 
 ![Image](images/image_000017_67f149500d045838a5fa35e801894c5bf9f044d5c5fbbbd2113b973ff16a93a0.png)
 
@@ -308,7 +308,7 @@ Source: Carbon Monitor, NBS, World Bank staff estimates.
 
 Note: Figure B electricity generation is by firms with annual revenues of RMB 20 million.
 
-## Low inflation persists amid weak aggregate demand
+### Low inflation persists amid weak aggregate demand
 
 Consumer  price  inflation  remained  tepid,  as  domestic  demand  weakness  persisted. The headline consumer price index (CPI) contracted by 0.1 percent y/y in the first five months of the year, compared to a 0.2-percent increase in 2024 (Figure 5A). The decline was mainly due to lower food and energy prices, as prices of fresh produces, meat and fuel all fell. Meanwhile, improved demand for goods covered by the consumer goods trade-in program supported an uptick in core goods prices, but this was offset by more moderate service price growth, especially rents amid the property sector weakness and tourism prices as travel demand normalized. As a result, core inflation, excluding the volatile food and energy components, remained subdued at 0.4 percent y/y, below the 2024 average of 0.5 percent.
 
@@ -316,17 +316,17 @@ Producer price deflation intensified on the back of both falling global commodit
 
 Figure 5. Consumer price inflation remained tepid, while producer price deflation intensified
 
-## A. CPI inflation
+#### A. CPI inflation
 
 ![Image](images/image_000018_0a9567f56cb06fb5317d23706fb0b9842c1f62e57b048243afbb50953e5c8c75.png)
 
-## B. PPI inflation
+#### B. PPI inflation
 
 ![Image](images/image_000019_8632d3e076288372a335c12f878448953646e857115128ab41d370ac62df02fb.png)
 
 Source: NBS, World Bank staff estimates.
 
-## Fiscal support helped shore up domestic demand
+### Fiscal support helped shore up domestic demand
 
 A positive fiscal impulse of 1.6 percent of GDP is expected to support the economy in 2025, mainly  through  higher public  investment,  with  some  targeted  support  to  households. 4 The government expanded the consumer goods trade-in subsidy to RMB 300 billion (0.2 percent of GDP), which is expected to provide a near-term boost to consumption, but its impact is likely to be short-lived and insufficient to address the structural factors underlying low consumption. The budget also allocates 0.3 ppts of GDP more to the voluntary social pension and health insurance scheme (the Rural and Urban Resident Scheme, RURS), raising the basic pension benefit by RMB 20 to RMB 143 per person per month and the medical insurance subsidy by RMB 30 to RMB 700 per person per year. Yet, the pension and health benefit levels of the RURS remain very low compared to the employer-backed Urban Worker Scheme (UWS), with the basic pension benefit of the RURS equivalent to 12 percent of per capita rural income. This limits the effectiveness of social protection in boosting household consumption.
 
@@ -344,7 +344,7 @@ Source: MoF, NBS, World Bank staff estimates.
 
 Note:  China's  budget  system  consists  of  (i)  the  Public Finance  Budget  (PFB)  which  includes  tax  and  non-tax revenues, current expenditures, and a portion of capital expenditures; (ii) the Government Fund Budget which reflects mainly land-lease revenues of local governments and expenditures for specific infrastructure and social projects; (iii) the Social Security Fund Budget which records social insurance contributions and disbursements; and (iv)  the  SOE Fund Budget which is the state-owned assets operation budget. The consolidated budget balance refers to the sum of (i), (ii), ( iii) and (iv) minus net withdrawals from the government's stabilization fund.  Data on (iii) and (iv) are only reported at annual frequency. In the PFB, local government revenues exclude transfers from the central budget, and central government expenditures exclude transfers to local governments.
 
-## Private-sector credit demand remains muted despite monetary easing
+### Private-sector credit demand remains muted despite monetary easing
 
 Monetary policy has remained accommodative, relying on liquidity injections and to a lesser extent on interest rate cuts to support credit and economic activity. In May, the PBC announced new easing measures including a 10-bps policy rate reduction and a 50-bps required reserve ratio (RRR) cut, alongside increased lending to priority sectors through  its structural credit facilities . The net liquidity injection was substantial at 3.8 percent of GDP in the first four months,
 
@@ -354,7 +354,7 @@ compared with 0.1 percent of GDP in Q4 2024. The modest cut of the policy rate r
 
 Figure  7.  Despite  easing  measures,  real  interest  rates  stayed  relatively  high  and  credit  demand remained subdued.
 
-## A. Real and nominal interest rate
+#### A. Real and nominal interest rate
 
 ![Image](images/image_000021_8bcbe5de9141134e5aeff5c3f40b82e6b48c28f945b839604f2fd0594350c555.png)
 
@@ -364,7 +364,7 @@ Source: PBC, SAFE, NBS, World Bank staff estimates.
 
 Corporate and household credit demand has remained subdued despite policy easing. Growth in total credit to the non-financial sector edged up to 8.3 percent y/y in the first four months of 2025, from 8.2 percent in 2024, as an acceleration in government bond issuance more than offset a deceleration in bank loan growth (Figure 7B). The slowdown in bank lending reflected subdued credit demand from both corporates and households. Corporate demand was constrained by the ongoing property downturn, significant uncertainty, and high real borrowing costs, particularly for medium- to long-term loans whose growth fell to 9.4 percent in Q1 2025, from 12.8 percent in  2024.  On  the  household  side,  below-trend  income  growth,  declining  home  prices,  and  an elevated debt burden, with an average debt-to-disposable income ratio of 139 percent, limited appetite to borrow.
 
-## Bank profitability has come under pressure
+### Bank profitability has come under pressure
 
 In 2024, banks' net interest margins (NIMs) contracted further, although slower than in 2023, while pressures on profitability persisted . The banking sector's aggregate NIM declined to 1.5 percent in 2024, compared to 1.7 percent in 2023. The decline in banks' funding costs slowed down the NIM contraction by partially offsetting the impact of lower loan rates, which resulted from the benchmark policy rate cuts. However, the accommodative monetary policy stance is expected to sustain downward pressure on NIMs over the short and medium term. While sector-
 
@@ -392,7 +392,7 @@ The government injected RMB 520 billion (0.4 percent of GDP) in equity into four
 
 package in September 2024 and primarily funded through central government bonds. The banks receiving the equity injection (three of them Global Systemically Important Banks (G-SIBs)), are expected to see their capital adequacy ratios improve to an average of 18.3 percent (Figure 8B). This intervention serves dual objectives: it strengthens G-SIB s' capital compliance, including the Total  Loss-Absorbing  Capacity  (TLAC)  requirements,  and  boosts  institutional  resilience.  The expanded capital base will further enhance the lending capacity of these banks.
 
-## Box 1. The f inancial sector's role in supporting consumption growth
+#### Box 1. The f inancial sector's role in supporting consumption growth
 
 The expansion of financial inclusion in China has supported rapid growth in consumer credit . Account ownership increased by 24.9 percentage points between 2011 and 2021, rising from 63.8 percent to 88.7 percent of adults. Gaps in financial access for underserved groups -including women, youth, and low-income adults -have also narrowed, driven by improvements in financial infrastructure, expanded service access points, and the widespread adoption of digital financial services.
 
@@ -406,21 +406,21 @@ However, such efforts come against the background of household income pressures,
 
 Figure 9. Past property boom and fast economic growth shaped the lending distribution evenly between mortgage and non-mortgage consumer loans
 
-## A. Household loans share
+#### A. Household loans share
 
 ![Image](images/image_000025_65a82f0570d45dd7cca555eb948f7a56c2193eb952c3295bd278d8e798ab68d5.png)
 
 Source: PBC, China Banking Association.
 
-## B. Growth of household loans
+#### B. Growth of household loans
 
 ![Image](images/image_000026_15406b1fc49c18ffb56c3707c34ef4efa05be0c69468f536ee2c44f51fa34fb3.png)
 
 ## II. Outlook, Risks, and Policy Implications
 
-## Outlook
+### Outlook
 
-## China's GDP g rowth is projected to moderate to 4.5 percent in 2025 and 4.0 percent in 2026.
+#### China's GDP g rowth is projected to moderate to 4.5 percent in 2025 and 4.0 percent in 2026.
 
 Despite export frontloading in the first half of the year, export growth is expected to decelerate from the level observed last year. Significantly higher uncertainty could temper manufacturing investment and labor demand. Fiscal policy will be the main lever in mitigating the negative impact of trade policy  uncertainty  and  supporting  GDP  growth. A  significant portion  of  fiscal support  has  been  allocated  to  infrastructure  investment,  while  some  social  benefits  and  the consumer subsidies have been expanded to boost household consumption. Policy support for the property sector is expected to provide a modest boost to housing demand, mainly in tier-1 cities, but stabilization in the sector is expected to be gradual.
 
@@ -453,21 +453,21 @@ Note: f = forecast (baseline). * World Bank staff estimates.
 
 Figure 10. Living standards will continue to improve, albeit slower than in previous years
 
-## A. Poverty rate
+##### A. Poverty rate
 
 ![Image](images/image_000027_8fc76ac2d7a94d9b1385fdff686d2b9269bf2d3207dadbd47edb14b6d729fe80.png)
 
-## B. Number of poor
+#### B. Number of poor
 
 ![Image](images/image_000028_f7c578a9e61121c24fc0dab457a3c5fa864dcd8c9a22c2738025fa2e0df7b8dd.png)
 
 Source: World Bank staff estimates using tabulated data from NBS and World Bank's GDP growth projections. Note: Last grouped data available to calculate poverty is for 2021. Projections based on per capita GDP growth estimates, using a neutral distribution assumption with pass-through 0.85 to per capita household consumption.
 
-## Risks
+### Risks
 
 Risks to the growth outlook are broadly balanced but significant. Globally, uncertainty around trade policy and global growth poses downside risks to China's growth outlook. Domestically, prolonged weakness in the property sector could further temper investment. Further softening of labor market conditions due to higher uncertainty, lower enterprise profitability, and reduced hiring  could  weigh  on  consumption.  On  the  upside,  higher-than-expected  fiscal  spending, financed  to  a  significant  extent  by  the  central  government,  could  lift  growth  above  baseline projections.
 
-## Policy implications
+### Policy implications
 
 Beyond short-term stimulus, a sustained improvement in household consumption will require greater reform ambition. While current policies are expected to support demand in the near term, additional measures are needed to address longer-term headwinds to growth. Investment in infrastructure and property is constrained by diminishing returns due to an already high capital stock  and  capital  misallocation  in  some  sectors  (World  Bank,  2023a).  The  infrastructure investment-heavy approach also contributes to rising local public debt, which may constrain the sustainability of such spending over time. The global trade landscape is also undergoing structural shifts. Going forward, China will need to rely more on household consumption as an engine of growth.
 
@@ -499,7 +499,7 @@ This chapter provides an analysis of the factors-both short- and long-term-that 
 
 to expand employment opportunities, target investments in skills development, and strengthen social protection for workers in transition.
 
-## Mirroring the shift in growth drivers, labor market trends have diverged across sectors
+### Mirroring the shift in growth drivers, labor market trends have diverged across sectors
 
 Although urban unemployment has remained stable at around five percent in recent years, the headline  unemployment  rate  masks  several  labor  market  challenges. First,  the  labor  force participation rate (LFPR) declined from 69.3 percent in 2015 to 65.5 percent in 2023, meaning that fewer people of working age are looking for or have a job (Figure 12A). There are several reasons for this. First, population aging has a dampening effect on overall labor force participation, as the share of older people, who tend to have lower LFPRs, increases. Second, young people in China today stay longer in tertiary education and out of the labor force. Gross college enrollment rose from 17 percent of the college-aged population in 2003 to 60 percent in 2023. In addition, technical and vocational education and training (TVET) has expanded since 2018 (World Bank, 2022). Third, some workers may have dropped out of the labor force for lack of opportunities, giving up job search. 7
 
@@ -571,7 +571,7 @@ Figure 15. High-skill services are the largest source of labor productivity grow
 
 Source: China NBS; China economic census; World Bank staff estimates. Note: Figure A and B show average annual labor productivity growth and its decomposition based on McMillan et al. (2014). Sectoral employment is estimated using aggregate employment from China labor statistics yearbook and sectoral employment share from China economic census. Low-skill services include wholesale &amp; retail trade, transport, and hotel &amp; catering services. High-skill services include IT, finance, real estate,  education, business services, and other services.
 
-## Informal, migrant, and young workers have been disproportionately affected
+### Informal, migrant, and young workers have been disproportionately affected
 
 Slower job creation in services and declining construction employment have been reflected in fewer job opportunities for informal sector workers. While urban formal sector employment has remained largely stable, urban informal sector job creation remains below its pre-pandemic trend (Figure  16A).  Informal  workers  face  weaker  job  security,  fewer  opportunities  for  career advancement,  and  limited  access  to  unemployment  insurance  and  other  social  protection benefits (Figure 16B). A sizeable share of the manufacturing workforce is also temporary-around 40  million  workers,  or  31  percent  of  the  sector's  employment. 9 Especially  in  export-oriented manufacturing sectors such as consumer electronics, hiring temporary workers for peak periods
 
@@ -583,7 +583,7 @@ rather than maintaining large full-time staff reduces labor costs and helps comp
 
 Figure 16. Youth, rural migrants, and informal workers face challenges from fewer job opportunities and higher income insecurity
 
-## A. Urban and rural employment compared to pre-pandemic trend
+#### A. Urban and rural employment compared to pre-pandemic trend
 
 - B. Unemployment insurance coverage
 
@@ -599,7 +599,7 @@ compared to the pre-pandemic trend (Figure 16C). Growth in real wages for migran
 
 In  addition,  youth  unemployment  has  become  a  growing  concern  in  China. The  youth unemployment rate, excluding people aged 16-24 who are enrolled in education, has averaged 16.5 percent since July 2024. Larger numbers of college graduates and slower job creation in the high-skill services sector, the largest employer of recent graduates, 10 have contributed to higher youth  unemployment  in  recent  years.  Evidence  also  suggests  that  there  has  been  a  growing mismatch between the skills of recent graduates and those required by employers-not only a mismatch between the fields of college study and employers' needs but also variations in the quality of college and TVET education (World Bank, 2022).
 
-## Technology is also reshaping the labor market
+### Technology is also reshaping the labor market
 
 New technologies such as robots, artificial intelligence (AI), and digitalization are affecting the relationship between growth and jobs through three channels: enhancing productivity, creating new tasks, and displacing workers. The productivity gains from new technologies reduce the cost of production by augmenting labor and/or capital, lowering prices, increasing demand, and hence boosting labor demand for existing labor-intensive tasks integral to the production. At the same time, new technologies expand the set of tasks that can be done with capital, displacing workers in routine manual or cognitive jobs. New technologies can also create new labor-intensive tasks which are non-routine (Acemoglu and Restrepo, 2019). For example, the emergence of generative AI has led to new professions such as AI trainers.
 
@@ -615,7 +615,7 @@ Source: Arias et al. (2025), IFR, National Bureau of Statistics, SAFE, World Ban
 
 Note: Panel A: Task content is measured based on the Autor and Dorn (2013) methodology and normalized at the ISCO08 2-digit level. Occupations are categorized into five groups by the dominant task category. Task content in agriculture is not measured because of data limitations. Data are from the most recent available year. Panel C: Industrial  robots  refer  to  multi-functional  industrial  robots  classified  under  HS  code  8479.50.10;  the  average manufacturing wage refers to urban private enterprises.
 
-## Robot adoption has accelerated in China in recent years, partly due to rising relative labor costs.
+#### Robot adoption has accelerated in China in recent years, partly due to rising relative labor costs.
 
 The pace of robot installations has picked up significantly in China in the past decade, outpacing other  economies  (Figure  17B).  Robot  adoption  has  increased  not  only  in  the  automotive, computer, and electronics sectors but also in others such as rubber and plastics. International evidence  suggests  that  robot  adoption  is  positively  correlated  with  rising  wages,  share  of manufacturing in value-added, 11 and aging (Arias et al., 2025). In China, robot prices have been declining  while  labor  costs  have  been  increasing  with  the  decline  in  working-age  population
 
@@ -657,7 +657,7 @@ Figure 19. Digitalization has created more flexible but less secure jobs
 
 Source:  China  Academy  of  Information  and  Communications  Technology  and  National  Academy  of  Economic Strategy, CASS (2024), Zhilian and Institute of Economics and Social Research, Jinan University (2024), World Bank staff estimates.
 
-## Policies for more and better jobs
+### Policies for more and better jobs
 
 Addressing the challenges of China's labor market requires both macroeconomic policy support and social protection and labor market reforms. The above analysis has highlighted that the jobs challenge  is  related  not  only  to  the  ongoing  growth  slowdown  amid  domestic  and  external headwinds but also to gaps in equitable access to markets and finance, social protection, and
 
@@ -665,11 +665,11 @@ Addressing the challenges of China's labor market requires both macroeconomic po
 
 labor mobility. Meanwhile, technological disruption is creating both risks and opportunities, often deepening labor market dualities. This calls for a recalibration of macroeconomic, market access, social  protection,  and  labor  market policies  to  support  inclusive  and  sustainable  employment growth. The government has recognized these challenges. In 2024, the State Council introduced a policy initiative which calls for strengthening labor and social protection for vulnerable labor groups,  such  as  flexible  and  migrant  workers,  as  well  as  college  graduates,  and  addressing structural  labor  market  challenges. 17 The  following  policy  recommendations  are  aligned  with these objectives.
 
-## Recalibrate fiscal policy
+#### Recalibrate fiscal policy
 
 Allocating more fiscal resources to social protection could raise household consumption in a sustainable way which could boost job creation, in particular in the services sector. Chapter 1 argued  for  rebalancing  the  composition  of  fiscal  spending  from  infrastructure  and  targeted consumer goods subsidies toward social protection programs such as unemployment insurance and pensions. These measures are more likely to allow many consumers to reduce precautionary savings, increase spending as a share of disposable income, and allocate more of it to services in the long term, with a positive impact on job creation. 18
 
-## Level the playing field in market entry and credit allocation
+#### Level the playing field in market entry and credit allocation
 
 Removing entry barriers for domestic private and foreign firms, especially in the services sector, can unlock the private sector's potential for job creation. The authorities have made restoring private  sector  confidence  a  priority.  This  is  important  for  employment  growth,  as  the  private sector generates 80 percent of urban jobs. A new Private Sector Promotion Law has been enacted, aiming to augment legal protections for private enterprises. The National Market Access Negative List, which restricts or prohibits market entry into specific industries and activities, has also been shortened.  However,  regulatory  restrictions  to  market  access  remain  relatively  high  in  China, especially in services and network industries and to trade and investment. 19 China's services trade
 
@@ -683,7 +683,7 @@ https://www.oecd.org/economy/reform/indicators-of-product-market-regulation.
 
 is also more restricted than in peer countries, according to OECD Services Trade Restrictiveness Index  (OECD,  2025).  The  implementation  of  the  negative  list  system  for  market  entry  has improved  transparency  but  challenges  remain,  including  opaque  market  entry  criteria  and screening process and inconsistent enforcement. The government could raise the ambition of market reforms, for example, by further limiting the negative investment list to sectors of national security and lowering service trade restrictions. It could also ensure equal treatment in tax policy and public procurement.
 
-## E qual access to credit is also important for sustainable growth and job creation. Government
+#### E qual access to credit is also important for sustainable growth and job creation. Government
 
 interventions in credit allocation risk leading to resource misallocation (World Bank, 2023a). The analysis  above  suggests  that  this  may  hinder  long-term  employment  growth. Despite  some progress in improved differentiation in risk pricing for SOEs, t here is evidence that SOEs continue to benefit from more favorable credit conditions. 20 Equal access to credit and capital requires SOEs operating in commercial activities to earn market rates of return on state equity. On the other hand, loans to micro-, small- and medium-sized enterprises (MSMEs) have been increasing in recent years, reaching 38 percent of total loans outstanding at the end of 2024, thanks to policy support such as the PBC's re -financing facility, reduced guarantee fees, and credit facilitation from the National Financing Guarantee Fund. Despite this progress, the combined guaranteed volumes remain relatively small compared to the size of the banking system and the number of private firms. Expanding the publicly backed credit guarantees and leveraging digital financial services  could  help  address  the  significant  gap  in  MSMEs  finance 21 and  thus  enhance  their capacity to generate jobs, which is crucial given that they account for around 80 percent of urban employment.
 
@@ -695,13 +695,13 @@ Policy predictability and transparency are particularly important in the current
 
 increase  transparency,  consult  and  communicate  policies,  as  well  as  ensure  their  consistent implementation would reduce policy and regulatory risks and improve sentiment.
 
-## Strengthen social protection for vulnerable workers
+##### Strengthen social protection for vulnerable workers
 
 The need to enhance China's social protection system is becoming more pressing, given the growing trend of flexible employment and the continuing vulnerability of rural migrants. As shown above, half of urban workers are not covered by unemployment insurance. China's total unemployment  expenses  were  less  than  0.1  percent  of  GDP  per  year,  which  is  much  lower compared  to  1.0  percent  of  GDP  on  average  from  OECD  countries  in  2021.  Since  2021,  the government has implemented pilot programs for occupational injury insurance in seven provinces, covering 11 million platform workers. 22 This is important because many platform workers are at increased risk of injuries because of the nature of their work (those working on in-situ platforms such as taxi and delivery). 23 Moreover, the government also introduced guidelines in 2021 and 2023  about  earnings,  working  hours,  and  breaks  to  strengthen  the  rights  and  interests  for platform-based workers. 24 Expanding the coverage of unemployment insurance, especially for flexible workers, scaling up occupational injury insurance, pooling the funds from a city level to a provincial level and finally at the national level to reduce risk, regional disparities, and costs, and simplifying the application process for unemployment insurance are the necessary next steps.
 
 In  the  longer  term,  delinking  social  insurance  entitlements  from  the  urban hukou will  also improve labor mobility. Incremental reform of the social insurance system was announced in July 2024.  Local  governments  will  allow  rural  migrants  to  access  social  insurance  benefits  (and compulsory  education  for  their  children)  in  the  cities  where  they  work.  While  this  does  not necessarily imply full liberalization of hukou -based restrictions, the measures aim to decoupling access to social security from hukou registration. Reforms could extend hukou liberalization and better access to social protection beyond small and medium cities and ensure the portability of social insurance benefits across cities.
 
-## Mitigate technological displacement through active labor market policies
+##### Mitigate technological displacement through active labor market policies
 
 To  take  advantage  of  the  opportunities  brought  by  technological  advancements,  the government and businesses need to invest in worker skills. China has significantly invested in
 

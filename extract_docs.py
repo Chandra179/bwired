@@ -4,6 +4,7 @@ from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.datamodel.pipeline_options import PdfPipelineOptions, TableFormerMode
 from docling_core.types.doc.base import ImageRefMode
 from docling.datamodel.base_models import InputFormat
+from hierarchical.postprocessor import ResultPostprocessor
 
 def convert_pdf_nuclear(pdf_path, output_dir=None):
     pdf_path = Path(pdf_path)
@@ -24,7 +25,7 @@ def convert_pdf_nuclear(pdf_path, output_dir=None):
     pipeline_options.table_structure_options.mode = TableFormerMode.ACCURATE  # vs FAST
     pipeline_options.generate_picture_images = True
     pipeline_options.generate_page_images = True
-    pipeline_options.images_scale = 2.0 
+    pipeline_options.images_scale = 2.0
 
     converter = DocumentConverter(
         format_options={
@@ -33,10 +34,13 @@ def convert_pdf_nuclear(pdf_path, output_dir=None):
     )
 
     result = converter.convert(pdf_path)
+    postprocessor = ResultPostprocessor(result, source=str(pdf_path))
+    postprocessor.process()
+    
     doc = result.document
 
     images_dir = Path("images")
-    final_filename = output_dir / f"{pdf_path.stem}_nuclear.md"
+    final_filename = output_dir / f"{pdf_path.stem}.md"
     
     doc.save_as_markdown(
         filename=final_filename,

@@ -3,10 +3,15 @@ from typing import Optional
 
 
 @dataclass
-class ChunkingConfig:
-    """Configuration for chunking behavior"""
+class BaseSplitterConfig:
+    """Base configuration for all splitters"""
     chunk_size: int = 512
     overlap_tokens: int = 0
+
+
+@dataclass
+class MarkdownSplitterConfig(BaseSplitterConfig):
+    """Configuration for Markdown splitter"""
     use_sentence_boundaries: bool = True
 
 
@@ -90,27 +95,27 @@ class QdrantConfig:
 @dataclass
 class RAGChunkingConfig:
     """Main configuration container with validation"""
-    chunking: ChunkingConfig
+    splitter: BaseSplitterConfig
     context: ContextConfig
     embedding: EmbeddingConfig
     
     def __post_init__(self):
         """Validate configuration after initialization"""
         # Ensure chunk_size doesn't exceed embedding model's limit
-        if self.chunking.chunk_size > self.embedding.embedding_token_limit:
+        if self.splitter.chunk_size > self.embedding.embedding_token_limit:
             raise ValueError(
-                f"chunk_size ({self.chunking.chunk_size}) cannot exceed "
+                f"chunk_size ({self.splitter.chunk_size}) cannot exceed "
                 f"embedding_token_limit ({self.embedding.embedding_token_limit})"
             )
         
         # Warn if overlap is too large relative to chunk size
-        if self.chunking.overlap_tokens >= self.chunking.chunk_size:
+        if self.splitter.overlap_tokens >= self.splitter.chunk_size:
             raise ValueError(
-                f"overlap_tokens ({self.chunking.overlap_tokens}) must be "
-                f"smaller than chunk_size ({self.chunking.chunk_size})"
+                f"overlap_tokens ({self.splitter.overlap_tokens}) must be "
+                f"smaller than chunk_size ({self.splitter.chunk_size})"
             )
     
     @property
     def max_chunk_size(self) -> int:
         """Maximum chunk size for backward compatibility"""
-        return self.chunking.chunk_size
+        return self.splitter.chunk_size
