@@ -1,35 +1,36 @@
+"""Markdown-specific document chunker with integrated section analysis"""
 from typing import List, Dict
+import uuid
 import logging
 import re
 
-from ..parser import MarkdownParser, MarkdownElement, ElementType
+from ..base_chunker import BaseDocumentChunker
+from .markdown_parser import MarkdownParser, MarkdownElement, ElementType
 from .section_analyzer import SectionAnalyzer, Section
-from ..text_processing.sentence_splitter import SentenceSplitter
-from ..text_processing.tokenizer_utils import TokenCounter
-from ..config import RAGChunkingConfig
-from ..schema import SemanticChunk
 from .overlap_handler import OverlapHandler
-from ..splitters.table_splitter import TableSplitter
-from ..splitters.code_splitter import CodeSplitter
-from ..splitters.list_splitter import ListSplitter
-from ..splitters.text_splitter import TextSplitter
-
+from .table_splitter import TableSplitter
+from .code_splitter import CodeSplitter
+from .list_splitter import ListSplitter
+from .text_splitter import TextSplitter
+from ...text_processing.sentence_splitter import SentenceSplitter
+from ...text_processing.tokenizer_utils import TokenCounter
+from ...config import RAGChunkingConfig
+from ..schema import SemanticChunk
 
 logger = logging.getLogger(__name__)
 
 
-class SemanticChunker:
+class MarkdownDocumentChunker(BaseDocumentChunker):
     """
-    RAG-optimized semantic chunker with:
+    RAG-optimized markdown chunker with:
+    - Semantic section hierarchy
     - Sliding window overlap
     - Relationship tracking
     - Enhanced ancestry paths
     """
     
-    def __init__(self, 
-        config: RAGChunkingConfig,
-    ):
-        self.config = config
+    def __init__(self, config: RAGChunkingConfig):
+        super().__init__(config)
         
         self.parser = MarkdownParser()
         self.section_analyzer = SectionAnalyzer()
@@ -37,12 +38,13 @@ class SemanticChunker:
         self.token_counter = TokenCounter(config.embedding.dense.model_name)
         self.overlap_handler = OverlapHandler(self.sentence_splitter)
         
+        # Initialize markdown-specific splitters
         self.table_splitter = TableSplitter(config, self.sentence_splitter, self.token_counter)
         self.code_splitter = CodeSplitter(config, self.sentence_splitter, self.token_counter)
         self.list_splitter = ListSplitter(config, self.sentence_splitter, self.token_counter)
         self.text_splitter = TextSplitter(config, self.sentence_splitter, self.token_counter)
         
-        logger.info("SemanticChunker initialized with overlap and relationship tracking")
+        logger.info("MarkdownDocumentChunker initialized with overlap and relationship tracking")
     
     def chunk_document(
         self, 
@@ -61,23 +63,22 @@ class SemanticChunker:
         """
         logger.info(f"Processing document: {document_id}")
         
+        # Stage 1: Parse markdown into elements
         elements = self.parser.parse(content)
         logger.info(f"Stage 1: Parsed {len(elements)} elements")
         
+        # Stage 2: Build section hierarchy
         sections = self.section_analyzer.analyze(elements)
         logger.info(f"Stage 2: Extracted {len(sections)} top-level sections")
         
+        # Stage 3: Chunk sections
         all_chunks = []
-        
         for section in sections:
             section_chunks = self._chunk_section(section, ancestry=[])
             all_chunks.extend(section_chunks)
         
         logger.info(f"Stage 3: Created {len(all_chunks)} semantic chunks")
-        
-        all_chunks = self._apply_overlap_by_section(all_chunks)
-        logger.info(f"Stage 4: Applied overlap to chunks")
-        
+                
         return all_chunks
     
     def _chunk_section(
@@ -94,7 +95,7 @@ class SemanticChunker:
         buffer_elements = []
         buffer_tokens = 0
         
-        max_size = self.config.max_chunk_size
+        max_size = self.config.chunking.max_chunk_size
 
         for element in section.content_elements:
             if self._is_metadata_noise(element.content):
@@ -137,15 +138,19 @@ class SemanticChunker:
         elements: List[MarkdownElement], 
         header_path: str
     ) -> SemanticChunk:
-        """Helper to merge multiple small elements into one coherent chunk"""
+        """Updated to satisfy the new SemanticChunk dataclass requirements"""
         combined_content = "\n\n".join([e.content for e in elements])
+        
+        # Extract parent_section from header_path
+        parent_section = header_path.split(" > ")[-1] if " > " in header_path else header_path
+        
         return SemanticChunk(
+            id=str(uuid.uuid4()),
             content=combined_content,
             token_count=self.token_counter.count_tokens(combined_content),
             chunk_type="text",
-            section_path=header_path,
-            is_continuation=False,
-            split_sequence=None
+            parent_section=parent_section,
+            section_path=header_path
         )
     
     def _chunk_element(

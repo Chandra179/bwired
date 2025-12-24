@@ -1,8 +1,9 @@
+"""Section analyzer for markdown documents"""
 from dataclasses import dataclass
 from typing import List, Optional
 import logging
 
-from ..parser import MarkdownElement, ElementType
+from .markdown_parser import MarkdownElement, ElementType
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +96,6 @@ class SectionAnalyzer:
             
             if elem.type == ElementType.HEADING:
                 if elem.level <= level: 
-                    # could be open and close tag so we need to check the level
                     # Next section at same or higher level
                     break
                 else:
