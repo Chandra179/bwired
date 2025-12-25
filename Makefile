@@ -19,5 +19,5 @@ s:
 r:
 	uvicorn server:app --host 0.0.0.0 --port 8000
 
-d:
-	python download_models.py
+c:
+	streamlit run client/client_app.py
