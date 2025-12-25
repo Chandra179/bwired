@@ -118,6 +118,7 @@ class SearchEngine:
             ])
         
         logger.info("Generating LLM response...")
+        logger.info(f"LLM context: {context}")
         response = self._generate_response(query_text, context)
         
         return response

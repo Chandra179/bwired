@@ -34,6 +34,11 @@ From docs extraction to retrieval
 ## Directory structure
 ```
 .
+├── server/
+│   ├── __init__.py
+│   ├── server.py           # FastAPI app + startup initialization
+│   └── search_api.py       # /search endpoint logic
+|
 ├── internal/
 │   ├── chunkers/                 # Document chunking system (format-based)
 │   │   ├── __init__.py           # Exports BaseDocumentChunker, ChunkerFactory
