@@ -23,7 +23,6 @@ class SearchResponse(BaseModel):
     """Response model for search endpoint"""
     response: str
     collection_name: str
-    num_chunks_searched: int
 
 
 def sanitize_filename(filename: str) -> str:
@@ -298,8 +297,7 @@ async def search_document(
         
         return SearchResponse(
             response=llm_response,
-            collection_name=collection_name,
-            num_chunks_searched=num_chunks if num_chunks > 0 else -1  # -1 indicates existing collection
+            collection_name=collection_name
         )
         
     except HTTPException:
