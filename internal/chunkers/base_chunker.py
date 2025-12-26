@@ -4,7 +4,7 @@ from typing import List
 import logging
 
 from .schema import SemanticChunk
-from ..config import RAGChunkingConfig
+from ..config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class BaseDocumentChunker(ABC):
     Each chunker handles: parsing → structure analysis → orchestrating element chunking
     """
     
-    def __init__(self, config: RAGChunkingConfig):
+    def __init__(self, config: Config):
         self.config = config
         logger.info(f"{self.__class__.__name__} initialized")
     

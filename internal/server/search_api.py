@@ -12,7 +12,7 @@ from docling.datamodel.base_models import InputFormat
 
 from internal.chunkers import ChunkerFactory
 from internal.storage.qdrant_client import QdrantClient
-from internal.core.search_engine import SearchEngine
+from internal.retriever.retriever import Retriever
 
 logger = logging.getLogger(__name__)
 
@@ -38,16 +38,9 @@ def sanitize_filename(filename: str) -> str:
     # Remove extension
     name = Path(filename).stem
     
-    # Replace spaces and special characters with underscores
     sanitized = re.sub(r'[^\w\-]', '_', name)
-    
-    # Remove consecutive underscores
     sanitized = re.sub(r'_+', '_', sanitized)
-    
-    # Remove leading/trailing underscores
     sanitized = sanitized.strip('_')
-    
-    # Convert to lowercase for consistency
     sanitized = sanitized.lower()
     
     return sanitized
@@ -213,7 +206,7 @@ async def perform_search(
     qdrant_client = QdrantClient(qdrant_config, state.dense_embedder.get_dimension())
     
     # Create search engine
-    search_engine = SearchEngine(
+    search_engine = Retriever(
         qdrant_client=qdrant_client,
         reranker=state.reranker,
         llm_config=state.llm_config,

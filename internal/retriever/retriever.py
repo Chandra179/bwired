@@ -7,13 +7,12 @@ from pathlib import Path
 from ..storage.qdrant_client import QdrantClient
 from ..embedding.reranker import Reranker
 from ..processing.base_processor import BaseProcessor
-from ..generator.engine import LocalEngine
 from ..config import LLMConfig
 
 logger = logging.getLogger(__name__)
 
 
-class SearchEngine:
+class Retriever:
     """High-level search orchestration with reranking, processing, and LLM generation"""
     
     def __init__(
@@ -37,11 +36,6 @@ class SearchEngine:
         self.processor = processor
         self.llm_config = llm_config
         
-        # Initialize LLM engine
-        self.llm_engine = LocalEngine(model=llm_config.model)
-        logger.info(f"LLM Engine initialized with model: {llm_config.model}")
-        
-        # Load prompt templates
         self.system_template = self._load_template(llm_config.system_prompt_path)
         self.user_template = self._load_template(llm_config.user_prompt_path)
         logger.info("Prompt templates loaded")
@@ -117,11 +111,9 @@ class SearchEngine:
                 result["content"] for result in reranked_results
             ])
         
-        logger.info("Generating LLM response...")
-        logger.info(f"LLM context: {context}")
-        response = self._generate_response(query_text, context)
+        # Use AI agents refactor this shit
         
-        return response
+        return context
     
     def _rerank_results(self, query_text: str, points: List[Any]) -> List[Dict[str, Any]]:
         """
@@ -134,14 +126,11 @@ class SearchEngine:
         Returns:
             Reranked results sorted by score
         """
-        # Extract document texts for reranking
         doc_texts = [p.payload.get("content", "") for p in points]
         query_doc_pairs = [[query_text, doc] for doc in doc_texts]
         
-        # Get reranker scores
         rerank_scores = self.reranker.predict(query_doc_pairs)
         
-        # Build results with reranker scores
         results = []
         for i, score in enumerate(rerank_scores):
             results.append({
@@ -150,34 +139,7 @@ class SearchEngine:
                 "metadata": {k: v for k, v in points[i].payload.items() if k != "content"}
             })
         
-        # Sort by reranker score in descending order
         results.sort(key=lambda x: x["score"], reverse=True)
         
         logger.info(f"Reranked {len(results)} results")
         return results
-    
-    def _generate_response(self, query: str, context: str) -> str:
-        """
-        Generate LLM response using query and context
-        
-        Args:
-            query: User query
-            context: Retrieved and processed context
-            
-        Returns:
-            Generated response from LLM
-        """
-        # Render system prompt
-        system_prompt = self.system_template.render()
-        user_prompt = self.user_template.render(
-            query=query,
-            context=context
-        )
-        
-        response = self.llm_engine.generate(
-            prompt=user_prompt,
-            system_message=system_prompt
-        )
-        
-        logger.info("LLM response generated")
-        return response

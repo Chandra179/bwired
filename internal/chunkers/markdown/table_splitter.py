@@ -6,7 +6,7 @@ from ..schema import SemanticChunk
 from .markdown_parser import MarkdownElement
 from ...text_processing.tokenizer_utils import TokenCounter
 from ...text_processing.sentence_splitter import SentenceSplitter
-from ...config import RAGChunkingConfig
+from ...config import Config
 
 from .utils import link_chunks, create_chunk
 
@@ -17,7 +17,7 @@ class TableSplitter:
     
     def __init__(
         self, 
-        config: RAGChunkingConfig, 
+        config: Config, 
         sentence_splitter: SentenceSplitter, 
         token_counter: TokenCounter
     ):

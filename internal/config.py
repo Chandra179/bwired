@@ -1,5 +1,9 @@
 from dataclasses import dataclass
 from typing import Optional
+import yaml
+import logging
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class ChunkingConfig:
@@ -80,14 +84,6 @@ class CompressionConfig:
             if self.token_limit <= 0:
                 raise ValueError("token_limit must be positive")
 
-
-@dataclass
-class ProcessorConfig:
-    """Configuration for result processors"""
-    enabled: bool = False
-    compression: Optional[CompressionConfig] = None
-
-
 @dataclass
 class LLMConfig:
     """Configuration for LLM generation"""
@@ -129,7 +125,7 @@ class QdrantConfig:
 
 
 @dataclass
-class RAGChunkingConfig:
+class Config:
     """
     Main configuration for RAG chunking system
     
@@ -141,9 +137,9 @@ class RAGChunkingConfig:
     chunking: ChunkingConfig
     embedding: EmbeddingConfig
     reranker: Optional[RerankerConfig] = None
-    processor: Optional[ProcessorConfig] = None
     llm: Optional[LLMConfig] = None
     storage: Optional[QdrantConfig] = None
+    compression: Optional[CompressionConfig] = None
     
     def __post_init__(self):
         """Validate cross-config constraints"""
@@ -163,3 +159,85 @@ class RAGChunkingConfig:
                 "This may result in highly redundant chunks.",
                 UserWarning
             )
+    
+def load_config(config_path: str = "config.yaml") -> Config:
+    """
+    Loads and parses the nested YAML into the Dataclass structure.
+    """
+    logger.info(f"Loading config from: {config_path}")
+    
+    with open(config_path, 'r', encoding='utf-8') as f:
+        data = yaml.safe_load(f) or {}
+
+    c_raw = data.get('chunking', {})
+    e_raw = data.get('embedding', {})
+    d_raw = e_raw.get('dense', {})
+    s_raw = e_raw.get('sparse', {})
+    q_raw = data.get('qdrant', {})
+    r_raw = data.get('reranker', {})
+    l_raw = data.get('llm', {})
+
+    # 2. Build Nested Objects
+    chunking_cfg = ChunkingConfig(
+        max_chunk_size=c_raw.get('chunk_size', 256),
+        overlap_tokens=c_raw.get('overlap_tokens', 30),
+        include_section_path=c_raw.get('include_header_path', True)
+    )
+    
+    dense_cfg = DenseEmbeddingConfig(
+        model_name=d_raw.get('model_name', "BAAI/bge-base-en-v1.5"),
+        device=e_raw.get('device', "cuda"), # Use the shared device from embedding level
+        batch_size=d_raw.get('batch_size', 30),
+        use_fp16=d_raw.get('use_fp16', True),
+        show_progress_bar=d_raw.get('show_progress_bar', False),
+        model_dim=e_raw.get('model_dim', 768)
+    )
+    
+    sparse_cfg = SparseEmbeddingConfig(
+        model_name=s_raw.get('model_name', "prithivida/Splade_PP_en_v1"),
+        batch_size=s_raw.get('batch_size', 5),
+        threads=s_raw.get('threads', 2)
+    )
+    
+    embedding_cfg = EmbeddingConfig(
+        dense=dense_cfg,
+        sparse=sparse_cfg,
+        embedding_token_limit=e_raw.get('token_limit', 512)
+    )
+    
+    qdrant_cfg = QdrantConfig(
+        url=q_raw.get('url', "http://localhost:6333"),
+        collection_name=q_raw.get('collection_name', "markdown_chunks"),
+        distance_metric=q_raw.get('distance_metric', "Cosine"),
+        grpc_port=q_raw.get('grpc_port', 6334),
+        storage_batch_size=q_raw.get('storage_batch_size', 500)
+    )
+
+    llm_cfg = LLMConfig(
+        model=l_raw.get('model', 'llama3.2'),
+        temperature=l_raw.get('temperature', 0.1),
+        max_tokens=l_raw.get('max_tokens', 1000)
+    )
+
+    reranker_cfg = RerankerConfig(
+        model_name=r_raw.get('model_name', 'BAAI/bge-reranker-v2-m3'),
+        device=r_raw.get('device', 'cpu'),
+        batch_size=r_raw.get('batch_size', 32),
+        enabled=True
+    )
+    
+    compression_cfg = CompressionConfig(
+        model_name=data.get('compression', {}).get('model_name', 'microsoft/llmlingua-2-bert-base-multilingual-cased-meetingbank'),
+        compression_ratio=data.get('compression', {}).get('compression_ratio'),
+        token_limit=data.get('compression', {}).get('token_limit'),
+        device=data.get('compression', {}).get('device', 'cpu')
+    )
+
+    return Config(
+        chunking=chunking_cfg,
+        embedding=embedding_cfg,
+        storage=qdrant_cfg,
+        reranker=reranker_cfg,
+        llm=llm_cfg,
+        compression=compression_cfg
+    )

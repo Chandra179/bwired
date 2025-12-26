@@ -11,7 +11,7 @@ from qdrant_client.http.models import QueryResponse
 import numpy as np
 
 from ..config import QdrantConfig
-from ..core.metadata import ChunkMetadata
+from ..retriever.metadata import ChunkMetadata
 
 logger = logging.getLogger(__name__)
 
