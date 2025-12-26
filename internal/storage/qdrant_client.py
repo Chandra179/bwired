@@ -39,33 +39,26 @@ class QdrantClient:
         logger.info(f"Storage batch size: {config.storage_batch_size}")
         
         
-    async def initialize(self):
+    async def initialize(self, collection_name: str):
         """Initialize Qdrant collection if it doesn't exist"""
-        collections = await self.client.get_collections()
-        collection_names = [col.name for col in collections.collections]
-        
-        if self.config.collection_name not in collection_names:
-            logger.info(f"Creating collection: {self.config.collection_name}")
-            
-            vectors_config = {
-                "dense": VectorParams(
-                    size=self.dense_embedding_dim,
-                    distance=Distance.COSINE
-                )
-            }
-            sparse_vectors_config = {
-                "sparse": SparseVectorParams(
-                    index=SparseIndexParams(on_disk=False)
-                )
-            }
-            await self.client.create_collection(
-                collection_name=self.config.collection_name,
-                vectors_config=vectors_config,
-                sparse_vectors_config=sparse_vectors_config
+        logger.info(f"Creating collection: {collection_name}")
+        vectors_config = {
+            "dense": VectorParams(
+                size=self.dense_embedding_dim,
+                distance=Distance.COSINE
             )
-            logger.info(f"Collection created with dimension {self.dense_embedding_dim}")
-        else:
-            logger.info(f"Collection {self.config.collection_name} already exists")
+        }
+        sparse_vectors_config = {
+            "sparse": SparseVectorParams(
+                index=SparseIndexParams(on_disk=False)
+            )
+        }
+        await self.client.create_collection(
+            collection_name=collection_name,
+            vectors_config=vectors_config,
+            sparse_vectors_config=sparse_vectors_config
+        )
+        logger.info(f"Collection created with dimension {self.dense_embedding_dim}")
 
 
     async def store_chunks(
@@ -135,7 +128,8 @@ class QdrantClient:
     
     
     async def query_points(
-        self, 
+        self,
+        collection_name: str,
         query_dense_embedding: np.ndarray, 
         query_sparse_embedding: Dict[str, Any],
         limit: int = 10,
@@ -158,7 +152,7 @@ class QdrantClient:
             
             # Perform hybrid search with RRF
             results = await self.client.query_points(
-                collection_name=self.config.collection_name,
+                collection_name=collection_name,
                 prefetch=[
                     Prefetch(
                         query=query_dense_embedding.tolist(),

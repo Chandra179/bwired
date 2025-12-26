@@ -1,17 +1,15 @@
-# internal/models/compressor.py – simplified version
 from typing import List, Dict, Any
 import logging
 import warnings
 from llmlingua import PromptCompressor
 
-from .base_processor import BaseProcessor
 from ..config import CompressionConfig
 from ..utils.token_counter import TokenCounter
 
 logger = logging.getLogger(__name__)
 
 
-class ContextCompressor(BaseProcessor):
+class ContextCompressor():
     """Compresses search results using LLMLingua-2"""
     
     def __init__(self, config: CompressionConfig):

@@ -19,7 +19,6 @@ embedding:
 
 qdrant:
   url: "http://localhost:6333"
-  collection_name: "markdown_chunks"
   distance_metric: "Cosine"
   grpc_port: 6334
   storage_batch_size: 500

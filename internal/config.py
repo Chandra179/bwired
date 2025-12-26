@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 import yaml
 import logging
@@ -33,7 +33,7 @@ class DenseEmbeddingConfig:
     batch_size: int = 32
     use_fp16: bool = False
     show_progress_bar: bool = True
-    model_dim: int = 768  # Output dimension
+    model_dim: int = 768
 
 
 @dataclass
@@ -106,7 +106,6 @@ class LLMConfig:
 class QdrantConfig:
     """Configuration for Qdrant vector store"""
     url: str = "http://localhost:6333"
-    collection_name: str = "markdown_chunks"
     distance_metric: str = "Cosine"
     grpc_port: int = 6334
     storage_batch_size: int = 100
@@ -159,6 +158,19 @@ class Config:
                 "This may result in highly redundant chunks.",
                 UserWarning
             )
+            
+@dataclass
+class ExtractorConfig:
+    """Configuration for document parsing and OCR"""
+    allowed_extensions: list[str] = field(default_factory=lambda: [".pdf", ".md"])
+    use_ocr: bool = False
+    ocr_language: str = "eng"
+    extraction_mode: str = "fast"  # e.g., "fast", "accurate"
+    
+    def __post_init__(self):
+        if not self.allowed_extensions:
+            raise ValueError("allowed_extensions cannot be empty")
+    
     
 def load_config(config_path: str = "config.yaml") -> Config:
     """
@@ -207,7 +219,6 @@ def load_config(config_path: str = "config.yaml") -> Config:
     
     qdrant_cfg = QdrantConfig(
         url=q_raw.get('url', "http://localhost:6333"),
-        collection_name=q_raw.get('collection_name', "markdown_chunks"),
         distance_metric=q_raw.get('distance_metric', "Cosine"),
         grpc_port=q_raw.get('grpc_port', 6334),
         storage_batch_size=q_raw.get('storage_batch_size', 500)

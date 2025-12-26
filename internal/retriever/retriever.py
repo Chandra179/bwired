@@ -36,36 +36,16 @@ class Retriever:
         self.processor = processor
         self.llm_config = llm_config
         
-        self.system_template = self._load_template(llm_config.system_prompt_path)
-        self.user_template = self._load_template(llm_config.user_prompt_path)
-        logger.info("Prompt templates loaded")
-        
         logger.info("SearchEngine initialized")
         if processor and processor.is_enabled():
             logger.info(f"Processor enabled: {processor.__class__.__name__}")
         else:
             logger.info("No processor configured")
     
-    def _load_template(self, template_path: str) -> Template:
-        """
-        Load Jinja2 template from file
-        
-        Args:
-            template_path: Path to template file
-            
-        Returns:
-            Jinja2 Template object
-        """
-        path = Path(template_path)
-        if not path.exists():
-            raise FileNotFoundError(f"Template file not found: {template_path}")
-        
-        with open(path, 'r', encoding='utf-8') as f:
-            return Template(f.read())
-    
     async def search(
         self,
         query_text: str,
+        collection_name: str,
         query_dense_embedding: np.ndarray,
         query_sparse_embedding: Dict[str, Any],
         limit: int = 10
@@ -84,6 +64,7 @@ class Retriever:
         """
         logger.info(f"Retrieving candidates (limit: {limit})...")
         query_response = await self.qdrant_client.query_points(
+            collection_name=collection_name,
             query_dense_embedding=query_dense_embedding,
             query_sparse_embedding=query_sparse_embedding,
             limit=limit

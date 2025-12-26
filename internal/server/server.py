@@ -8,6 +8,8 @@ from internal.embedding.dense_embedder import DenseEmbedder
 from internal.embedding.sparse_embedder import SparseEmbedder
 from internal.embedding.reranker import Reranker
 from internal.processing.context_compressor import ContextCompressor
+from internal.storage.qdrant_client import QdrantClient
+from internal.chunkers import ChunkerFactory
 
 from internal.config import (
     load_config,
@@ -40,14 +42,14 @@ class ServerState:
         self.sparse_embedder: SparseEmbedder = None
         self.reranker: Reranker = None
         self.processor: ContextCompressor = None
+        self.qdrant_client: QdrantClient = None
+        self.chunker = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
     logger.info("Starting server initialization...")
     
-    
-    # Store configs in state
     state = ServerState()
     state.config = load_config("config.yaml") 
     
@@ -65,12 +67,11 @@ async def lifespan(app: FastAPI):
         raise
     
     try:
-        logger.info("Initializing sparse embedder (this may download models on first run)...")
+        logger.info("Initializing sparse embedder...")
         state.sparse_embedder = SparseEmbedder(state.config.embedding.sparse)
         logger.info("✓ Sparse embedder loaded")
     except Exception as e:
         logger.error(f"Failed to load sparse embedder: {e}")
-        logger.error("If this is the first run, the model needs to download. Please wait...")
         raise
     
     try:
@@ -88,6 +89,25 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Failed to load compressor (optional): {e}")
         state.processor = None
+        
+    try:
+        logger.info("Initializing Qdrant client...")
+        state.qdrant_client = QdrantClient(
+            config=state.qdrant_config,
+            dense_embedding_dim=state.config.embedding.dense.model_dim
+        )
+        logger.info("✓ Qdrant client initialized and collection ready")
+    except Exception as e:
+        logger.error(f"Failed to initialize Qdrant client: {e}")
+        raise
+    
+    try:
+        logger.info("Initializing chunker...")
+        state.chunker = ChunkerFactory.create(format='markdown', config=state.config)
+        logger.info("✓ Chunker loaded")
+    except Exception as e:
+        logger.error(f"Failed to load chunker: {e}")
+        raise
     
     app.state.server_state = state
     
@@ -132,13 +152,14 @@ async def root():
 @app.get("/health")
 async def health():
     """Detailed health check"""
+    state = app.state.server_state
     return {
         "status": "healthy",
         "models": {
-            "dense_embedder": "loaded",
-            "sparse_embedder": "loaded",
-            "reranker": "loaded",
-            "llm_engine": "loaded"
+            "dense_embedder": "loaded" if state.dense_embedder else "failed",
+            "sparse_embedder": "loaded" if state.sparse_embedder else "failed",
+            "reranker": "loaded" if state.reranker else "failed",
+            "qdrant_client": "connected" if state.qdrant_client else "failed"
         }
     }
 
