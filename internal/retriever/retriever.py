@@ -1,12 +1,9 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 import logging
 import numpy as np
-from jinja2 import Template
-from pathlib import Path
 
 from ..storage.qdrant_client import QdrantClient
 from ..embedding.reranker import Reranker
-from ..processing.base_processor import BaseProcessor
 from ..config import LLMConfig
 
 logger = logging.getLogger(__name__)
@@ -20,7 +17,6 @@ class Retriever:
         qdrant_client: QdrantClient,
         reranker: Reranker,
         llm_config: LLMConfig,
-        processor: Optional[BaseProcessor] = None
     ):
         """
         Initialize search engine
@@ -33,14 +29,8 @@ class Retriever:
         """
         self.qdrant_client = qdrant_client
         self.reranker = reranker
-        self.processor = processor
         self.llm_config = llm_config
         
-        logger.info("SearchEngine initialized")
-        if processor and processor.is_enabled():
-            logger.info(f"Processor enabled: {processor.__class__.__name__}")
-        else:
-            logger.info("No processor configured")
     
     async def search(
         self,
