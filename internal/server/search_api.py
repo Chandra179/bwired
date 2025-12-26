@@ -47,7 +47,7 @@ async def search_document(
         
         response = await search_engine.search(
             query_text=search_request.query,
-            collection_name=request.collection_name,
+            collection_name=search_request.collection_name,
             query_dense_embedding=query_dense,
             query_sparse_embedding=query_sparse,
             limit=search_request.limit

@@ -78,7 +78,7 @@ async def upload_document(
         
         logger.info(f"Vectorizing document: {document_id}")
         
-        chunks = state.chunk.chunk_document(markdown_content, document_id)
+        chunks = state.chunker.chunk_document(markdown_content, document_id)
         
         if not chunks:
             raise ValueError("No chunks generated from document. Document may be empty or invalid.")

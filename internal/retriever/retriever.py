@@ -17,6 +17,7 @@ class Retriever:
         qdrant_client: QdrantClient,
         reranker: Reranker,
         llm_config: LLMConfig,
+        processor = None,
     ):
         """
         Initialize search engine
@@ -30,6 +31,7 @@ class Retriever:
         self.qdrant_client = qdrant_client
         self.reranker = reranker
         self.llm_config = llm_config
+        self.processor = processor
         
     
     async def search(
