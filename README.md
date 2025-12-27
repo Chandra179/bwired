@@ -34,12 +34,13 @@ From docs extraction to retrieval
 ## Directory structure
 ```
 .
-├── server/
-│   ├── __init__.py
-│   ├── server.py           # FastAPI app + startup initialization
-│   └── search_api.py       # /search endpoint logic
-|
 ├── internal/
+│   ├── server/
+│   │   ├── __init__.py
+│   │   ├── server.py             # FastAPI app + startup initialization
+│   │   ├── search_api.py         # /search endpoint logic
+│   │   └── upload_docs_api.py    # /upload endpoint logic
+|   |
 │   ├── chunkers/                 # Document chunking system (format-based)
 │   │   ├── __init__.py           # Exports BaseDocumentChunker, ChunkerFactory
 │   │   ├── base_chunker.py       # Abstract interface for all chunkers
@@ -73,8 +74,8 @@ From docs extraction to retrieval
 │   │
 │   ├── processing/               # Result processing
 │   │   ├── __init__.py           
-│   │   ├── base_processor.py     # Abstract base class for processors
-│   │   └── compressor.py         # LLMLingua compression implementation
+│   │   ├── document_extractor.py # Pdf to markdown extractor
+│   │   └── context_compressor.py # LLMLingua compression implementation
 │   │
 │   ├── storage/                  # Vector database integrations
 │   │   └── qdrant_client.py      # Low-level Qdrant operations
@@ -87,12 +88,7 @@ From docs extraction to retrieval
 │   ├── logger.py                 # Centralized logging setup
 │   └── schema.py                 # Data models and Pydantic types
 │
-├── prompts/                      # LLM prompt templates
-│   ├── user_prompt.j2            
-│   └── system_prompt.j2
-│
-├── vectorize.yaml                # Configuration for chunking and embedding
-├── search.yaml                   # Configuration for search and processing
+├── config.yaml                   # App Configuration
 ├── Makefile
 ├── docker-compose.yml
 └── README.md
