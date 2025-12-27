@@ -1,6 +1,7 @@
 import logging
 import os
 from contextlib import asynccontextmanager
+from typing import Optional
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,7 +10,7 @@ from internal.embedding.sparse_embedder import SparseEmbedder
 from internal.embedding.reranker import Reranker
 from internal.processing.context_compressor import ContextCompressor
 from internal.storage.qdrant_client import QdrantClient
-from internal.chunkers import ChunkerFactory
+from internal.chunkers import ChunkerFactory, BaseDocumentChunker
 
 from internal.config import (
     load_config,
@@ -31,19 +32,20 @@ class ServerState:
     """Global state container for initialized models and configs"""
     
     def __init__(self):
-        self.config: Config = None
+        self.config: Optional[Config] = None
         
-        self.qdrant_config: QdrantConfig = None
-        self.reranker_config: RerankerConfig = None
-        self.processor_config: CompressionConfig = None
-        self.llm_config: LLMConfig = None
+        self.qdrant_config: Optional[QdrantConfig] = None
+        self.reranker_config: Optional[RerankerConfig] = None
+        self.processor_config: Optional[CompressionConfig] = None
+        self.llm_config: Optional[LLMConfig] = None
         
-        self.dense_embedder: DenseEmbedder = None
-        self.sparse_embedder: SparseEmbedder = None
-        self.reranker: Reranker = None
-        self.processor: ContextCompressor = None
-        self.qdrant_client: QdrantClient = None
-        self.chunker = None
+        self.dense_embedder: Optional[DenseEmbedder] = None
+        self.sparse_embedder: Optional[SparseEmbedder] = None
+        self.reranker: Optional[Reranker] = None
+        self.processor: Optional[ContextCompressor] = None
+        self.qdrant_client: Optional[QdrantClient] = None
+        self.chunker: Optional[BaseDocumentChunker] = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -154,7 +156,7 @@ async def root():
 @app.get("/health")
 async def health():
     """Detailed health check"""
-    state = app.state.server_state
+    state: ServerState = app.state.server_state  # Type hint here too
     return {
         "status": "healthy",
         "models": {

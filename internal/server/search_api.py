@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from internal.retriever.retriever import Retriever
+from internal.server.server import ServerState
 
 logger = logging.getLogger(__name__)
 
@@ -23,14 +24,14 @@ class SearchResponse(BaseModel):
 
 @router.post("/search", response_model=SearchResponse)
 async def search_document(
-    request: Request,
+    req: Request,
     search_request: SearchRequest
 ):
     """
     Search endpoint: Search an existing document collection
     """
     
-    state = request.app.state.server_state
+    state: ServerState = req.app.state.server_state
     
     logger.info(f"Searching collection '{search_request.collection_name}' with query: '{search_request.query}'")
     

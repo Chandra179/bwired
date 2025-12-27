@@ -5,11 +5,12 @@ from pathlib import Path
 
 from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
 from internal.processing.document_extractor import convert_pdf_to_markdown
-from internal.chunkers import ChunkerFactory
+from internal.server.server import ServerState
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["upload"])
+
 
 def sanitize_filename(filename: str) -> str:
     """
@@ -52,7 +53,8 @@ async def upload_document(
     Raises:
         HTTPException: If file processing fails
     """
-    state = req.app.state.server_state
+    # Add type annotation here - VSCode will now autocomplete!
+    state: ServerState = req.app.state.server_state
     
     if not file.filename:
         raise HTTPException(status_code=400, detail="Invalid file: no filename")
@@ -61,12 +63,10 @@ async def upload_document(
         logger.warning(f"File {file.filename} has content type {file.content_type}, expected application/pdf")
     
     collection_name = sanitize_filename(file.filename)
-    
     document_id = collection_name
-    
     logger.info(f"Processing file: {file.filename} → collection: {collection_name}")
-    
     tmp_path = None
+    
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
             content = await file.read()
@@ -83,7 +83,6 @@ async def upload_document(
             raise ValueError("No chunks generated from document. Document may be empty or invalid.")
         
         logger.info(f"Generated {len(chunks)} chunks")
-        
         chunk_texts = [chunk.content for chunk in chunks]
         dense_embeddings = state.dense_embedder.encode(chunk_texts)
         sparse_embeddings = state.sparse_embedder.encode(chunk_texts)
@@ -107,6 +106,5 @@ async def upload_document(
         raise HTTPException(status_code=500, detail=f"Failed to process document: {str(e)}")
         
     finally:
-        # Clean up temp file
         if tmp_path and tmp_path.exists():
             tmp_path.unlink()
