@@ -63,6 +63,7 @@ class QdrantClient:
 
     async def store_chunks(
         self, 
+        collection_name: str,
         chunks: List[Any],
         dense_vectors: List[np.ndarray],
         sparse_vectors: List[Dict[str, Any]], 
@@ -107,18 +108,18 @@ class QdrantClient:
             points.append(point)
             
             if len(points) >= self.config.storage_batch_size:
-                await self._upload_batch(points)
+                await self._upload_batch(collection_name, points)
                 points = []
         
         if points:
-            await self._upload_batch(points)
+            await self._upload_batch(collection_name, points)
     
     
-    async def _upload_batch(self, points: List[PointStruct]):
+    async def _upload_batch(self, collection_name: str, points: List[PointStruct]):
         """Upload a batch of points to Qdrant"""
         try:
             await self.client.upsert(
-                collection_name=self.config.collection_name,
+                collection_name=collection_name,
                 points=points
             )
             logger.debug(f"Uploaded batch of {len(points)} points")

@@ -68,7 +68,6 @@ async def upload_document(
     
     tmp_path = None
     try:
-        # Save uploaded file to temp location
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
             content = await file.read()
             tmp_file.write(content)
@@ -85,7 +84,6 @@ async def upload_document(
         
         logger.info(f"Generated {len(chunks)} chunks")
         
-        # Generate embeddings
         chunk_texts = [chunk.content for chunk in chunks]
         dense_embeddings = state.dense_embedder.encode(chunk_texts)
         sparse_embeddings = state.sparse_embedder.encode(chunk_texts)
@@ -94,6 +92,7 @@ async def upload_document(
         
         await state.qdrant_client.initialize(collection_name)
         await state.qdrant_client.store_chunks(
+            collection_name=collection_name,
             chunks=chunks,
             dense_vectors=dense_embeddings,
             sparse_vectors=sparse_embeddings,

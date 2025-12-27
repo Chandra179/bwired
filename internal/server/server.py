@@ -137,7 +137,9 @@ app.add_middleware(
 
 # Import and include routers
 from .search_api import router as search_router
+from .upload_docs_api import router as upload_router
 app.include_router(search_router)
+app.include_router(upload_router)
 
 
 @app.get("/")

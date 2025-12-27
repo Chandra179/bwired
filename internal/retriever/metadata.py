@@ -30,7 +30,6 @@ class ChunkMetadata:
         return cls(
             id=chunk.id,
             document_id=document_id,
-            id=chunk.id,
             token_count=chunk.token_count,
             chunk_type=chunk.chunk_type,
             parent_section=chunk.parent_section, 
