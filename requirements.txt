@@ -1,28 +1,43 @@
+# Core ML/AI - Install these first
+torch>=2.0.0,<3.0.0
+numpy>=2.0.2  # Required by docling-hierarchical-pdf
+sentence-transformers>=2.3.0,<4.0.0
+
+# Document Processing
 docling==2.64.1
-docling_core==2.55.0
-docling-hierarchical-pdf
+docling-core==2.55.0
+docling-hierarchical-pdf>=0.1.1
 
-sentence-transformers>=2.3.0 
-torch>=2.0.0
-qdrant-client>=1.12.0
-numpy>=1.24.0
-
+# Text Processing
+spacy>=3.7.0,<4.0.0
 markdown-it-py>=3.0.0
 linkify-it-py>=2.0.3
 
-spacy>=3.7.0
+# Vector Store & Embeddings
+qdrant-client>=1.12.0,<2.0.0
+fastembed>=0.2.0,<1.0.0
+
+# Context Compression
+llmlingua>=0.2.0
+
+# Web Framework
+fastapi>=0.115.0,<0.116.0
+uvicorn[standard]>=0.32.0,<0.33.0
+python-multipart>=0.0.12,<1.0.0
+
+# Agentic AI (relaxed pydantic constraint)
+pydantic>=2.9.0,<3.0.0
+pydantic-ai>=0.0.14
+httpx>=0.27.0
+
+# LLM & Templates
+ollama>=0.1.0
+jinja2>=3.0.0
+
+# Utilities
 python-dotenv>=1.0.0
-numpy>=1.24.0
-fastembed
 
-llmlingua
-jinja2
-ollama
+# Optional: Web UI
+streamlit>=1.28.0
 
-fastapi==0.115.0
-uvicorn[standard]==0.32.0
-python-multipart==0.0.12
-pydantic==2.9.2
-streamlit
-
-# Run: python -m spacy download en_core_web_sm
+# Run after installation: python -m spacy download en_core_web_sm

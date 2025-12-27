@@ -88,18 +88,6 @@ class CompressionConfig:
 class LLMConfig:
     """Configuration for LLM generation"""
     model: str = "llama3.2"
-    temperature: float = 0.1
-    system_prompt_path: str = "prompts/system_prompt.j2"
-    user_prompt_path: str = "prompts/user_prompt.j2"
-    max_tokens: int = 1000
-    
-    def __post_init__(self):
-        """Validate LLM parameters"""
-        if not 0 <= self.temperature <= 2:
-            raise ValueError("temperature must be between 0 and 2")
-        
-        if self.max_tokens <= 0:
-            raise ValueError("max_tokens must be positive")
 
 
 @dataclass
@@ -225,9 +213,7 @@ def load_config(config_path: str = "config.yaml") -> Config:
     )
 
     llm_cfg = LLMConfig(
-        model=l_raw.get('model', 'llama3.2'),
-        temperature=l_raw.get('temperature', 0.1),
-        max_tokens=l_raw.get('max_tokens', 1000)
+        model=l_raw.get('model', 'llama3.2')
     )
 
     reranker_cfg = RerankerConfig(

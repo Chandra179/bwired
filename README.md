@@ -1,17 +1,12 @@
-# E2E RAG
+# AI Agents
 
+![LLM Chat](test.png)
 From docs extraction to retrieval
-
-## Config
-- modify `vectorize.yaml` for custom chunking and embedding, reranker config
-- modify `search.yaml` for search config
 
 ## Running (Makefile)
 - make up: start docker compose
-- make e: extract pdf files to markdown
-- make i: install python dependency
-- make v: chunk, embed and store markdown vector to database
-- make s: do RAG by query search
+- make r: run app server
+- make c: run client
 
 ## Chunking Architecture
 1. parsing markdown into AST (Abstract Syntax Tree) structure
@@ -25,70 +20,76 @@ From docs extraction to retrieval
 1. generate 2 embed query for sparse and dense vector for hybrid search
 2. use Reciprocal Rank Fusion (RRF) for hybrid search
 3. rerank the result
-4. compress the result using llm lingua
+4. compress the result using llm lingua (optional)
 
-## Generation Architecture
-1. have system and user template for LLM
-2. use Ollama for LLM chat
+## AI Agents
+1. create agents using PydanticAI
+2. model: Ollama (configurable)
 
 ## Directory structure
 ```
 .
 ├── internal/
+│   ├── agents/                   # Agentic AI layer
+│   │   ├── __init__.py
+│   │   ├── factory.py            # Agent creation and configuration
+│   │   ├── search_agent.py       # Search tool
+│   │   └── upload_agent.py       # Indexing tool
+│   │
 │   ├── server/
 │   │   ├── __init__.py
-│   │   ├── server.py             # FastAPI app + startup initialization
-│   │   ├── search_api.py         # /search endpoint logic
-│   │   └── upload_docs_api.py    # /upload endpoint logic
-|   |
-│   ├── chunkers/                 # Document chunking system (format-based)
-│   │   ├── __init__.py           # Exports BaseDocumentChunker, ChunkerFactory
-│   │   ├── base_chunker.py       # Abstract interface for all chunkers
-│   │   ├── chunker_factory.py    # Factory for creating format-specific chunkers
-│   │   └── markdown/             # Markdown-specific chunking (all-in-one)
-│   │       ├── __init__.py       # Exports markdown components
-│   │       ├── markdown_chunker.py    # Main markdown document chunker
-│   │       ├── markdown_parser.py     # Parses markdown into elements
-│   │       ├── section_analyzer.py    # Builds hierarchical sections
-│   │       ├── overlap_handler.py     # Manages chunk overlap
-│   │       ├── table_splitter.py      # Splits large tables by rows
-│   │       ├── code_splitter.py       # Splits code blocks by lines
-│   │       ├── list_splitter.py       # Splits lists by items
-│   │       └── text_splitter.py       # Splits text by sentences
+│   │   ├── server.py             # FastAPI app + agent initialization
+│   │   ├── chat_api.py           # Unified /chat endpoint
+│   │   └── upload_docs_api.py    # /upload endpoint for binary files
 │   │
-│   ├── cli/                      # Command-line interface logic
-│   │   ├── config_loader.py      # Handles CLI-specific configurations
-│   │   ├── display.py            # Formatting for terminal output 
-│   │   ├── search_cli.py         # Entry point for search queries
-│   │   └── vectorize_cli.py      # Entry point for document processing
+│   ├── chunkers/                 # Document chunking system
+│   │   ├── __init__.py
+│   │   ├── base_chunker.py
+│   │   ├── chunker_factory.py
+│   │   └── markdown/             # Markdown-specific chunking
+│   │       ├── markdown_chunker.py
+│   │       ├── markdown_parser.py
+│   │       ├── section_analyzer.py
+│   │       ├── overlap_handler.py
+│   │       ├── table_splitter.py
+│   │       ├── code_splitter.py
+│   │       ├── list_splitter.py
+│   │       └── text_splitter.py
 │   │
-│   ├── core/                     # Shared business logic and orchestration
-│   │   ├── metadata.py           # Metadata management
-│   │   ├── search_engine.py      # Search orchestration logic
-│   │   └── semantic_chunker.py   # DEPRECATED: Use ChunkerFactory instead
+│   ├── cli/                      # Command-line interface
+│   │   ├── config_loader.py
+│   │   ├── display.py
+│   │   ├── search_cli.py
+│   │   └── vectorize_cli.py
 │   │
-│   ├── embedding/                # Embedding & Ranking models
-│   │   ├── dense_embedder.py     # Logic for dense vectors
-│   │   ├── reranker.py           # Cross-encoder logic for result reranking
-│   │   └── sparse_embedder.py    # Logic for sparse vectors
+│   ├── core/                     # Shared business logic
+│   │   ├── metadata.py
+│   │   ├── search_engine.py
+│   │   └── semantic_chunker.py   # DEPRECATED
+│   │
+│   ├── embedding/                # Embedding & Ranking
+│   │   ├── dense_embedder.py
+│   │   ├── reranker.py
+│   │   └── sparse_embedder.py
 │   │
 │   ├── processing/               # Result processing
-│   │   ├── __init__.py           
-│   │   ├── document_extractor.py # Pdf to markdown extractor
-│   │   └── context_compressor.py # LLMLingua compression implementation
+│   │   ├── __init__.py
+│   │   ├── document_extractor.py # PDF → Markdown
+│   │   └── context_compressor.py # LLMLingua compression
 │   │
-│   ├── storage/                  # Vector database integrations
-│   │   └── qdrant_client.py      # Low-level Qdrant operations
+│   ├── storage/                  # Vector database
+│   │   └── qdrant_client.py
 │   │
-│   ├── text_processing/          # Global utilities for text cleanup
-│   │   ├── sentence_splitter.py  # Sentence boundary detection
-│   │   └── tokenizer_utils.py    # Token counting utilities
+│   ├── text_processing/          # Text utilities
+│   │   ├── sentence_splitter.py
+│   │   └── tokenizer_utils.py
 │   │
-│   ├── config.py                 # Main application configuration
-│   ├── logger.py                 # Centralized logging setup
-│   └── schema.py                 # Data models and Pydantic types
+│   ├── config.py                 # Configuration management
+│   ├── logger.py                 # Logging setup
+│   └── schema.py                 # Data models
 │
-├── config.yaml                   # App Configuration
+├── config.yaml                   # Main configuration
+├── requirements.txt              # Python dependencies (includes pydantic-ai)
 ├── Makefile
 ├── docker-compose.yml
 └── README.md

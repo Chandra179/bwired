@@ -1,192 +1,118 @@
 import streamlit as st
 import requests
-import json
-import re
-from pathlib import Path
 
-st.set_page_config(page_title="RAG PDF Search", layout="wide")
+# --- Configuration ---
+# Default to localhost:8000 as defined in your server.py
+API_BASE_URL = "http://localhost:8000" 
 
-st.title("📄 AI Document Search")
-st.markdown("Upload PDFs or search existing collections using RAG.")
+# --- Page Config ---
+st.set_page_config(
+    page_title="Agentic RAG Chat",
+    page_icon="🤖",
+    layout="wide"
+)
 
-# Settings Sidebar
+st.title("🤖 Document Search Agent")
+
+# --- Sidebar: Document Upload ---
 with st.sidebar:
-    st.header("⚙️ API Settings")
-    api_base = st.text_input("Backend URL", "http://localhost:8000")
+    st.header("📂 Upload Documents")
+    st.markdown("Upload a PDF to index it into the vector database.")
     
-    st.divider()
+    # File Uploader
+    uploaded_file = st.file_uploader("Choose a PDF file", type=["pdf"])
     
-    st.header("🔍 Search Settings")
-    search_limit = st.slider("Results to retrieve", min_value=1, max_value=20, value=5)
-    
-    st.divider()
-    
-    # Health check
-    if st.button("Check API Health"):
-        try:
-            response = requests.get(f"{api_base}/health", timeout=5)
-            if response.status_code == 200:
-                health_data = response.json()
-                st.success("✅ API is healthy")
-                with st.expander("Details"):
-                    st.json(health_data)
-            else:
-                st.error(f"❌ API returned {response.status_code}")
-        except Exception as e:
-            st.error(f"❌ Cannot connect: {e}")
-
-# Initialize session state
-if 'recent_collections' not in st.session_state:
-    st.session_state.recent_collections = []
-
-# Helper function to sanitize collection name
-def sanitize_collection_name(filename: str) -> str:
-    """Sanitize filename to match backend logic"""
-    if not filename:
-        return "unnamed_document"
-    name = Path(filename).stem
-    sanitized = re.sub(r'[^\w\-]', '_', name)
-    sanitized = re.sub(r'_+', '_', sanitized)
-    sanitized = sanitized.strip('_').lower()
-    return sanitized
-
-# Create tabs for Upload and Search
-tab1, tab2 = st.tabs(["📤 Upload Document", "🔍 Search Collection"])
-
-# ============== UPLOAD TAB ==============
-with tab1:
-    st.header("Upload PDF Document")
-    
-    uploaded_file = st.file_uploader("Choose a PDF file", type="pdf", key="pdf_uploader")
-    
-    if uploaded_file:
-        # Show what the collection name will be
-        predicted_collection = sanitize_collection_name(uploaded_file.name)
-        st.info(f"📚 This will create collection: `{predicted_collection}`")
-        
-        if st.button("📤 Process and Upload PDF", type="primary"):
-            with st.spinner("Processing PDF... This may take a moment..."):
-                try:
-                    # Upload to /upload endpoint
-                    files = {"file": (uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
-                    data = {"collection_name": predicted_collection}
-                    
-                    response = requests.post(
-                        f"{api_base}/upload",
-                        files=files,
-                        data=data,
-                        timeout=120
-                    )
-                    
-                    if response.status_code == 200:
-                        num_chunks = response.json()
-                        
-                        # Add to recent collections
-                        if predicted_collection not in st.session_state.recent_collections:
-                            st.session_state.recent_collections.insert(0, predicted_collection)
-                            # Keep only last 10
-                            st.session_state.recent_collections = st.session_state.recent_collections[:10]
-                        
-                        st.success(f"✅ Successfully processed {num_chunks} chunks!")
-                        st.info(f"📚 Collection: `{predicted_collection}`")
-                        st.info("💡 Go to 'Search Collection' tab to query this document")
-                    else:
-                        st.error(f"❌ Upload failed ({response.status_code}): {response.text}")
-                        
-                except requests.exceptions.Timeout:
-                    st.error("⏱️ Request timed out. The PDF may be too large.")
-                except Exception as e:
-                    st.error(f"❌ Error: {e}")
-
-# ============== SEARCH TAB ==============
-with tab2:
-    st.header("Search Document Collection")
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        # Collection name input
-        collection_name = st.text_input(
-            "Collection Name",
-            placeholder="e.g., my_document",
-            help="Enter the exact collection name you want to search"
-        )
-    
-    with col2:
-        st.write("")  # Spacing
-        # Show recent collections if any
-        if st.session_state.recent_collections:
-            recent_collection = st.selectbox(
-                "Or select recent:",
-                options=[""] + st.session_state.recent_collections,
-                index=0
-            )
-            if recent_collection:
-                collection_name = recent_collection
-    
-    # Query input
-    query = st.text_area(
-        "What would you like to know?",
-        placeholder="e.g., What are the main findings in this document?",
-        height=100
+    # Optional Collection Name Input
+    collection_name = st.text_input(
+        "Collection Name (Optional)", 
+        placeholder="Leave empty to auto-generate"
     )
     
-    # Search button
-    search_button = st.button("🔍 Search", type="primary", use_container_width=True)
-    
-    # Search functionality
-    if search_button:
-        if not query:
-            st.warning("⚠️ Please enter a question.")
-        elif not collection_name:
-            st.warning("⚠️ Please enter a collection name.")
-        else:
-            with st.spinner("🔎 Searching and generating response..."):
+    # Upload Button
+    if st.button("Upload", type="primary"):
+        if uploaded_file is not None:
+            with st.spinner("Uploading..."):
                 try:
-                    # Call /search endpoint with JSON body
-                    payload = {
-                        "query": query,
-                        "collection_name": collection_name,
-                        "limit": search_limit
+                    # prepare multipart/form-data
+                    files = {
+                        "file": (uploaded_file.name, uploaded_file, "application/pdf")
+                    }
+                    data = {
+                        "collection_name": collection_name
                     }
                     
+                    # POST to /upload endpoint
                     response = requests.post(
-                        f"{api_base}/search",
-                        json=payload,
-                        headers={"Content-Type": "application/json"},
-                        timeout=60
+                        f"{API_BASE_URL}/upload", 
+                        files=files, 
+                        data=data
                     )
                     
                     if response.status_code == 200:
                         result = response.json()
-                        
-                        st.divider()
-                        st.subheader("💡 AI Response")
-                        st.markdown(result['response'])
-                        
-                        with st.expander("ℹ️ Search Details"):
-                            st.write(f"**Collection:** `{collection_name}`")
-                            st.write(f"**Results Retrieved:** {search_limit}")
-                            st.write(f"**Query:** {query}")
+                        st.success("✅ Document indexed successfully!")
+                        st.json(result)
                     else:
-                        st.error(f"❌ Search failed ({response.status_code}): {response.text}")
-                        if response.status_code == 404:
-                            st.info("💡 Collection not found. Make sure the collection name is correct or upload a document first.")
+                        st.error(f"❌ Upload failed: {response.status_code}")
+                        st.error(response.text)
                         
-                except requests.exceptions.Timeout:
-                    st.error("⏱️ Search timed out. Try reducing the result limit.")
+                except requests.exceptions.ConnectionError:
+                    st.error("❌ Could not connect to backend. Is the server running?")
                 except Exception as e:
-                    st.error(f"❌ Error during search: {e}")
-                    st.exception(e)
+                    st.error(f"❌ An error occurred: {str(e)}")
+        else:
+            st.warning("⚠️ Please select a file first.")
 
-# Footer
-st.divider()
-st.caption("🤖 Powered by RAG (Retrieval-Augmented Generation)")
+    st.divider()
+    
+    # System Status Check
+    if st.button("Check System Health"):
+        try:
+            res = requests.get(f"{API_BASE_URL}/health")
+            if res.status_code == 200:
+                st.success("System Online")
+                st.json(res.json())
+            else:
+                st.error("System Unhealthy")
+        except:
+            st.error("Server Offline")
 
-# Show recent collections in sidebar if any
-if st.session_state.recent_collections:
-    with st.sidebar:
-        st.divider()
-        st.subheader("📚 Recent Collections")
-        for coll in st.session_state.recent_collections[:5]:
-            st.text(f"• {coll}")
+# --- Main Interface: Chat ---
+st.subheader("Chat with your Documents")
+
+# Initialize chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Display chat messages from history on app rerun
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# React to user input
+if prompt := st.chat_input("Ask a question regarding your uploaded documents..."):
+    # 1. Display user message
+    st.chat_message("user").markdown(prompt)
+    st.session_state.messages.append({"role": "user", "content": prompt})
+
+    # 2. Send to Backend
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        try:
+            with st.spinner("Agent is thinking..."):
+                # POST to /chat endpoint
+                payload = {"message": prompt}
+                response = requests.post(f"{API_BASE_URL}/chat", json=payload)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    bot_response = data.get("response", "No response content.")
+                    message_placeholder.markdown(bot_response)
+                    
+                    # Add assistant response to history
+                    st.session_state.messages.append({"role": "assistant", "content": bot_response})
+                else:
+                    error_msg = f"Error {response.status_code}: {response.text}"
+                    message_placeholder.error(error_msg)
+        except requests.exceptions.ConnectionError:
+            message_placeholder.error("❌ Connection refused. Ensure the FastAPI backend is running.")

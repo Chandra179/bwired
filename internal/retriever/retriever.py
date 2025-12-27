@@ -73,13 +73,13 @@ class Retriever:
         reranked_results = self._rerank_results(query_text, points)
         
         # Non compressed context    
-        # context = "\n\n---\n\n".join([
-        #         result["content"] for result in reranked_results
-        #     ])
+        context = "\n\n---\n\n".join([
+                result["content"] for result in reranked_results
+            ])
         
         logger.info("Applying compressor...")
-        processed_output = self.processor.process(reranked_results)
-        context = processed_output.get("compressed_context", "")
+        # processed_output = self.processor.process(reranked_results)
+        # context = processed_output.get("compressed_context", "")
             
         # Use AI agents refactor this shit
         

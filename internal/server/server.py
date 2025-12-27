@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from typing import Optional
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic_ai import Agent
 
 from internal.embedding.dense_embedder import DenseEmbedder
 from internal.embedding.sparse_embedder import SparseEmbedder
@@ -11,6 +12,7 @@ from internal.embedding.reranker import Reranker
 from internal.processing.context_compressor import ContextCompressor
 from internal.storage.qdrant_client import QdrantClient
 from internal.chunkers import ChunkerFactory, BaseDocumentChunker
+from internal.agents import create_document_agent
 
 from internal.config import (
     load_config,
@@ -45,6 +47,8 @@ class ServerState:
         self.processor: Optional[ContextCompressor] = None
         self.qdrant_client: Optional[QdrantClient] = None
         self.chunker: Optional[BaseDocumentChunker] = None
+        
+        self.agent: Optional[Agent] = None
 
 
 @asynccontextmanager
@@ -111,6 +115,14 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to load chunker: {e}")
         raise
     
+    try:
+        logger.info("Initializing document agent...")
+        state.agent = create_document_agent(model_name=state.llm_config.model)
+        logger.info("✓ Document agent initialized")
+    except Exception as e:
+        logger.error(f"Failed to initialize agent: {e}")
+        raise
+    
     app.state.server_state = state
     
     logger.info("="*60)
@@ -124,8 +136,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Document Search API",
-    description="RAG-based document search with PDF processing",
-    version="1.0.0",
+    description="RAG-based document search with agentic AI",
+    version="2.0.0",
     lifespan=lifespan
 )
 
@@ -138,9 +150,9 @@ app.add_middleware(
 )
 
 # Import and include routers
-from .search_api import router as search_router
+from .chat_api import router as chat_router
 from .upload_docs_api import router as upload_router
-app.include_router(search_router)
+app.include_router(chat_router)
 app.include_router(upload_router)
 
 
@@ -149,21 +161,23 @@ async def root():
     """Health check endpoint"""
     return {
         "status": "online",
-        "message": "Document Search API is running"
+        "message": "Document Search API is running",
+        "version": "2.0.0 (Agentic)"
     }
 
 
 @app.get("/health")
 async def health():
     """Detailed health check"""
-    state: ServerState = app.state.server_state  # Type hint here too
+    state: ServerState = app.state.server_state
     return {
         "status": "healthy",
         "models": {
             "dense_embedder": "loaded" if state.dense_embedder else "failed",
             "sparse_embedder": "loaded" if state.sparse_embedder else "failed",
             "reranker": "loaded" if state.reranker else "failed",
-            "qdrant_client": "connected" if state.qdrant_client else "failed"
+            "qdrant_client": "connected" if state.qdrant_client else "failed",
+            "agent": "loaded" if state.agent else "failed"
         }
     }
 
