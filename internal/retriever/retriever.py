@@ -72,18 +72,15 @@ class Retriever:
         logger.info("Reranking results...")
         reranked_results = self._rerank_results(query_text, points)
         
-        # Extract context based on processor availability
-        is_processing_enabled = self.processor and self.processor.is_enabled()
-        if is_processing_enabled:
-            logger.info("Applying processor...")
-            processed_output = self.processor.process(reranked_results)
-            context = processed_output.get("compressed_context", "")
-        else:
-            # Extract content from raw results
-            context = "\n\n---\n\n".join([
-                result["content"] for result in reranked_results
-            ])
+        # Non compressed context    
+        # context = "\n\n---\n\n".join([
+        #         result["content"] for result in reranked_results
+        #     ])
         
+        logger.info("Applying compressor...")
+        processed_output = self.processor.process(reranked_results)
+        context = processed_output.get("compressed_context", "")
+            
         # Use AI agents refactor this shit
         
         return context
