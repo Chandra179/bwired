@@ -4,7 +4,7 @@ import logging
 
 from .base_chunker import BaseDocumentChunker
 from .markdown import MarkdownDocumentChunker
-from ..config import RAGChunkingConfig
+from ..config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class ChunkerFactory:
     @staticmethod
     def create(
         format: ChunkerFormat,
-        config: RAGChunkingConfig
+        config: Config
     ) -> BaseDocumentChunker:
         """
         Create a document chunker for the specified format

@@ -28,8 +28,8 @@ class ChunkMetadata:
         Ensures all required positional arguments are passed in order.
         """
         return cls(
-            document_id=document_id,
             id=chunk.id,
+            document_id=document_id,
             token_count=chunk.token_count,
             chunk_type=chunk.chunk_type,
             parent_section=chunk.parent_section, 

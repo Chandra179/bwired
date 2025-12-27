@@ -14,7 +14,7 @@ from .list_splitter import ListSplitter
 from .text_splitter import TextSplitter
 from ...text_processing.sentence_splitter import SentenceSplitter
 from ...text_processing.tokenizer_utils import TokenCounter
-from ...config import RAGChunkingConfig
+from ...config import Config
 from ..schema import SemanticChunk
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class MarkdownDocumentChunker(BaseDocumentChunker):
     - Enhanced ancestry paths
     """
     
-    def __init__(self, config: RAGChunkingConfig):
+    def __init__(self, config: Config):
         super().__init__(config)
         
         self.parser = MarkdownParser()
