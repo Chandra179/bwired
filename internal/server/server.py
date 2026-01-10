@@ -12,7 +12,6 @@ from internal.embedding.reranker import Reranker
 from internal.processing.context_compressor import ContextCompressor
 from internal.storage.qdrant_client import QdrantClient
 from internal.chunkers import ChunkerFactory, BaseDocumentChunker
-from internal.agents import create_document_agent
 
 from internal.config import (
     load_config,
@@ -115,14 +114,6 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to load chunker: {e}")
         raise
     
-    try:
-        logger.info("Initializing document agent...")
-        state.agent = create_document_agent(model_name=state.llm_config.model)
-        logger.info("✓ Document agent initialized")
-    except Exception as e:
-        logger.error(f"Failed to initialize agent: {e}")
-        raise
-    
     app.state.server_state = state
     
     logger.info("="*60)
@@ -148,12 +139,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Import and include routers
-from .chat_api import router as chat_router
-from .upload_docs_api import router as upload_router
-app.include_router(chat_router)
-app.include_router(upload_router)
 
 
 @app.get("/")

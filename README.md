@@ -30,17 +30,10 @@ From docs extraction to retrieval
 ```
 .
 ├── internal/
-│   ├── agents/                   # Agentic AI layer
-│   │   ├── __init__.py
-│   │   ├── factory.py            # Agent creation and configuration
-│   │   ├── search_agent.py       # Search tool
-│   │   └── upload_agent.py       # Indexing tool
 │   │
 │   ├── server/
 │   │   ├── __init__.py
 │   │   ├── server.py             # FastAPI app + agent initialization
-│   │   ├── chat_api.py           # Unified /chat endpoint
-│   │   └── upload_docs_api.py    # /upload endpoint for binary files
 │   │
 │   ├── chunkers/                 # Document chunking system
 │   │   ├── __init__.py
@@ -55,17 +48,6 @@ From docs extraction to retrieval
 │   │       ├── code_splitter.py
 │   │       ├── list_splitter.py
 │   │       └── text_splitter.py
-│   │
-│   ├── cli/                      # Command-line interface
-│   │   ├── config_loader.py
-│   │   ├── display.py
-│   │   ├── search_cli.py
-│   │   └── vectorize_cli.py
-│   │
-│   ├── core/                     # Shared business logic
-│   │   ├── metadata.py
-│   │   ├── search_engine.py
-│   │   └── semantic_chunker.py   # DEPRECATED
 │   │
 │   ├── embedding/                # Embedding & Ranking
 │   │   ├── dense_embedder.py
@@ -83,6 +65,10 @@ From docs extraction to retrieval
 │   ├── text_processing/          # Text utilities
 │   │   ├── sentence_splitter.py
 │   │   └── tokenizer_utils.py
+│   │ 
+│   ├── utils/          
+│   │   ├── sentence_splitter.py
+│   │   └── token_counter.py
 │   │
 │   ├── config.py                 # Configuration management
 │   ├── logger.py                 # Logging setup
