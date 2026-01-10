@@ -3,7 +3,7 @@ import logging
 from fastembed import SparseTextEmbedding
 
 from internal.config import SparseEmbeddingConfig
-from internal.utils.token_counter import TokenCounter
+from internal.token_counter import TokenCounter
 
 logger = logging.getLogger(__name__)
 

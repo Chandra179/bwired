@@ -9,9 +9,23 @@ logger = logging.getLogger(__name__)
 
 
 class TokenCounter:
-    """Universal token counter that caches tokenizers for reuse"""
+    """Universal token counter that caches tokenizers for reuse.
+    
+    Supports class method for counting tokens:
+    - Class method: TokenCounter.count_tokens(text, model_name, tokenizer)
+    """
     
     _tokenizer_cache = {}
+    
+    def __init__(self, model_name: str):
+        """
+        Initialize token counter for a specific model (for chunker usage).
+        
+        Args:
+            model_name: HuggingFace model ID
+        """
+        self.model_name = model_name
+        self.tokenizer = self.get_tokenizer(model_name)
     
     @classmethod
     def get_tokenizer(cls, model_name: str) -> Optional[AutoTokenizer]:

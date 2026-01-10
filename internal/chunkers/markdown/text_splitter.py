@@ -4,8 +4,8 @@ from typing import List
 
 from ..schema import SemanticChunk
 from .markdown_parser import MarkdownElement
-from ...text_processing.tokenizer_utils import TokenCounter
-from ...text_processing.sentence_splitter import SentenceSplitter
+from ...token_counter import TokenCounter
+from ...processing.sentence_splitter import SentenceSplitter
 from ...config import Config
 
 from .utils import link_chunks, create_chunk
@@ -32,7 +32,7 @@ class TextSplitter:
     
     def chunk(self, element: MarkdownElement, header_path: str) -> List[SemanticChunk]:
         content = element.content
-        token_count = self.token_counter.count_tokens(content)
+        token_count = TokenCounter.count_tokens(content, self.token_counter.model_name, self.token_counter.tokenizer)
         parent_section = header_path.split(" > ")[-1] if " > " in header_path else header_path
         
         if token_count <= self.max_chunk_size:
@@ -45,12 +45,12 @@ class TextSplitter:
     def _split_by_sentences(self, text_content: str, header_path: str, parent_section: str) -> List[SemanticChunk]:
         sentences = self.sentence_splitter.split_sentences(text_content)
         if not sentences:
-            return [create_chunk(text_content, self.token_counter.count_tokens(text_content), header_path, parent_section, "text")]
+            return [create_chunk(text_content, TokenCounter.count_tokens(text_content, self.token_counter.model_name, self.token_counter.tokenizer), header_path, parent_section, "text")]
         
         chunks, current_sentences, current_tokens = [], [], 0
         
         for sentence in sentences:
-            sentence_tokens = self.token_counter.count_tokens(sentence)
+            sentence_tokens = TokenCounter.count_tokens(sentence, self.token_counter.model_name, self.token_counter.tokenizer)
             
             if sentence_tokens > self.max_chunk_size:
                 if current_sentences:

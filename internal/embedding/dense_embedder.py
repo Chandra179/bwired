@@ -4,7 +4,7 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 
 from internal.config import DenseEmbeddingConfig
-from internal.utils.token_counter import TokenCounter
+from internal.token_counter import TokenCounter
 
 logger = logging.getLogger(__name__)
 

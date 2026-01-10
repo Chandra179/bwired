@@ -6,7 +6,6 @@ From docs extraction to retrieval
 ## Running (Makefile)
 - make up: start docker compose
 - make r: run app server
-- make c: run client
 
 ## Chunking Architecture
 1. parsing markdown into AST (Abstract Syntax Tree) structure
@@ -16,30 +15,21 @@ From docs extraction to retrieval
 ## Embedding Architecture
 1. use Qdrant for vector store (dense and sparse) vector
 
-## Retrieval Architecture
-1. generate 2 embed query for sparse and dense vector for hybrid search
-2. use Reciprocal Rank Fusion (RRF) for hybrid search
-3. rerank the result
-4. compress the result using llm lingua (optional)
-
-## AI Agents
-1. create agents using PydanticAI
-2. model: Ollama (configurable)
-
 ## Directory structure
 ```
 .
 ├── internal/
-│   │
 │   ├── server/
 │   │   ├── __init__.py
-│   │   ├── server.py             # FastAPI app + agent initialization
+│   │   └── server.py             # FastAPI app + agent initialization
 │   │
 │   ├── chunkers/                 # Document chunking system
 │   │   ├── __init__.py
 │   │   ├── base_chunker.py
 │   │   ├── chunker_factory.py
+│   │   ├── schema.py
 │   │   └── markdown/             # Markdown-specific chunking
+│   │       ├── __init__.py
 │   │       ├── markdown_chunker.py
 │   │       ├── markdown_parser.py
 │   │       ├── section_analyzer.py
@@ -47,9 +37,11 @@ From docs extraction to retrieval
 │   │       ├── table_splitter.py
 │   │       ├── code_splitter.py
 │   │       ├── list_splitter.py
-│   │       └── text_splitter.py
+│   │       ├── text_splitter.py
+│   │       └── utils.py
 │   │
 │   ├── embedding/                # Embedding & Ranking
+│   │   ├── __init__.py
 │   │   ├── dense_embedder.py
 │   │   ├── reranker.py
 │   │   └── sparse_embedder.py
@@ -57,26 +49,20 @@ From docs extraction to retrieval
 │   ├── processing/               # Result processing
 │   │   ├── __init__.py
 │   │   ├── document_extractor.py # PDF → Markdown
+│   │   ├── sentence_splitter.py
 │   │   └── context_compressor.py # LLMLingua compression
 │   │
 │   ├── storage/                  # Vector database
 │   │   └── qdrant_client.py
 │   │
-│   ├── text_processing/          # Text utilities
-│   │   ├── sentence_splitter.py
-│   │   └── tokenizer_utils.py
-│   │ 
-│   ├── utils/          
-│   │   ├── sentence_splitter.py
-│   │   └── token_counter.py
-│   │
 │   ├── config.py                 # Configuration management
 │   ├── logger.py                 # Logging setup
-│   └── schema.py                 # Data models
+│   ├── parser.py                 # parsing markdown with markdown-it-py
+│   └── token_counter.py          # Token counting utility
 │
 ├── config.yaml                   # Main configuration
 ├── requirements.txt              # Python dependencies (includes pydantic-ai)
 ├── Makefile
 ├── docker-compose.yml
-└── README.md
+├── README.md
 ```

@@ -4,8 +4,8 @@ from typing import List
 
 from ..schema import SemanticChunk
 from .markdown_parser import MarkdownElement
-from ...text_processing.tokenizer_utils import TokenCounter
-from ...text_processing.sentence_splitter import SentenceSplitter
+from ...token_counter import TokenCounter
+from ...processing.sentence_splitter import SentenceSplitter
 from ...config import Config
 
 from .utils import link_chunks, create_chunk
@@ -32,7 +32,7 @@ class CodeSplitter:
     def chunk(self, element: MarkdownElement, header_path: str) -> List[SemanticChunk]:
         content = element.content
         language = element.language or "unknown"
-        token_count = self.token_counter.count_tokens(content)
+        token_count = TokenCounter.count_tokens(content, self.token_counter.model_name, self.token_counter.tokenizer)
         parent_section = header_path.split(" > ")[-1] if " > " in header_path else header_path
         chunk_type = f"code_{language}"
         
@@ -48,7 +48,7 @@ class CodeSplitter:
         chunks, current_lines, current_tokens = [], [], 0
         
         for line in lines:
-            line_tokens = self.token_counter.count_tokens(line)
+            line_tokens = TokenCounter.count_tokens(line, self.token_counter.model_name, self.token_counter.tokenizer)
             if current_tokens + line_tokens > self.max_chunk_size and current_lines:
                 chunks.append(create_chunk("\n".join(current_lines), current_tokens, header_path, parent_section, chunk_type))
                 current_lines, current_tokens = [line], line_tokens

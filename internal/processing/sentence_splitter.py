@@ -1,5 +1,6 @@
 from typing import List
 import logging
+from ..token_counter import TokenCounter
 
 try:
     import spacy
@@ -94,7 +95,7 @@ class SentenceSplitter:
         current_tokens = 0
         
         for sentence in sentences:
-            sentence_tokens = token_counter.count_tokens(sentence)
+            sentence_tokens = TokenCounter.count_tokens(sentence, token_counter.model_name, token_counter.tokenizer)
             
             # If single sentence is too long, split it by clauses/words
             if sentence_tokens > max_tokens:
@@ -147,7 +148,7 @@ class SentenceSplitter:
                 current_chunk = ""
                 for part in parts:
                     test_text = current_chunk + part
-                    if token_counter.count_tokens(test_text) <= max_tokens:
+                    if TokenCounter.count_tokens(test_text, token_counter.model_name, token_counter.tokenizer) <= max_tokens:
                         current_chunk = test_text
                     else:
                         if current_chunk:
@@ -158,7 +159,7 @@ class SentenceSplitter:
                     chunks.append(current_chunk.strip())
                 
                 # Check if we successfully reduced the size
-                if chunks and all(token_counter.count_tokens(c) <= max_tokens for c in chunks):
+                if chunks and all(TokenCounter.count_tokens(c, token_counter.model_name, token_counter.tokenizer) <= max_tokens for c in chunks):
                     return chunks
         
         # Fallback to word splitting if clause splitting failed
@@ -169,7 +170,7 @@ class SentenceSplitter:
         for word in words:
             test_chunk = ' '.join(current_chunk + [word])
             
-            if token_counter.count_tokens(test_chunk) <= max_tokens:
+            if TokenCounter.count_tokens(test_chunk, token_counter.model_name, token_counter.tokenizer) <= max_tokens:
                 current_chunk.append(word)
             else:
                 if current_chunk:
