@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class MarkdownDocumentChunker(BaseDocumentChunker):
     """
-    RAG-optimized markdown chunker with:
+    Markdown chunker with:
     - Semantic section hierarchy
     - Sliding window overlap
     - Relationship tracking
@@ -101,7 +101,8 @@ class MarkdownDocumentChunker(BaseDocumentChunker):
             if self._is_metadata_noise(element.content):
                 continue
             
-            element_tokens = TokenCounter.count_tokens(element.content, self.token_counter.model_name, self.token_counter.tokenizer)
+            element_tokens = TokenCounter.count_tokens(element.content, 
+                                                       self.token_counter.model_name, self.token_counter.tokenizer)
             
             # Handle large/special elements individually
             if element_tokens > max_size or element.type in [ElementType.CODE_BLOCK, ElementType.TABLE]:

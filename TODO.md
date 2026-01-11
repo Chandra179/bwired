@@ -56,76 +56,76 @@ This TODO list outlines the implementation of a Deep Research agent system with 
 ## 2. Processing Pipeline (HTML to Fact)
 
 ### Document Extraction
-- [ ] Add Crawl4AI integration
-  - [ ] Create `internal/search/crawl4ai_client.py`
-  - [ ] Implement `fetch_url(url)` → Markdown
-  - [ ] Add `Crawl4AIConfig` to `config.yaml`
+- [x] Add Crawl4AI integration
+  - [x] Create `internal/search/crawl4ai_client.py`
+  - [x] Implement `fetch_url(url)` → Markdown
+  - [x] Add `Crawl4AIConfig` to `config.yaml`
 
 ### Semantic Chunking
-- [ ] Verify existing markdown chunker supports header-based splitting
-  - [ ] Ensure headers (`#`, `##`) define chunk boundaries
-  - [ ] Validate token counting accuracy
+- [x] Verify existing markdown chunker supports header-based splitting
+  - [x] Ensure headers (`#`, `##`) define chunk boundaries
+  - [x] Validate token counting accuracy
 
 ### Vector Embedding
-- [ ] Verify pgvector support
-  - [ ] Create PostgreSQL extension for pgvector
-  - [ ] Define 1536-dimensional vector column
-  - [ ] Add HNSW index for fast similarity search
+- [x] Verify pgvector support
+  - [x] Create PostgreSQL extension for pgvector
+  - [x] Define 768-dimensional vector column
+  - [x] Add HNSW index for fast similarity search
 
 ### Fact Extraction
-- [ ] Create `internal/research/nodes/process.py`
-  - [ ] Implement `extract_facts(markdown, schema_model)` using Instructor
-  - [ ] LLM populates dynamic Pydantic schema
-  - [ ] Return structured facts as JSONB
-- [ ] Store results in `extracted_facts` column (JSONB type)
+- [x] Create `internal/research/nodes/process.py`
+  - [x] Implement `extract_facts(markdown, schema_model)` using Instructor
+  - [x] LLM populates dynamic Pydantic schema
+  - [x] Return structured facts as JSONB
+- [x] Store results in `extracted_facts` column (JSONB type)
 
 ---
 
 ## 3. Recursive Discovery & Lead Identification
 
 ### Lead Identification
-- [ ] Create `internal/research/lead_extractor.py`
-  - [ ] Implement `extract_citations(extracted_facts, markdown)`
-  - [ ] Parse links and references from Markdown
-  - [ ] Identify mentions without details (conceptual leads)
-- [ ] Implement `generate_sub_questions(concept, original_goal)`
-  - [ ] Create new research questions for unknown concepts
+- [x] Create `internal/research/lead_extractor.py`
+  - [x] Implement `extract_citations(extracted_facts, markdown)`
+  - [x] Parse links and references from Markdown
+  - [x] Identify mentions without details (conceptual leads)
+- [x] Implement `generate_sub_questions(concept, original_goal)`
+  - [x] Create new research questions for unknown concepts
 
 ### Link Extraction & Priority
-- [ ] Implement link extraction from Markdown
-  - [ ] Parse anchor text and URLs
-  - [ ] Deduplicate URLs
-- [ ] Implement priority scoring
-  - [ ] Embed anchor text into vector
-  - [ ] Calculate cosine similarity with original question vector
-  - [ ] Score range: 0.0 to 1.0
-- [ ] Implement pruning logic
-  - [ ] Discard links with score < 0.5
-  - [ ] Discard links exceeding depth limit
+- [x] Implement link extraction from Markdown
+  - [x] Parse anchor text and URLs
+  - [x] Deduplicate URLs
+- [x] Implement priority scoring
+  - [x] Embed anchor text into vector
+  - [x] Calculate cosine similarity with original question vector
+  - [x] Score range: 0.0 to 1.0
+- [x] Implement pruning logic
+  - [x] Discard links with score < 0.5
+  - [x] Discard links exceeding depth limit
 
 ### Redis Priority Queue
-- [ ] Create `internal/queue/task_queue.py`
-  - [ ] Initialize Redis connection
-  - [ ] Implement `push_task(task_type, priority, payload)`
-  - [ ] Implement `pop_task()` returns highest priority
-  - [ ] Task types: "Scout", "Process", "Discovery"
-- [ ] Create `internal/queue/redis_client.py`
-  - [ ] Configure Redis client
-  - [ ] Add connection pooling
+- [x] Create `internal/queue/task_queue.py`
+  - [x] Initialize Redis connection
+  - [x] Implement `push_task(task_type, priority, payload)`
+  - [x] Implement `pop_task()` returns highest priority
+  - [x] Task types: "scout", "process", "discovery"
+- [x] Create `internal/queue/redis_client.py`
+  - [x] Configure Redis client
+  - [x] Add connection pooling
 
 ### Discovery Node
-- [ ] Create `internal/research/nodes/discovery.py`
-  - [ ] Process `extracted_facts` to identify leads
-  - [ ] Extract and score links
-  - [ ] Generate new sub-questions
-  - [ ] Push valid tasks to Redis queue
+- [x] Create `internal/research/nodes/discovery.py`
+- [x] Process `extracted_facts` to identify leads
+- [x] Extract and score links
+- [x] Generate new sub-questions
+- [x] Push valid tasks to Redis queue
 
 ---
 
 ## 4. Storage Strategy
 
 ### Database Tables
-- [ ] Create `research_nodes` table
+- [x] Create `research_nodes` table
   - Columns:
     - `id` (UUID)
     - `task_id` (FK to research_tasks)
@@ -135,75 +135,75 @@ This TODO list outlines the implementation of a Deep Research agent system with 
     - `question_text` (for research questions)
     - `depth_level` (integer)
     - `extracted_facts` (JSONB)
-    - `content_vector` (pgvector, 1536 dims)
+    - `content_vector` (pgvector, 768 dims)
     - `priority_score` (float, 0.0-1.0)
     - `status` (pending, processing, completed, failed)
     - `created_at`, `updated_at`
 
 ### Indexes
-- [ ] Create HNSW index on `content_vector` for similarity search
-- [ ] Create B-tree index on `url` for deduplication
-- [ ] Create B-tree index on `question_text` for deduplication
-- [ ] Create index on `parent_node_id` for lineage queries
-- [ ] Create index on `task_id` for task-level queries
-- [ ] Create index on `status` for filtering
+- [x] Create HNSW index on `content_vector` for similarity search
+- [x] Create B-tree index on `url` for deduplication
+- [x] Create B-tree index on `question_text` for deduplication
+- [x] Create index on `parent_node_id` for lineage queries
+- [x] Create index on `task_id` for task-level queries
+- [x] Create index on `status` for filtering
 
 ### ORM Models
-- [ ] Create `internal/database/models.py`
-  - [ ] Define SQLAlchemy models for all tables
-  - [ ] Set up relationships (parent-child lineage)
-  - [ ] Add JSONB and pgvector column types
+- [x] Create `internal/database/models.py`
+  - [x] Define SQLAlchemy models for all tables
+  - [x] Set up relationships (parent-child lineage)
+  - [x] Add JSONB and pgvector column types
 
 ### Database Client
-- [ ] Create `internal/database/client.py`
-  - [ ] Initialize async SQLAlchemy engine
-  - [ ] Create session factory
-  - [ ] Implement CRUD operations for nodes
-  - [ ] Implement vector similarity queries
+- [x] Create `internal/database/client.py`
+  - [x] Initialize async SQLAlchemy engine
+  - [x] Create session factory
+  - [x] Implement CRUD operations for nodes
+  - [x] Implement vector similarity queries
 
 ---
 
 ## 5. Presentation & Synthesis
 
 ### Synthesis Node
-- [ ] Create `internal/research/nodes/synthesis.py`
-  - [ ] Implement `collect_facts(task_id)`
-    - [ ] Query all completed nodes for task
-    - [ ] Aggregate `extracted_facts` from JSONB columns
-  - [ ] Implement depth check
-    - [ ] Verify queue is empty OR depth limit reached
-    - [ ] Mark task as "synthesis_ready"
+- [x] Create `internal/research/nodes/synthesis.py`
+  - [x] Implement `collect_facts(task_id)`
+    - [x] Query all completed nodes for task
+    - [x] Aggregate `extracted_facts` from JSONB columns
+  - [x] Implement depth check
+    - [x] Verify queue is empty OR depth limit reached
+    - [x] Mark task as "synthesis_ready"
 
 ### Table Format
-- [ ] Implement `flatten_to_table(facts_list)`
-  - [ ] Extract all unique keys from JSONB objects
-  - [ ] Create header row from keys
-  - [ ] Create data rows
-  - [ ] Support CSV and Markdown output
+- [x] Implement `flatten_to_table(facts_list)`
+  - [x] Extract all unique keys from JSONB objects
+  - [x] Create header row from keys
+  - [x] Create data rows
+  - [x] Support CSV and Markdown output
 
 ### Graph Format
-- [ ] Implement `build_lineage_graph(task_id)`
-  - [ ] Query nodes with `parent_node_id` relationships
-  - [ ] Generate Mermaid.js diagram
-    - [ ] Nodes = research topics
-    - [ ] Edges = lineage connections
+- [x] Implement `build_lineage_graph(task_id)`
+  - [x] Query nodes with `parent_node_id` relationships
+  - [x] Generate Mermaid.js diagram
+    - [x] Nodes = research topics
+    - [x] Edges = lineage connections
   - [ ] Optionally generate D3.js visualization
 
 ### Text/PDF Report
-- [ ] Implement `generate_narrative(facts_list, goal)`
-  - [ ] Use LLM to write cohesive story
-  - [ ] Use ONLY `extracted_facts` as source (reduce hallucinations)
-  - [ ] Structure: Introduction → Key Findings → Connections → Conclusion
+- [x] Implement `generate_narrative(facts_list, goal)`
+  - [x] Use LLM to write cohesive story
+  - [x] Use ONLY `extracted_facts` as source (reduce hallucinations)
+  - [x] Structure: Introduction → Key Findings → Connections → Conclusion
   - [ ] Support Markdown and PDF output
 
 ### API Endpoints
-- [ ] Add GET `/research/{task_id}`
-  - [ ] Return task status (pending, processing, synthesis_ready, completed)
-  - [ ] Return progress statistics
-- [ ] Add GET `/research/{task_id}/result?format={table|graph|text|pdf}`
-  - [ ] Query and aggregate facts
-  - [ ] Generate requested format
-  - [ ] Return appropriate Content-Type
+- [x] Add GET `/research/{task_id}`
+  - [x] Return task status (pending, processing, synthesis_ready, completed)
+  - [x] Return progress statistics
+- [x] Add GET `/research/{task_id}/result?format={table|graph|text}`
+  - [x] Query and aggregate facts
+  - [x] Generate requested format
+  - [x] Return appropriate Content-Type
 
 ---
 

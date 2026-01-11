@@ -9,8 +9,29 @@ logger = logging.getLogger(__name__)
 
 
 class SparseEmbedder:
-    """Generate sparse embeddings using SPLADE models"""
+    """
+    Generate sparse embeddings using SPLADE models.
     
+    Sparse embeddings represent text as a bag-of-words where each
+    vocabulary token has a weight (not just 0/1). This provides:
+    - Lexical matching precision (exact word matches)
+    - Better recall for rare terms (compared to dense alone)
+    - Complement to dense embeddings for hybrid search
+    
+    Default model: prithivida/Splade_PP_en_v1 (~30k vocabulary)
+    
+    Attributes:
+        config: SparseEmbeddingConfig with model settings
+        model: Loaded FastEmbed sparse embedding model
+        tokenizer: HuggingFace tokenizer for the model
+        max_seq_length: Maximum token length model can process
+    
+    Note:
+        Sparse vectors use (indices, values) representation:
+        - indices: List of token IDs (non-zero positions)
+        - values: List of token weights (relevance scores)
+        Most positions are zero, making storage efficient
+    """
     def __init__(self, config: SparseEmbeddingConfig):
         self.config = config
         
@@ -34,13 +55,24 @@ class SparseEmbedder:
     
     def encode(self, texts: List[str]) -> List[Dict[str, List]]:
         """
-        Generate sparse embeddings for a list of texts
+        Generate sparse embeddings for a list of texts.
+        
+        Each text is converted to a sparse vector where most vocabulary
+        tokens have zero weight. Only non-zero entries are stored,
+        making this efficient for high-dimensional spaces.
         
         Args:
             texts: List of text strings to embed
             
         Returns:
-            List of dictionaries with 'indices' and 'values' keys
+            List of dictionaries with 'indices' and 'values' keys:
+            - indices: List[int] - Non-zero token IDs
+            - values: List[float] - Corresponding weights/scores
+            
+        Note:
+            - Texts longer than max_seq_length are truncated
+            - Batch processing reduces memory usage for large lists
+            - Returns are compatible with Qdrant sparse vector storage
         """
         if not texts:
             return []
@@ -74,9 +106,13 @@ class SparseEmbedder:
     
     def get_dimension(self) -> int:
         """
-        Get the dimension (vocabulary size) of the sparse model
+        Get dimension (vocabulary size) of the sparse model.
         
+        This represents the maximum possible number of non-zero
+        entries in a sparse vector. Actual vectors have
+        far fewer non-zero entries (typically < 100).
+
         Returns:
-            Vocabulary size of the tokenizer
+            Vocabulary size of the tokenizer (e.g., ~30,000 for Splade_PP_en_v1)
         """
         return self.model.model.tokenizer.get_vocab_size

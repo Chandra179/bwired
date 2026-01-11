@@ -17,4 +17,4 @@ __all__ = [
     'Reranker',
 ]
 
-__version__ = '2.0.0'  # Version after refactoring
+__version__ = '2.0.0'

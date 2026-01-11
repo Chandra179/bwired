@@ -4,7 +4,6 @@ from ..token_counter import TokenCounter
 
 try:
     import spacy
-    from spacy.language import Language
     SPACY_AVAILABLE = True
 except ImportError:
     SPACY_AVAILABLE = False

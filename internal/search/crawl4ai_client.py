@@ -1,5 +1,5 @@
 import logging
-from crawl4ai import AsyncWebCrawler
+from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -34,5 +34,42 @@ class Crawl4AIClient:
 
         Returns:
             Markdown content as string
+
+        Raises:
+            RuntimeError: If crawler is not initialized
+            ValueError: If URL fetch fails
         """
-        raise NotImplementedError
+        if not self.crawler:
+            raise RuntimeError("Crawler not initialized. Call initialize() first.")
+
+        logger.info(f"Fetching URL: {url}")
+
+        run_config = CrawlerRunConfig(
+            cache_mode=CacheMode.BYPASS
+        )
+
+        try:
+            result = await self.crawler.arun(url=url, config=run_config)
+
+            if getattr(result, 'success', False):
+                markdown = getattr(result, 'markdown', '')
+                logger.info(f"Successfully fetched {len(markdown)} characters from {url}")
+                return markdown
+            else:
+                error_msg = getattr(result, 'error_message', 'Unknown error')
+                raise ValueError(f"Failed to fetch {url}: {error_msg}")
+
+        except ValueError:
+            raise
+        except Exception as e:
+            logger.error(f"Error fetching {url}: {e}")
+            raise
+
+    async def __aenter__(self):
+        """Async context manager entry"""
+        await self.initialize()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit"""
+        await self.close()

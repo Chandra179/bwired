@@ -7,6 +7,12 @@ logger = logging.getLogger(__name__)
 
 
 class QuestionsResponse(BaseModel):
+    """
+    Pydantic model for structured LLM response containing generated questions.
+    
+    This model is used with Ollama's structured output feature to ensure
+    the LLM returns valid JSON with the expected format.
+    """
     questions: List[str]
 
 
@@ -14,13 +20,21 @@ async def generate_seed_questions(goal: str, template: dict, count: int = 5) -> 
     """
     Generate initial seed questions based on research goal and template.
 
+    This is the first node in the research pipeline. It uses the LLM to
+    create targeted research questions that will guide the subsequent search
+    and crawling phases. Questions are aligned with the template's schema
+    to ensure extracted facts will match the expected structure.
+
     Args:
-        goal: Research goal
-        template: Template with schema fields
-        count: Number of questions to generate (3-5)
+        goal: Research goal or topic to investigate
+        template: Template dictionary containing schema_json with field definitions
+        count: Number of questions to generate (default: 5)
 
     Returns:
-        List of seed question texts
+        List of seed question texts that will be used for initial search
+
+    Raises:
+        Exception: If LLM fails to generate or parse response
     """
     template_fields = template.get("schema_json", {})
     fields_list = ", ".join(template_fields.keys()) if template_fields else "various aspects"

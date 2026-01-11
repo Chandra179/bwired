@@ -2,7 +2,7 @@ import asyncio
 import sys
 sys.path.append('/home/mando/Work/bwired')
 
-from internal.database.client import DatabaseClient
+from internal.storage.client import DatabaseClient
 from internal.config import load_config
 
 async def create_test_templates():
