@@ -1,0 +1,24 @@
+use_default_settings: true
+server:
+  port: 8080
+  bind_address: "0.0.0.0"
+  secret_key: "change-this-in-production"
+  limiter: false
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  results_on_new_tab: false
+
+engines:
+  - name: wikipedia
+    engine: wikipedia
+  - name: duckduckgo
+    engine: duckduckgo
+  - name: google
+    engine: google
+    disabled: true
+  - name: bing
+    engine: bing
+  - name: brave
+    engine: brave

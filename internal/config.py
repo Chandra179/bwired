@@ -84,6 +84,90 @@ class CompressionConfig:
             if self.token_limit <= 0:
                 raise ValueError("token_limit must be positive")
 
+
+@dataclass
+class PostgresConfig:
+    """Configuration for PostgreSQL database"""
+    url: str = "postgresql+asyncpg://researcher:password@localhost:5432/deep_research"
+    pool_size: int = 10
+    max_overflow: int = 20
+    
+    def __post_init__(self):
+        if self.pool_size <= 0:
+            raise ValueError("pool_size must be positive")
+        if self.max_overflow < 0:
+            raise ValueError("max_overflow cannot be negative")
+
+
+@dataclass
+class RedisConfig:
+    """Configuration for Redis"""
+    url: str = "redis://localhost:6379/0"
+    db: int = 0
+    max_connections: int = 50
+    
+    def __post_init__(self):
+        if self.db < 0:
+            raise ValueError("db cannot be negative")
+        if self.max_connections <= 0:
+            raise ValueError("max_connections must be positive")
+
+
+@dataclass
+class SearXNGConfig:
+    """Configuration for SearXNG search"""
+    api_url: str = "http://localhost:8080/search"
+    timeout: int = 30
+    
+    def __post_init__(self):
+        if self.timeout <= 0:
+            raise ValueError("timeout must be positive")
+
+
+@dataclass
+class Crawl4AIConfig:
+    """Configuration for Crawl4AI"""
+    browser_type: str = "chromium"
+    headless: bool = True
+    timeout: int = 30
+    
+    def __post_init__(self):
+        if self.timeout <= 0:
+            raise ValueError("timeout must be positive")
+
+
+@dataclass
+class ResearchConfig:
+    """Configuration for research tasks"""
+    default_depth_limit: int = 3
+    max_pages_per_task: int = 100
+    priority_threshold: float = 0.5
+    seed_question_count: int = 5
+    
+    def __post_init__(self):
+        if self.default_depth_limit <= 0:
+            raise ValueError("default_depth_limit must be positive")
+        if self.max_pages_per_task <= 0:
+            raise ValueError("max_pages_per_task must be positive")
+        if not 0 <= self.priority_threshold <= 1:
+            raise ValueError("priority_threshold must be between 0 and 1")
+        if not 3 <= self.seed_question_count <= 10:
+            raise ValueError("seed_question_count must be between 3 and 10")
+
+
+@dataclass
+class SynthesisConfig:
+    """Configuration for report synthesis"""
+    llm_temperature: float = 0.3
+    max_output_tokens: int = 4000
+    
+    def __post_init__(self):
+        if not 0 <= self.llm_temperature <= 2:
+            raise ValueError("llm_temperature must be between 0 and 2")
+        if self.max_output_tokens <= 0:
+            raise ValueError("max_output_tokens must be positive")
+
+
 @dataclass
 class LLMConfig:
     """Configuration for LLM generation"""
@@ -127,6 +211,12 @@ class Config:
     llm: Optional[LLMConfig] = None
     storage: Optional[QdrantConfig] = None
     compression: Optional[CompressionConfig] = None
+    postgres: Optional[PostgresConfig] = None
+    redis: Optional[RedisConfig] = None
+    searxng: Optional[SearXNGConfig] = None
+    crawl4ai: Optional[Crawl4AIConfig] = None
+    research: Optional[ResearchConfig] = None
+    synthesis: Optional[SynthesisConfig] = None
     
     def __post_init__(self):
         """Validate cross-config constraints"""
@@ -158,8 +248,8 @@ class ExtractorConfig:
     def __post_init__(self):
         if not self.allowed_extensions:
             raise ValueError("allowed_extensions cannot be empty")
-    
-    
+
+
 def load_config(config_path: str = "config.yaml") -> Config:
     """
     Loads and parses the nested YAML into the Dataclass structure.
@@ -176,8 +266,13 @@ def load_config(config_path: str = "config.yaml") -> Config:
     q_raw = data.get('qdrant', {})
     r_raw = data.get('reranker', {})
     l_raw = data.get('llm', {})
+    p_raw = data.get('postgres', {})
+    redis_raw = data.get('redis', {})
+    searx_raw = data.get('searxng', {})
+    crawl_raw = data.get('crawl4ai', {})
+    research_raw = data.get('research', {})
+    synthesis_raw = data.get('synthesis', {})
 
-    # 2. Build Nested Objects
     chunking_cfg = ChunkingConfig(
         max_chunk_size=c_raw.get('chunk_size', 256),
         overlap_tokens=c_raw.get('overlap_tokens', 30),
@@ -186,7 +281,7 @@ def load_config(config_path: str = "config.yaml") -> Config:
     
     dense_cfg = DenseEmbeddingConfig(
         model_name=d_raw.get('model_name', "BAAI/bge-base-en-v1.5"),
-        device=e_raw.get('device', "cuda"), # Use the shared device from embedding level
+        device=e_raw.get('device', "cuda"),
         batch_size=d_raw.get('batch_size', 30),
         use_fp16=d_raw.get('use_fp16', True),
         show_progress_bar=d_raw.get('show_progress_bar', False),
@@ -229,6 +324,41 @@ def load_config(config_path: str = "config.yaml") -> Config:
         token_limit=data.get('compression', {}).get('token_limit'),
         device=data.get('compression', {}).get('device', 'cpu')
     )
+    
+    postgres_cfg = PostgresConfig(
+        url=p_raw.get('url', 'postgresql+asyncpg://researcher:password@localhost:5432/deep_research'),
+        pool_size=p_raw.get('pool_size', 10),
+        max_overflow=p_raw.get('max_overflow', 20)
+    )
+    
+    redis_cfg = RedisConfig(
+        url=redis_raw.get('url', 'redis://localhost:6379/0'),
+        db=redis_raw.get('db', 0),
+        max_connections=redis_raw.get('max_connections', 50)
+    )
+    
+    searxng_cfg = SearXNGConfig(
+        api_url=searx_raw.get('api_url', 'http://localhost:8080/search'),
+        timeout=searx_raw.get('timeout', 30)
+    )
+    
+    crawl4ai_cfg = Crawl4AIConfig(
+        browser_type=crawl_raw.get('browser_type', 'chromium'),
+        headless=crawl_raw.get('headless', True),
+        timeout=crawl_raw.get('timeout', 30)
+    )
+    
+    research_cfg = ResearchConfig(
+        default_depth_limit=research_raw.get('default_depth_limit', 3),
+        max_pages_per_task=research_raw.get('max_pages_per_task', 100),
+        priority_threshold=research_raw.get('priority_threshold', 0.5),
+        seed_question_count=research_raw.get('seed_question_count', 5)
+    )
+    
+    synthesis_cfg = SynthesisConfig(
+        llm_temperature=synthesis_raw.get('llm_temperature', 0.3),
+        max_output_tokens=synthesis_raw.get('max_output_tokens', 4000)
+    )
 
     return Config(
         chunking=chunking_cfg,
@@ -236,5 +366,11 @@ def load_config(config_path: str = "config.yaml") -> Config:
         storage=qdrant_cfg,
         reranker=reranker_cfg,
         llm=llm_cfg,
-        compression=compression_cfg
+        compression=compression_cfg,
+        postgres=postgres_cfg,
+        redis=redis_cfg,
+        searxng=searxng_cfg,
+        crawl4ai=crawl4ai_cfg,
+        research=research_cfg,
+        synthesis=synthesis_cfg
     )

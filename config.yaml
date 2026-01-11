@@ -39,3 +39,94 @@ compression:
   compression_ratio: 0.5
   token_limit: null
   device: "cpu"
+
+postgres:
+  url: "postgresql+asyncpg://researcher:password@localhost:5432/deep_research"
+  pool_size: 10
+  max_overflow: 20
+
+redis:
+  url: "redis://localhost:6379/0"
+  db: 0
+  max_connections: 50
+
+searxng:
+  api_url: "http://localhost:8080/search"
+  timeout: 30
+
+crawl4ai:
+  browser_type: "chromium"
+  headless: true
+  timeout: 30
+
+research:
+  default_depth_limit: 3
+  max_pages_per_task: 100
+  priority_threshold: 0.5
+  seed_question_count: 5
+
+synthesis:
+  llm_temperature: 0.3
+  max_output_tokens: 4000
+
+safety:
+  dangerous_commands:
+    - "rm -rf"
+    - "rm -r"
+    - "rm -f /"
+    - "dd "
+    - "mkfs"
+    - ":(){:|:&};:"
+    - "chmod 777 /"
+    - "chown -R root:root"
+    - "mv /"
+    - "cp /"
+    - "dd if=/dev/zero"
+    - "dd if=/dev/random"
+    - "mkswap"
+    - "swapon"
+    - "killall -9"
+    - "pkill -9"
+    - "systemctl stop"
+    - "service .* stop"
+  require_permission:
+    - "sudo"
+    - "su "
+    - "doas"
+    - "pkexec"
+    - "chown"
+    - "chmod"
+    - "apt install"
+    - "apt remove"
+    - "apt purge"
+    - "dnf install"
+    - "yum install"
+    - "pip install .* --user"
+    - "npm install -g"
+    - "pip3 install .* --user"
+    - "gem install"
+    - "docker run .* --privileged"
+  safe_commands:
+    - "ls"
+    - "pwd"
+    - "cat"
+    - "echo"
+    - "grep"
+    - "head"
+    - "tail"
+    - "find"
+    - "wc"
+    - "sort"
+    - "uniq"
+    - "date"
+    - "whoami"
+    - "id"
+    - "git status"
+    - "git log"
+    - "git diff"
+    - "git show"
+    - "git branch"
+    - "git remote"
+  interactive_mode: true
+  log_denied: true
+  log_approved: true

@@ -2,15 +2,16 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from typing import Optional
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from pydantic_ai import Agent
 
 from internal.embedding.dense_embedder import DenseEmbedder
 from internal.embedding.sparse_embedder import SparseEmbedder
 from internal.embedding.reranker import Reranker
 from internal.processing.context_compressor import ContextCompressor
-from internal.storage.qdrant_client import QdrantClient
+from internal.database.qdrant_client import QdrantClient
 from internal.chunkers import ChunkerFactory, BaseDocumentChunker
 
 from internal.config import (
@@ -20,9 +21,12 @@ from internal.config import (
     RerankerConfig,
     CompressionConfig,
     LLMConfig,
+    PostgresConfig,
 )
 
 from internal.logger import setup_logging
+from internal.database.client import DatabaseClient
+from internal.research.nodes.initiation import generate_seed_questions
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +50,7 @@ class ServerState:
         self.processor: Optional[ContextCompressor] = None
         self.qdrant_client: Optional[QdrantClient] = None
         self.chunker: Optional[BaseDocumentChunker] = None
+        self.db_client: Optional[DatabaseClient] = None
         
         self.agent: Optional[Agent] = None
 
@@ -81,27 +86,30 @@ async def lifespan(app: FastAPI):
     
     try:
         logger.info("Initializing reranker...")
-        state.reranker = Reranker(state.config.reranker)
-        logger.info("✓ Reranker loaded")
+        if state.config.reranker:
+            state.reranker = Reranker(state.config.reranker)
+            logger.info("✓ Reranker loaded")
     except Exception as e:
         logger.error(f"Failed to load reranker: {e}")
         raise
     
     try:
         logger.info("Initializing compressor...")
-        state.processor = ContextCompressor(state.config.compression)
-        logger.info("✓ Compressor loaded")
+        if state.config.compression:
+            state.processor = ContextCompressor(state.config.compression)
+            logger.info("✓ Compressor loaded")
     except Exception as e:
         logger.warning(f"Failed to load compressor (optional): {e}")
         state.processor = None
         
     try:
         logger.info("Initializing Qdrant client...")
-        state.qdrant_client = QdrantClient(
-            config=state.qdrant_config,
-            dense_embedding_dim=state.config.embedding.dense.model_dim
-        )
-        logger.info("✓ Qdrant client initialized and collection ready")
+        if state.qdrant_config:
+            state.qdrant_client = QdrantClient(
+                config=state.qdrant_config,
+                dense_embedding_dim=state.config.embedding.dense.model_dim
+            )
+            logger.info("✓ Qdrant client initialized and collection ready")
     except Exception as e:
         logger.error(f"Failed to initialize Qdrant client: {e}")
         raise
@@ -114,6 +122,20 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to load chunker: {e}")
         raise
     
+    try:
+        logger.info("Initializing database client...")
+        if state.config.postgres:
+            state.db_client = DatabaseClient(
+                database_url=state.config.postgres.url,
+                pool_size=state.config.postgres.pool_size,
+                max_overflow=state.config.postgres.max_overflow
+            )
+            await state.db_client.init_db()
+            logger.info("✓ Database client initialized")
+    except Exception as e:
+        logger.error(f"Failed to initialize database client: {e}")
+        raise
+    
     app.state.server_state = state
     
     logger.info("="*60)
@@ -123,6 +145,8 @@ async def lifespan(app: FastAPI):
     yield
     
     logger.info("Shutting down server...")
+    if state.db_client:
+        await state.db_client.close()
 
 
 app = FastAPI(
@@ -162,8 +186,55 @@ async def health():
             "sparse_embedder": "loaded" if state.sparse_embedder else "failed",
             "reranker": "loaded" if state.reranker else "failed",
             "qdrant_client": "connected" if state.qdrant_client else "failed",
+            "db_client": "connected" if state.db_client else "failed",
             "agent": "loaded" if state.agent else "failed"
         }
+    }
+
+
+class StartResearchRequest(BaseModel):
+    goal: str
+    template_id: str
+    depth_limit: Optional[int] = None
+
+
+@app.post("/research/start")
+async def start_research(request: StartResearchRequest):
+    """Start a new research task"""
+    state: ServerState = app.state.server_state
+    
+    if not state.db_client:
+        raise HTTPException(status_code=500, detail="Database client not initialized")
+    
+    if not state.config or not state.config.research:
+        raise HTTPException(status_code=500, detail="Research configuration not found")
+    
+    template = await state.db_client.get_template(request.template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    depth_limit = request.depth_limit or state.config.research.default_depth_limit
+    task = await state.db_client.create_research_task(
+        goal=request.goal,
+        template_id=request.template_id,
+        depth_limit=depth_limit
+    )
+    
+    questions = await generate_seed_questions(
+        goal=request.goal,
+        template={"schema_json": template.schema_json},
+        count=state.config.research.seed_question_count
+    )
+    
+    logger.info(f"Created research task {task.id} with {len(questions)} seed questions")
+    
+    return {
+        "task_id": task.id,
+        "goal": task.goal,
+        "template_id": task.template_id,
+        "depth_limit": task.depth_limit,
+        "seed_questions": questions,
+        "status": task.status
     }
 
 

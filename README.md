@@ -1,68 +1,44 @@
-# AI Agents
+# AI Agents - Deep Research System
+
+A Python-based agentic AI research system with dynamic templating, recursive discovery, multi-format synthesis, and advanced document chunking.
 
 ![LLM Chat](test.png)
-From docs extraction to retrieval
 
-## Running (Makefile)
-- make up: start docker compose
-- make r: run app server
+## Quick Start
 
-## Chunking Architecture
-1. parsing markdown into AST (Abstract Syntax Tree) structure
-2. build section hierarchy. Group all related elements under 1 Parent element. for example: header (#) is the bigger header so elements (##, ###, list, tables) that are under it will be grouped into 1
-3. chunking the section where each elements have their own chunking strategy, for example: if tables to large split by rows while still keep the table header
+```bash
+# Start infrastructure (PostgreSQL, Redis, SearXNG)
+make up
 
-## Embedding Architecture
-1. use Qdrant for vector store (dense and sparse) vector
+# Install dependencies
+make i
 
-## Directory structure
+# Run FastAPI server
+make r
+
+# Server runs on http://0.0.0.0:8000
+# API docs: http://localhost:8000/docs
 ```
-.
-├── internal/
-│   ├── server/
-│   │   ├── __init__.py
-│   │   └── server.py             # FastAPI app + agent initialization
-│   │
-│   ├── chunkers/                 # Document chunking system
-│   │   ├── __init__.py
-│   │   ├── base_chunker.py
-│   │   ├── chunker_factory.py
-│   │   ├── schema.py
-│   │   └── markdown/             # Markdown-specific chunking
-│   │       ├── __init__.py
-│   │       ├── markdown_chunker.py
-│   │       ├── markdown_parser.py
-│   │       ├── section_analyzer.py
-│   │       ├── overlap_handler.py
-│   │       ├── table_splitter.py
-│   │       ├── code_splitter.py
-│   │       ├── list_splitter.py
-│   │       ├── text_splitter.py
-│   │       └── utils.py
-│   │
-│   ├── embedding/                # Embedding & Ranking
-│   │   ├── __init__.py
-│   │   ├── dense_embedder.py
-│   │   ├── reranker.py
-│   │   └── sparse_embedder.py
-│   │
-│   ├── processing/               # Result processing
-│   │   ├── __init__.py
-│   │   ├── document_extractor.py # PDF → Markdown
-│   │   ├── sentence_splitter.py
-│   │   └── context_compressor.py # LLMLingua compression
-│   │
-│   ├── storage/                  # Vector database
-│   │   └── qdrant_client.py
-│   │
-│   ├── config.py                 # Configuration management
-│   ├── logger.py                 # Logging setup
-│   ├── parser.py                 # parsing markdown with markdown-it-py
-│   └── token_counter.py          # Token counting utility
-│
-├── config.yaml                   # Main configuration
-├── requirements.txt              # Python dependencies (includes pydantic-ai)
-├── Makefile
-├── docker-compose.yml
-├── README.md
-```
+
+## Architecture Overview
+
+### Chunking Pipeline
+1. Parse Markdown into AST (markdown-it-py)
+2. Build section hierarchy - group elements under parent headers
+3. Apply element-specific chunking:
+   - Tables: split by rows, preserve headers
+   - Code blocks: split by logical units
+   - Lists: split by item groups
+   - Text: split by tokens/paragraphs
+
+### Research Pipeline Nodes
+- **Initiation**: Generate seed questions from goal + template
+- **Scout**: Search SearXNG for relevant URLs
+- **Process**: Crawl URL → chunk → embed → extract facts
+- **Discovery**: Identify leads → score links → generate sub-questions
+- **Synthesis**: Aggregate facts → generate reports (table/graph/text/PDF)
+
+## Documentation
+
+- **AGENTS.md** - Detailed code standards, conventions, and technical specifications
+- **TODO.md** - Implementation roadmap and task checklist
