@@ -11,45 +11,5 @@ services:
     volumes:
       - qdrant_storage:/qdrant/storage
 
-  postgres:
-    image: pgvector/pgvector:pg16
-    container_name: postgres_db
-    restart: unless-stopped
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: researcher
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: deep_research
-    volumes:
-      - postgres_storage:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-
-  redis:
-    image: redis:7-alpine
-    container_name: redis_queue
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_storage:/data
-
-  searxng:
-    image: searxng/searxng:latest
-    container_name: searxng_search
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./searxng:/etc/searxng
-    environment:
-      - SEARXNG_SETTINGS_PATH=/etc/searxng/settings.yml
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-
 volumes:
   qdrant_storage:
-  postgres_storage:
-  redis_storage:

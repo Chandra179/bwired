@@ -39,32 +39,3 @@ compression:
   compression_ratio: 0.5
   token_limit: null
   device: "cpu"
-
-postgres:
-  url: "postgresql+asyncpg://researcher:password@localhost:5432/deep_research"
-  pool_size: 10
-  max_overflow: 20
-
-redis:
-  url: "redis://localhost:6379/0"
-  db: 0
-  max_connections: 50
-
-searxng:
-  api_url: "http://localhost:8080/search"
-  timeout: 30
-
-crawl4ai:
-  browser_type: "chromium"
-  headless: true
-  timeout: 30
-
-research:
-  default_depth_limit: 3
-  max_pages_per_task: 100
-  priority_threshold: 0.5
-  seed_question_count: 5
-
-synthesis:
-  llm_temperature: 0.3
-  max_output_tokens: 4000

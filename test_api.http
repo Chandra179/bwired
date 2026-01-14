@@ -2,30 +2,6 @@
 ### Health Check Endpoints
 ### ============================================================================
 
+### Detailed health check with model status
 GET http://localhost:8000/health
 Accept: application/json
-
-### ============================================================================
-### Research Endpoints
-### ============================================================================
-
-### Note: A valid template_id must exist in the database.
-### Templates need to be created directly via DatabaseClient first.
-### Example template schema:
-### {
-###   "title": "string",
-###   "author": "string",
-###   "publication_date": "string",
-###   "key_findings": ["string"],
-###   "methodology": "string"
-### }
-
-### 1. Start Research Task with default depth_limit
-POST http://localhost:8000/research/start
-Content-Type: application/json
-
-{
-  "goal": "Analyze the current state of quantum computing applications",
-  "template_id": "91d45465-5d2a-4770-b42a-7ae81e379c00",
-  "depth_limit": 3
-}

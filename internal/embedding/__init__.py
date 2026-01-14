@@ -9,7 +9,7 @@ This package provides three independent components for embedding and reranking:
 
 from .dense_embedder import DenseEmbedder
 from .sparse_embedder import SparseEmbedder
-from .reranker import Reranker
+from ..processing.reranker import Reranker
 
 __all__ = [
     'DenseEmbedder',
