@@ -3,8 +3,8 @@ from typing import List, Optional
 import logging
 
 from ..schema import SemanticChunk
-from ...text_processing.sentence_splitter import SentenceSplitter
-from ...text_processing.tokenizer_utils import TokenCounter
+from ...processing.sentence_splitter import SentenceSplitter
+from ...token_counter import TokenCounter
 
 logger = logging.getLogger(__name__)
 
@@ -71,9 +71,9 @@ class OverlapHandler:
             
             if overlap_text:
                 overlapped_content = f"{overlap_text}\n\n{chunk.content}"
-                chunk_token_count = token_counter.count_tokens(chunk.content)
-                overlap_token_count = token_counter.count_tokens(overlap_text)
-                final_token_count = token_counter.count_tokens(overlapped_content)
+                chunk_token_count = TokenCounter.count_tokens(chunk.content, token_counter.model_name, token_counter.tokenizer)
+                overlap_token_count = TokenCounter.count_tokens(overlap_text, token_counter.model_name, token_counter.tokenizer)
+                final_token_count = TokenCounter.count_tokens(overlapped_content, token_counter.model_name, token_counter.tokenizer)
                 if final_token_count > max_tokens:
                     logger.warning(
                         f"Overlap caused chunk to exceed limit: {final_token_count} > {max_tokens}. \n"
@@ -87,7 +87,7 @@ class OverlapHandler:
                 
                 overlapped_chunk = SemanticChunk(
                     content=overlapped_content,
-                    token_count=token_counter.count_tokens(overlapped_content),
+                    token_count=TokenCounter.count_tokens(overlapped_content, token_counter.model_name, token_counter.tokenizer),
                     chunk_type=chunk.chunk_type,
                     prev_chunk_id=chunk.prev_chunk_id,
                     next_chunk_id=chunk.next_chunk_id,
@@ -136,7 +136,7 @@ class OverlapHandler:
         accumulated_tokens = 0
         
         for sentence in reversed(sentences):
-            sentence_tokens = token_counter.count_tokens(sentence)
+            sentence_tokens = TokenCounter.count_tokens(sentence, token_counter.model_name, token_counter.tokenizer)
             
             # Stop if adding this sentence would exceed target significantly
             if accumulated_tokens > 0 and accumulated_tokens + sentence_tokens > target_tokens * 1.5:

@@ -146,20 +146,8 @@ class Config:
                 "This may result in highly redundant chunks.",
                 UserWarning
             )
-            
-@dataclass
-class ExtractorConfig:
-    """Configuration for document parsing and OCR"""
-    allowed_extensions: list[str] = field(default_factory=lambda: [".pdf", ".md"])
-    use_ocr: bool = False
-    ocr_language: str = "eng"
-    extraction_mode: str = "fast"  # e.g., "fast", "accurate"
-    
-    def __post_init__(self):
-        if not self.allowed_extensions:
-            raise ValueError("allowed_extensions cannot be empty")
-    
-    
+
+
 def load_config(config_path: str = "config.yaml") -> Config:
     """
     Loads and parses the nested YAML into the Dataclass structure.
@@ -177,7 +165,6 @@ def load_config(config_path: str = "config.yaml") -> Config:
     r_raw = data.get('reranker', {})
     l_raw = data.get('llm', {})
 
-    # 2. Build Nested Objects
     chunking_cfg = ChunkingConfig(
         max_chunk_size=c_raw.get('chunk_size', 256),
         overlap_tokens=c_raw.get('overlap_tokens', 30),
@@ -186,7 +173,7 @@ def load_config(config_path: str = "config.yaml") -> Config:
     
     dense_cfg = DenseEmbeddingConfig(
         model_name=d_raw.get('model_name', "BAAI/bge-base-en-v1.5"),
-        device=e_raw.get('device', "cuda"), # Use the shared device from embedding level
+        device=e_raw.get('device', "cuda"),
         batch_size=d_raw.get('batch_size', 30),
         use_fp16=d_raw.get('use_fp16', True),
         show_progress_bar=d_raw.get('show_progress_bar', False),
@@ -236,5 +223,5 @@ def load_config(config_path: str = "config.yaml") -> Config:
         storage=qdrant_cfg,
         reranker=reranker_cfg,
         llm=llm_cfg,
-        compression=compression_cfg
+        compression=compression_cfg,
     )

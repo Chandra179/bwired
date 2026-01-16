@@ -4,15 +4,12 @@ from contextlib import asynccontextmanager
 from typing import Optional
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic_ai import Agent
 
 from internal.embedding.dense_embedder import DenseEmbedder
 from internal.embedding.sparse_embedder import SparseEmbedder
-from internal.embedding.reranker import Reranker
-from internal.processing.context_compressor import ContextCompressor
+from internal.processing.reranker import Reranker
 from internal.storage.qdrant_client import QdrantClient
 from internal.chunkers import ChunkerFactory, BaseDocumentChunker
-from internal.agents import create_document_agent
 
 from internal.config import (
     load_config,
@@ -44,11 +41,8 @@ class ServerState:
         self.dense_embedder: Optional[DenseEmbedder] = None
         self.sparse_embedder: Optional[SparseEmbedder] = None
         self.reranker: Optional[Reranker] = None
-        self.processor: Optional[ContextCompressor] = None
         self.qdrant_client: Optional[QdrantClient] = None
         self.chunker: Optional[BaseDocumentChunker] = None
-        
-        self.agent: Optional[Agent] = None
 
 
 @asynccontextmanager
@@ -82,27 +76,21 @@ async def lifespan(app: FastAPI):
     
     try:
         logger.info("Initializing reranker...")
-        state.reranker = Reranker(state.config.reranker)
-        logger.info("✓ Reranker loaded")
+        if state.config.reranker:
+            state.reranker = Reranker(state.config.reranker)
+            logger.info("✓ Reranker loaded")
     except Exception as e:
         logger.error(f"Failed to load reranker: {e}")
         raise
-    
-    try:
-        logger.info("Initializing compressor...")
-        state.processor = ContextCompressor(state.config.compression)
-        logger.info("✓ Compressor loaded")
-    except Exception as e:
-        logger.warning(f"Failed to load compressor (optional): {e}")
-        state.processor = None
         
     try:
         logger.info("Initializing Qdrant client...")
-        state.qdrant_client = QdrantClient(
-            config=state.qdrant_config,
-            dense_embedding_dim=state.config.embedding.dense.model_dim
-        )
-        logger.info("✓ Qdrant client initialized and collection ready")
+        if state.qdrant_config:
+            state.qdrant_client = QdrantClient(
+                config=state.qdrant_config,
+                dense_embedding_dim=state.config.embedding.dense.model_dim
+            )
+            logger.info("✓ Qdrant client initialized and collection ready")
     except Exception as e:
         logger.error(f"Failed to initialize Qdrant client: {e}")
         raise
@@ -113,14 +101,6 @@ async def lifespan(app: FastAPI):
         logger.info("✓ Chunker loaded")
     except Exception as e:
         logger.error(f"Failed to load chunker: {e}")
-        raise
-    
-    try:
-        logger.info("Initializing document agent...")
-        state.agent = create_document_agent(model_name=state.llm_config.model)
-        logger.info("✓ Document agent initialized")
-    except Exception as e:
-        logger.error(f"Failed to initialize agent: {e}")
         raise
     
     app.state.server_state = state
@@ -149,12 +129,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Import and include routers
-from .chat_api import router as chat_router
-from .upload_docs_api import router as upload_router
-app.include_router(chat_router)
-app.include_router(upload_router)
-
 
 @app.get("/")
 async def root():
@@ -176,11 +150,10 @@ async def health():
             "dense_embedder": "loaded" if state.dense_embedder else "failed",
             "sparse_embedder": "loaded" if state.sparse_embedder else "failed",
             "reranker": "loaded" if state.reranker else "failed",
-            "qdrant_client": "connected" if state.qdrant_client else "failed",
-            "agent": "loaded" if state.agent else "failed"
+            "qdrant_client": "connected" if state.qdrant_client else "failed"
         }
     }
-
+    
 
 if __name__ == "__main__":
     import uvicorn

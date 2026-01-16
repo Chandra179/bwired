@@ -5,8 +5,8 @@ from typing import List
 
 from ..schema import SemanticChunk
 from .markdown_parser import MarkdownElement
-from ...text_processing.tokenizer_utils import TokenCounter
-from ...text_processing.sentence_splitter import SentenceSplitter
+from ...token_counter import TokenCounter
+from ...processing.sentence_splitter import SentenceSplitter
 from ...config import Config
 
 from .utils import link_chunks, create_chunk
@@ -32,7 +32,7 @@ class ListSplitter:
     
     def chunk(self, element: MarkdownElement, header_path: str) -> List[SemanticChunk]:
         content = element.content
-        token_count = self.token_counter.count_tokens(content)
+        token_count = TokenCounter.count_tokens(content, self.token_counter.model_name, self.token_counter.tokenizer)
         parent_section = header_path.split(" > ")[-1] if " > " in header_path else header_path
         
         if token_count <= self.max_chunk_size:
@@ -45,11 +45,11 @@ class ListSplitter:
     def _split_by_items(self, list_content: str, header_path: str, parent_section: str) -> List[SemanticChunk]:
         items = self._extract_list_items(list_content)
         if not items:
-            return [create_chunk(list_content, self.token_counter.count_tokens(list_content), header_path, parent_section, "list")]
+            return [create_chunk(list_content, TokenCounter.count_tokens(list_content, self.token_counter.model_name, self.token_counter.tokenizer), header_path, parent_section, "list")]
         
         chunks, current_items, current_tokens = [], [], 0
         for item in items:
-            item_tokens = self.token_counter.count_tokens(item)
+            item_tokens = TokenCounter.count_tokens(item, self.token_counter.model_name, self.token_counter.tokenizer)
             if current_tokens + item_tokens > self.max_chunk_size and current_items:
                 chunks.append(create_chunk("\n".join(current_items), current_tokens, header_path, parent_section, "list"))
                 current_items, current_tokens = [item], item_tokens

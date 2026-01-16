@@ -8,6 +8,7 @@ from docling.datamodel.base_models import InputFormat
 logger = logging.getLogger(__name__)
 
 
+# This function will be used later if we got PDF file
 def convert_pdf_to_markdown(pdf_path: Path) -> str:
     """
     Convert PDF to markdown using Docling

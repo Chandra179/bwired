@@ -1,3 +1,21 @@
+<<<<<<< HEAD
+# Bwired
+
+## Features
+
+- **Document Processing**: Convert PDFs and other formats to Markdown using Docling
+- **Intelligent Chunking**: Advanced Markdown-aware chunking with special handling for:
+  - Tables, code blocks, and lists
+  - Header-based sections
+  - Token overlap between chunks
+- **Hybrid Search**: Combine dense and sparse embeddings for better retrieval
+- **Reranking**: Reorder search results using BAAI/bge-reranker-v2-m3
+- **Context Compression**: Reduce retrieved context size with LLMLingua
+- **Vector Storage**: Qdrant vector database for efficient similarity search
+- **FastAPI**: RESTful API with CORS support
+
+## Architecture
+=======
 # AI Agents
 
 ![LLM Chat](test.png)
@@ -7,90 +25,39 @@ From docs extraction to retrieval
 - make up: start docker compose
 - make r: run app server
 - make c: run client
+>>>>>>> main
 
-## Chunking Architecture
-1. parsing markdown into AST (Abstract Syntax Tree) structure
-2. build section hierarchy. Group all related elements under 1 Parent element. for example: header (#) is the bigger header so elements (##, ###, list, tables) that are under it will be grouped into 1
-3. chunking the section where each elements have their own chunking strategy, for example: if tables to large split by rows while still keep the table header
+### Components
 
-## Embedding Architecture
-1. use Qdrant for vector store (dense and sparse) vector
+- **Chunker Factory**: Creates appropriate chunkers based on document format
+- **Dense Embedder**: Generates dense vectors using BAAI/bge-base-en-v1.5
+- **Sparse Embedder**: Generates sparse vectors using SPLADE
+- **Reranker**: Reorders search results for better relevance
+- **Qdrant Client**: Manages vector storage and retrieval
+- **Document Processor**: Handles text splitting and sentence segmentation
+- **Server**: FastAPI application with lifespan management
 
-## Retrieval Architecture
-1. generate 2 embed query for sparse and dense vector for hybrid search
-2. use Reciprocal Rank Fusion (RRF) for hybrid search
-3. rerank the result
-4. compress the result using llm lingua (optional)
+### Models
 
-## AI Agents
-1. create agents using PydanticAI
-2. model: Ollama (configurable)
+- Dense Embedding: BAAI/bge-base-en-v1.5 (768 dimensions)
+- Sparse Embedding: prithivida/Splade_PP_en_v1
+- Reranker: BAAI/bge-reranker-v2-m3
+- Context Compression: microsoft/llmlingua-2-bert-base-multilingual-cased-meetingbank
 
-## Directory structure
+## Development
+
+### Project Structure
+
 ```
-.
+bwired/
 ├── internal/
-│   ├── agents/                   # Agentic AI layer
-│   │   ├── __init__.py
-│   │   ├── factory.py            # Agent creation and configuration
-│   │   ├── search_agent.py       # Search tool
-│   │   └── upload_agent.py       # Indexing tool
-│   │
-│   ├── server/
-│   │   ├── __init__.py
-│   │   ├── server.py             # FastAPI app + agent initialization
-│   │   ├── chat_api.py           # Unified /chat endpoint
-│   │   └── upload_docs_api.py    # /upload endpoint for binary files
-│   │
-│   ├── chunkers/                 # Document chunking system
-│   │   ├── __init__.py
-│   │   ├── base_chunker.py
-│   │   ├── chunker_factory.py
-│   │   └── markdown/             # Markdown-specific chunking
-│   │       ├── markdown_chunker.py
-│   │       ├── markdown_parser.py
-│   │       ├── section_analyzer.py
-│   │       ├── overlap_handler.py
-│   │       ├── table_splitter.py
-│   │       ├── code_splitter.py
-│   │       ├── list_splitter.py
-│   │       └── text_splitter.py
-│   │
-│   ├── cli/                      # Command-line interface
-│   │   ├── config_loader.py
-│   │   ├── display.py
-│   │   ├── search_cli.py
-│   │   └── vectorize_cli.py
-│   │
-│   ├── core/                     # Shared business logic
-│   │   ├── metadata.py
-│   │   ├── search_engine.py
-│   │   └── semantic_chunker.py   # DEPRECATED
-│   │
-│   ├── embedding/                # Embedding & Ranking
-│   │   ├── dense_embedder.py
-│   │   ├── reranker.py
-│   │   └── sparse_embedder.py
-│   │
-│   ├── processing/               # Result processing
-│   │   ├── __init__.py
-│   │   ├── document_extractor.py # PDF → Markdown
-│   │   └── context_compressor.py # LLMLingua compression
-│   │
-│   ├── storage/                  # Vector database
-│   │   └── qdrant_client.py
-│   │
-│   ├── text_processing/          # Text utilities
-│   │   ├── sentence_splitter.py
-│   │   └── tokenizer_utils.py
-│   │
-│   ├── config.py                 # Configuration management
-│   ├── logger.py                 # Logging setup
-│   └── schema.py                 # Data models
-│
-├── config.yaml                   # Main configuration
-├── requirements.txt              # Python dependencies (includes pydantic-ai)
-├── Makefile
-├── docker-compose.yml
-└── README.md
+│   ├── chunkers/          # Document chunking logic
+│   ├── embedding/         # Dense and sparse embedders
+│   ├── processing/        # Text processing and reranking
+│   ├── server/            # FastAPI application
+│   └── storage/           # Qdrant client
+├── config.yaml            # Configuration file
+├── requirements.txt       # Python dependencies
+├── docker-compose.yml     # Qdrant service
+└── Makefile              # Convenience commands
 ```

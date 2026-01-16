@@ -12,8 +12,8 @@ from .table_splitter import TableSplitter
 from .code_splitter import CodeSplitter
 from .list_splitter import ListSplitter
 from .text_splitter import TextSplitter
-from ...text_processing.sentence_splitter import SentenceSplitter
-from ...text_processing.tokenizer_utils import TokenCounter
+from ...processing.sentence_splitter import SentenceSplitter
+from ...token_counter import TokenCounter
 from ...config import Config
 from ..schema import SemanticChunk
 
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class MarkdownDocumentChunker(BaseDocumentChunker):
     """
-    RAG-optimized markdown chunker with:
+    Markdown chunker with:
     - Semantic section hierarchy
     - Sliding window overlap
     - Relationship tracking
@@ -101,7 +101,8 @@ class MarkdownDocumentChunker(BaseDocumentChunker):
             if self._is_metadata_noise(element.content):
                 continue
             
-            element_tokens = self.token_counter.count_tokens(element.content)
+            element_tokens = TokenCounter.count_tokens(element.content, 
+                                                       self.token_counter.model_name, self.token_counter.tokenizer)
             
             # Handle large/special elements individually
             if element_tokens > max_size or element.type in [ElementType.CODE_BLOCK, ElementType.TABLE]:
@@ -147,7 +148,7 @@ class MarkdownDocumentChunker(BaseDocumentChunker):
         return SemanticChunk(
             id=str(uuid.uuid4()),
             content=combined_content,
-            token_count=self.token_counter.count_tokens(combined_content),
+            token_count=TokenCounter.count_tokens(combined_content, self.token_counter.model_name, self.token_counter.tokenizer),
             chunk_type="text",
             parent_section=parent_section,
             section_path=header_path
@@ -181,7 +182,7 @@ class MarkdownDocumentChunker(BaseDocumentChunker):
         
         elif element.type == ElementType.HEADING:
             # Only chunk significant headings
-            token_count = self.token_counter.count_tokens(element.content)
+            token_count = TokenCounter.count_tokens(element.content, self.token_counter.model_name, self.token_counter.tokenizer)
             if token_count > 50:
                 chunks = self.text_splitter.chunk(element, header_path)
             else:

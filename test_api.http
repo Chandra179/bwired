@@ -1,0 +1,7 @@
+### ============================================================================
+### Health Check Endpoints
+### ============================================================================
+
+### Detailed health check with model status
+GET http://localhost:8000/health
+Accept: application/json

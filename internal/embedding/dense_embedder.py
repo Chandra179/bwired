@@ -4,14 +4,34 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 
 from internal.config import DenseEmbeddingConfig
-from internal.utils.token_counter import TokenCounter
+from internal.token_counter import TokenCounter
 
 logger = logging.getLogger(__name__)
 
 
 class DenseEmbedder:
-    """Generate dense embeddings using SentenceTransformer models"""
+    """
+    Generate dense embeddings using SentenceTransformer models.
     
+    Dense embeddings capture semantic meaning of text in a fixed-length
+    vector space. They are used for:
+    - Semantic similarity search (find chunks related to query)
+    - Link prioritization (score relevance of links to research questions)
+    - Vector database storage (Qdrant for hybrid search)
+    
+    Default model: BAAI/bge-base-en-v1.5 (768 dimensions)
+    
+    Attributes:
+        config: DenseEmbeddingConfig with model settings
+        model: Loaded SentenceTransformer model
+        tokenizer: HuggingFace tokenizer for the model
+        max_seq_length: Maximum token length model can process
+    
+    Performance:
+    - Supports GPU acceleration (device="cuda")
+    - FP16 precision reduces memory usage on CUDA
+    - Batch encoding for efficiency
+    """
     def __init__(self, config: DenseEmbeddingConfig):
         self.config = config
         
@@ -34,13 +54,22 @@ class DenseEmbedder:
     
     def encode(self, texts: List[str]) -> List[np.ndarray]:
         """
-        Generate dense embeddings for a list of texts
+        Generate dense embeddings for a list of texts.
+        
+        Each text is converted to a normalized 768-dimensional vector
+        that represents its semantic meaning. Vectors are normalized
+        to unit length for cosine similarity calculations.
         
         Args:
             texts: List of text strings to embed
             
         Returns:
-            List of numpy arrays (embeddings)
+            List of numpy arrays (embeddings), each with shape (embedding_dim,)
+            
+        Note:
+            - Texts longer than max_seq_length are truncated with warning
+            - Batch processing uses config.batch_size for efficiency
+            - Embeddings are L2-normalized for cosine similarity
         """
         if not texts:
             return []
@@ -65,5 +94,10 @@ class DenseEmbedder:
         return [embedding for embedding in embeddings]
     
     def get_dimension(self) -> int:
-        """Get the dimensionality of the embedding vectors"""
+        """
+        Get the dimensionality of the embedding vectors.
+        
+        Returns:
+            Number of dimensions in output vectors (e.g., 768 for bge-base-en-v1.5)
+        """
         return self.model.get_sentence_embedding_dimension()
