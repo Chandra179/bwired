@@ -97,7 +97,7 @@ class QdrantConfig:
     distance_metric: str = "Cosine"
     grpc_port: int = 6334
     storage_batch_size: int = 100
-    
+
     def __post_init__(self):
         """Validate Qdrant configuration"""
         valid_metrics = ["Cosine", "Dot", "Euclid", "Manhattan"]
@@ -106,16 +106,89 @@ class QdrantConfig:
                 f"distance_metric must be one of {valid_metrics}, "
                 f"got '{self.distance_metric}'"
             )
-        
+
         if self.storage_batch_size <= 0:
             raise ValueError("storage_batch_size must be positive")
+
+
+@dataclass
+class PostgresConfig:
+    """Configuration for PostgreSQL database"""
+    host: str = "localhost"
+    port: int = 5432
+    database: str = "bwired_research"
+    user: str = "bwired"
+    password: str = ""
+
+    def __post_init__(self):
+        """Validate PostgreSQL configuration"""
+        if self.port <= 0 or self.port > 65535:
+            raise ValueError("port must be between 1 and 65535")
+        if not self.database:
+            raise ValueError("database name cannot be empty")
+
+
+@dataclass
+class SearXNGConfig:
+    """Configuration for SearXNG search engine"""
+    url: str = "http://localhost:8080"
+    timeout: int = 30
+    max_results_per_query: int = 10
+
+    def __post_init__(self):
+        """Validate SearXNG configuration"""
+        if self.timeout <= 0:
+            raise ValueError("timeout must be positive")
+        if self.max_results_per_query <= 0:
+            raise ValueError("max_results_per_query must be positive")
+
+
+@dataclass
+class CrawlingConfig:
+    """Configuration for web crawling"""
+    max_urls_per_domain: int = 5
+    relevance_threshold: int = 50
+    timeout: int = 30
+    user_agent: str = "BwiredResearchBot/1.0"
+
+    def __post_init__(self):
+        """Validate crawling configuration"""
+        if self.max_urls_per_domain <= 0:
+            raise ValueError("max_urls_per_domain must be positive")
+        if not 0 <= self.relevance_threshold <= 100:
+            raise ValueError("relevance_threshold must be between 0 and 100")
+        if self.timeout <= 0:
+            raise ValueError("timeout must be positive")
+
+
+@dataclass
+class ExtractionConfig:
+    """Configuration for fact extraction"""
+    batch_size: int = 5
+    confidence_threshold: float = 0.7
+
+    def __post_init__(self):
+        """Validate extraction configuration"""
+        if self.batch_size <= 0:
+            raise ValueError("batch_size must be positive")
+        if not 0 <= self.confidence_threshold <= 1:
+            raise ValueError("confidence_threshold must be between 0 and 1")
+
+
+@dataclass
+class ResearchConfig:
+    """Configuration for deep research system"""
+    postgres: PostgresConfig
+    searxng: SearXNGConfig
+    crawling: CrawlingConfig
+    extraction: ExtractionConfig
 
 
 @dataclass
 class Config:
     """
     Main configuration for RAG chunking system
-    
+
     Simplified to focus on three core concerns:
     1. How to chunk documents (chunking)
     2. How to embed chunks (embedding)
@@ -127,6 +200,7 @@ class Config:
     llm: Optional[LLMConfig] = None
     storage: Optional[QdrantConfig] = None
     compression: Optional[CompressionConfig] = None
+    research: Optional[ResearchConfig] = None
     
     def __post_init__(self):
         """Validate cross-config constraints"""
@@ -164,6 +238,7 @@ def load_config(config_path: str = "config.yaml") -> Config:
     q_raw = data.get('qdrant', {})
     r_raw = data.get('reranker', {})
     l_raw = data.get('llm', {})
+    research_raw = data.get('research', {})
 
     chunking_cfg = ChunkingConfig(
         max_chunk_size=c_raw.get('chunk_size', 256),
@@ -217,6 +292,39 @@ def load_config(config_path: str = "config.yaml") -> Config:
         device=data.get('compression', {}).get('device', 'cpu')
     )
 
+    postgres_cfg = PostgresConfig(
+        host=research_raw.get('postgres', {}).get('host', 'localhost'),
+        port=research_raw.get('postgres', {}).get('port', 5432),
+        database=research_raw.get('postgres', {}).get('database', 'bwired_research'),
+        user=research_raw.get('postgres', {}).get('user', 'bwired'),
+        password=research_raw.get('postgres', {}).get('password', '')
+    )
+
+    searxng_cfg = SearXNGConfig(
+        url=research_raw.get('searxng', {}).get('url', 'http://localhost:8080'),
+        timeout=research_raw.get('searxng', {}).get('timeout', 30),
+        max_results_per_query=research_raw.get('searxng', {}).get('max_results_per_query', 10)
+    )
+
+    crawling_cfg = CrawlingConfig(
+        max_urls_per_domain=research_raw.get('crawling', {}).get('max_urls_per_domain', 5),
+        relevance_threshold=research_raw.get('crawling', {}).get('relevance_threshold', 50),
+        timeout=research_raw.get('crawling', {}).get('timeout', 30),
+        user_agent=research_raw.get('crawling', {}).get('user_agent', 'BwiredResearchBot/1.0')
+    )
+
+    extraction_cfg = ExtractionConfig(
+        batch_size=research_raw.get('extraction', {}).get('batch_size', 5),
+        confidence_threshold=research_raw.get('extraction', {}).get('confidence_threshold', 0.7)
+    )
+
+    research_cfg = ResearchConfig(
+        postgres=postgres_cfg,
+        searxng=searxng_cfg,
+        crawling=crawling_cfg,
+        extraction=extraction_cfg
+    )
+
     return Config(
         chunking=chunking_cfg,
         embedding=embedding_cfg,
@@ -224,4 +332,5 @@ def load_config(config_path: str = "config.yaml") -> Config:
         reranker=reranker_cfg,
         llm=llm_cfg,
         compression=compression_cfg,
+        research=research_cfg
     )

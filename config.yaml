@@ -39,3 +39,26 @@ compression:
   compression_ratio: 0.5
   token_limit: null
   device: "cpu"
+
+research:
+  postgres:
+    host: "localhost"
+    port: 5432
+    database: "bwired_research"
+    user: "bwired"
+    password: "${POSTGRES_PASSWORD}"
+
+  searxng:
+    url: "http://localhost:8080"
+    timeout: 30
+    max_results_per_query: 10
+
+  crawling:
+    max_urls_per_domain: 5
+    relevance_threshold: 50
+    timeout: 30
+    user_agent: "BwiredResearchBot/1.0"
+
+  extraction:
+    batch_size: 5
+    confidence_threshold: 0.7

@@ -1,0 +1,14 @@
+use_default_settings:
+  engines:
+    remove:
+      - radio browser
+
+server:
+  secret_key: "32969e271b4db8e5361178416051a5be69eff7fe18ac63e928affb569e41c6dc"
+  bind_address: "0.0.0.0"
+  limiter: false
+
+search:
+  formats:
+    - html
+    - json
