@@ -52,10 +52,30 @@ From docs extraction to retrieval
 bwired/
 ├── internal/
 │   ├── chunkers/          # Document chunking logic
+│   │   ├── base_chunker.py
+│   │   ├── chunker_factory.py
+│   │   └── markdown/
+│   │       ├── text_splitter.py
+│   │       ├── table_splitter.py
+│   │       └── list_splitter.py
 │   ├── embedding/         # Dense and sparse embedders
+│   │   ├── dense_embedder.py
+│   │   └── sparse_embedder.py
 │   ├── processing/        # Text processing and reranking
+│   │   ├── sentence_splitter.py
+│   │   ├── document_extractor.py
+│   │   ├── reranker.py
+│   │   └── context_compressor.py
+│   ├── retriever/         # Search and retrieval
+│   │   ├── retriever.py
+│   │   └── metadata.py
 │   ├── server/            # FastAPI application
+│   │   ├── server.py
+│   │   ├── chat_api.py
+│   │   ├── search_api.py
+│   │   └── upload_docs_api.py
 │   └── storage/           # Qdrant client
+│       └── qdrant_client.py
 ├── config.yaml            # Configuration file
 ├── requirements.txt       # Python dependencies
 ├── docker-compose.yml     # Qdrant service
