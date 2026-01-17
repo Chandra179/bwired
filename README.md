@@ -1,29 +1,30 @@
 # Bwired
 
-## Features
+## Modules
 
-- **Document Processing**: Convert PDFs and other formats to Markdown using Docling
-- **Intelligent Chunking**: Advanced Markdown-aware chunking with special handling for:
-  - Tables, code blocks, and lists
-  - Header-based sections
-  - Token overlap between chunks
-- **Hybrid Search**: Combine dense and sparse embeddings for better retrieval
-- **Reranking**: Reorder search results using BAAI/bge-reranker-v2-m3
-- **Context Compression**: Reduce retrieved context size with LLMLingua
-- **Vector Storage**: Qdrant vector database for efficient similarity search
-- **FastAPI**: RESTful API with CORS support
+### Research Engine (`internal/research`)
+- **Search Orchestrator**: Manages web searches via SearXNG, handling query generation and result aggregation
+- **Web Crawler**: Asynchronously crawls websites and processes PDFs using Crawl4AI, converting content to Markdown
+- **Fact Extractor**: Uses LLMs (Instructor) to extract structured data from content based on defined templates
+- **Template Manager**: Handles CRUD operations for research templates and schemas
+- **Pipeline**: Orchestrates the full deep research workflow (Search -> Crawl -> Chunk -> Store -> Extract)
 
-## Architecture
+### Data Processing (`internal/processing` & `internal/chunkers`)
+- **Markdown Chunker**: Intelligent splitting of content preserving tables, lists, and code blocks
+- **Context Compressor**: Reduces retrieved context size using LLMLingua-2 to fit LLM windows
+- **Reranker**: Re-orders search results using BAAI/bge-reranker-v2-m3 for higher relevance
+- **URL Processor**: Normalizes URLs, calculates relevance scores, and handles deduplication
 
-### Components
+### Storage & Retrieval (`internal/storage` & `internal/embedding`)
+- **Qdrant Client**: Vector database wrapper managing dense and sparse collections
+- **Postgres Client**: Relational storage for research sessions, raw documents, and extracted facts
+- **Hybrid Embedder**: Combines Dense (BGE-Base) and Sparse (SPLADE) embeddings for robust retrieval
 
-- **Chunker Factory**: Creates appropriate chunkers based on document format
-- **Dense Embedder**: Generates dense vectors using BAAI/bge-base-en-v1.5
-- **Sparse Embedder**: Generates sparse vectors using SPLADE
-- **Reranker**: Reorders search results for better relevance
-- **Qdrant Client**: Manages vector storage and retrieval
-- **Document Processor**: Handles text splitting and sentence segmentation
-- **Server**: FastAPI application with lifespan management
+### Infrastructure (`internal/server` & `internal/llm`)
+- **FastAPI Server**: REST API providing endpoints for starting and monitoring research
+- **LLM Factory**: Unified interface for different LLM providers (OpenAI, Ollama)
+- **Token Counter**: Universal token counting and text truncation utilities
+- **Config**: Type-safe configuration management using Pydantic models
 
 ### Models
 

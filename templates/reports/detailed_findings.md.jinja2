@@ -1,0 +1,19 @@
+# Detailed Findings
+
+{% for section in sections %}
+## {{ section.title }}
+
+{{ section.content }}
+
+{% if section.citations %}
+**Sources:**
+{% for citation in section.citations %}
+- [{{ citation }}]({{ citation }})
+{% endfor %}
+{% endif %}
+
+{% if section.seed_question %}
+*Answering: {{ section.seed_question }}*
+{% endif %}
+
+{% endfor %}

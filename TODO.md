@@ -90,24 +90,19 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
 ## Phase 2: Template Management (Week 1-2)
 
 ### 2.1 Template Data Models
-- [ ] Create `internal/research/models.py`
+- [x] Create `internal/research/models.py`
   - `ResearchTemplate` Pydantic model
   - `TemplateSchema` for field definitions
   - `SeedQuestion` model
   - Validation logic for schema types
 
 ### 2.2 Template Manager
-- [ ] Create `internal/research/template_manager.py`
+- [x] Create `internal/research/template_manager.py`
   - `TemplateManager` class with:
-    - `create_template(name, description, schema, prompts, seed_questions)`
-    - `get_template(template_id)` 
     - `list_templates()`
-    - `update_template(template_id, updates)`
-    - `delete_template(template_id)`
-    - `select_template(query)` - LLM-based template selection using descriptions
 
 ### 2.3 Default Templates
-- [ ] Create `templates/historical_economy_events.json`
+- [x] Create `templates/historical_economy_events.json`
   ```json
   {
     "name": "historical_economy_events",
@@ -147,12 +142,12 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
     }
   ```
 
-- [ ] Add template loading script `scripts/load_templates.py`
+- [x] Add template loading script `scripts/load_templates.py`
 
 ## Phase 3: Search & URL Collection (Week 2)
 
 ### 3.1 SearXNG Integration
-- [ ] Create `internal/research/search_orchestrator.py`
+- [x] Create `internal/research/search_orchestrator.py`
   - `SearchOrchestrator` class with:
     - `search(query, engines=None, max_results=10)` - call SearXNG API
     - `search_multiple(queries)` - batch search for seed questions
@@ -160,7 +155,7 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
     - Response parsing and normalization
 
 ### 3.2 URL Processing
-- [ ] Create `internal/research/url_processor.py`
+- [x] Create `internal/research/url_processor.py`
   - `URLProcessor` class with:
     - `normalize_url(url)` - remove tracking params, lowercase, standardize
     - `calculate_hash(url)` - for deduplication
@@ -169,20 +164,20 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
     - `filter_by_domain_limits(urls, max_per_domain=5)`
 
 ### 3.3 Relevance Scoring
-- [ ] Implement scoring factors in `URLProcessor`:
+- [x] Implement scoring factors in `URLProcessor`:
   - Query match (0-40 points) - keyword overlap in URL/title
   - Domain authority (0-30 points) - .edu, .gov, known publishers
   - Freshness (0-15 points) - extract and score publication date
   - Content type (0-15 points) - prefer PDFs, research papers
 
-- [ ] Add domain authority list
+- [x] Add domain authority list
   - Create `data/trusted_domains.json` with scores
   - Academic: .edu, .ac.uk (30 points)
-  - Government: .gov (30 points)  
+  - Government: .gov (30 points)
   - Known publishers: nature.com, science.org (25 points)
 
 ### 3.4 Storage Integration
-- [ ] Implement database operations in `postgres_client.py`:
+- [x] Implement database operations in `postgres_client.py`:
   - `store_search_results(session_id, seed_question, urls)`
   - `get_pending_urls(session_id)`
   - `update_url_status(url_id, status)`
@@ -190,18 +185,18 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
 ## Phase 4: Web Crawling (Week 2-3)
 
 ### 4.1 Crawl4AI Integration
-- [ ] Add Crawl4AI to `requirements.txt`
+- [x] Add Crawl4AI to `requirements.txt`
   ```
   crawl4ai>=0.3.0
   playwright>=1.40.0  # Required by Crawl4AI
   ```
 
-- [ ] Install Playwright browsers
+- [x] Install Playwright browsers
   - Add to Makefile: `make install-browsers`
   - `playwright install chromium`
 
 ### 4.2 Web Crawler Implementation
-- [ ] Create `internal/research/web_crawler.py`
+- [x] Create `internal/research/web_crawler.py`
   - `WebCrawler` class with:
     - `crawl_url(url, timeout=30)` - fetch content
     - `extract_content(html)` - get main content, remove boilerplate
@@ -210,14 +205,14 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
     - Error handling (timeouts, 404s, rate limits)
 
 ### 4.3 Content Storage
-- [ ] Implement in `postgres_client.py`:
+- [x] Implement in `postgres_client.py`:
   - `store_raw_document(search_result_id, content_type, raw_content, hash)`
   - `check_content_hash(hash)` - detect duplicate content
   - `get_document_by_id(doc_id)`
   - `mark_crawl_failed(result_id, error_message)`
 
 ### 4.4 Crawling Orchestration
-- [ ] Create `internal/research/crawl_orchestrator.py`
+- [x] Create `internal/research/crawl_orchestrator.py`
   - `CrawlOrchestrator` class with:
     - `crawl_batch(urls, batch_size=10)` - parallel crawling
     - `prioritize_urls(urls)` - sort by relevance score
@@ -227,27 +222,27 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
 ## Phase 5: Content Processing Integration (Week 3)
 
 ### 5.1 Link Existing Chunking Pipeline
-- [ ] Update `web_crawler.py` to use Docling
+- [x] Update `web_crawler.py` to use Docling
   - Convert crawled HTML/PDF to Markdown
   - Preserve tables, images, code blocks
 
-- [ ] Update `crawl_orchestrator.py`
+- [x] Update `crawl_orchestrator.py`
   - After crawling, trigger chunking pipeline
   - Use existing `ChunkerFactory.create(format='markdown')`
   - Store chunks with `research_session_id` metadata
 
 ### 5.2 Embedding & Vector Storage
-- [ ] Update `internal/storage/qdrant_client.py`
+- [x] Update `internal/storage/qdrant_client.py`
   - Add `collection_name` parameter (support multiple collections)
   - Add method: `upsert_research_chunks(chunks, session_id)`
   - Include session_id in chunk metadata for filtering
 
-- [ ] Create research-specific collection
+- [x] Create research-specific collection
   - Add to `research_pipeline.py`: create collection per session
   - Or use single collection with session_id filter
 
 ### 5.3 Metadata Enhancement
-- [ ] Extend chunk metadata to include:
+- [x] Extend chunk metadata to include:
   ```python
   {
     "chunk_id": "uuid",
@@ -266,14 +261,14 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
 ## Phase 6: Fact Extraction (Week 3-4)
 
 ### 6.1 Instructor Integration
-- [ ] Add Instructor to `requirements.txt`
+- [x] Add Instructor to `requirements.txt`
   ```
   instructor>=1.0.0
   openai>=1.0.0  # Required by instructor
   ```
 
 ### 6.2 Fact Extractor Implementation
-- [ ] Create `internal/research/fact_extractor.py`
+- [x] Create `internal/research/fact_extractor.py`
   - `FactExtractor` class with:
     - `extract_from_chunk(chunk, template)` - use Instructor + Pydantic
     - `validate_extraction(facts, chunk_content)` - check hallucination
@@ -281,13 +276,13 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
     - Batch processing for multiple chunks
 
 ### 6.3 Dynamic Pydantic Models
-- [ ] Create `internal/research/schema_builder.py`
+- [x] Create `internal/research/schema_builder.py`
   - `build_pydantic_model(template_schema)` - dynamically create model from JSON schema
   - Handle different field types (str, int, float, list, dict)
   - Add validation rules from schema
 
 ### 6.4 Retrieval for Extraction
-- [ ] Create `internal/research/research_retriever.py`
+- [x] Create `internal/research/research_retriever.py`
   - `ResearchRetriever` class extending existing retriever
   - `retrieve_for_question(seed_question, session_id, top_k=10)`
   - Filter by session_id
@@ -295,7 +290,7 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
   - Apply reranking
 
 ### 6.5 Fact Storage
-- [ ] Implement in `postgres_client.py`:
+- [x] Implement in `postgres_client.py`:
   - `store_fact(session_id, chunk_id, source_url, fact_data, confidence)`
   - `get_facts_by_session(session_id, min_confidence=0.7)`
   - `get_facts_by_question(session_id, seed_question)`
@@ -303,7 +298,7 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
 ## Phase 7: Research Pipeline Orchestration (Week 4)
 
 ### 7.1 Pipeline Implementation
-- [ ] Create `internal/research/research_pipeline.py`
+- [x] Create `internal/research/research_pipeline.py`
   - `ResearchPipeline` class orchestrating:
     1. Template selection
     2. Search execution (all seed questions)
@@ -315,37 +310,39 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
     8. Fact storage
 
 ### 7.2 Session Management
-- [ ] Add to `postgres_client.py`:
+- [x] Add to `postgres_client.py`:
   - `research_sessions` table operations
-  - `create_session(query, template_id)` 
+  - `create_session(query, template_id)`
   - `update_session_status(session_id, status, progress)`
   - `get_session_info(session_id)`
   - Status: 'searching', 'crawling', 'processing', 'extracting', 'complete', 'failed'
 
 ### 7.3 Progress Tracking
-- [ ] Implement progress updates:
+- [x] Implement progress updates:
   - Track: total URLs, crawled URLs, processed chunks, extracted facts
   - Store in `research_sessions` table
   - Update after each pipeline stage
+- [x] ✅ Implemented
 
 ### 7.4 Error Recovery
-- [ ] Add basic error handling:
+- [x] Add basic error handling:
   - Log failures to database
   - Continue pipeline on partial failures
   - Mark failed URLs but don't stop entire research
   - Save partial results
+- [x] ✅ Implemented
 
 ## Phase 8: Synthesis & Report Generation (Week 4-5)
 
 ### 8.1 Fact Aggregation
-- [ ] Create `internal/research/synthesizer.py`
+- [x] Create `internal/research/synthesizer.py`
   - `ResearchSynthesizer` class with:
     - `aggregate_facts(session_id)` - group by seed question
     - `format_for_llm(facts)` - prepare facts for synthesis
     - `count_sources(facts)` - track source diversity
 
 ### 8.2 Report Generation
-- [ ] Implement in `ResearchSynthesizer`:
+- [x] Implement in `ResearchSynthesizer`:
   - `generate_report(session_id, format='markdown')`
   - Use LLM to synthesize facts into coherent narrative
   - Include source citations
@@ -353,15 +350,16 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
   - Highlight key insights
 
 ### 8.3 Report Templates
-- [ ] Create Jinja2 templates in `templates/reports/`:
+- [x] Create Jinja2 templates in `templates/reports/`:
   - `executive_summary.md.jinja2`
   - `detailed_findings.md.jinja2`
-  - `sources_cited.md.jinja2`
+  - `key_insights.md.jinja2`
+  - `full_report.md.jinja2` (includes others)
 
 ## Phase 9: API Endpoints (Week 5)
 
 ### 9.1 Research API
-- [ ] Create `internal/server/research_api.py`
+- [x] Create `internal/server/research_api.py`
   - `POST /research/start` - initiate research
     ```json
     {
@@ -369,7 +367,7 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
       "template_name": "clinical_studies"  // optional, auto-select if not provided
     }
     ```
-  
+
   - `GET /research/{session_id}/status` - check progress
     ```json
     {
@@ -383,12 +381,12 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
       }
     }
     ```
-  
-  - `GET /research/{session_id}/facts` - get raw facts
+
+  - `GET /research/{session_id}/facts` - get raw facts (with pagination: limit, offset)
   - `GET /research/{session_id}/report` - get synthesized report
 
 ### 9.2 Template API
-- [ ] Add template management endpoints:
+- [x] Add template management endpoints:
   - `POST /research/templates` - create template
   - `GET /research/templates` - list all
   - `GET /research/templates/{id}` - get specific
@@ -396,52 +394,26 @@ Implementation plan for adding deep research capabilities to the existing RAG sy
   - `DELETE /research/templates/{id}` - delete
 
 ### 9.3 Server Integration
-- [ ] Update `internal/server/server.py` lifespan:
+- [x] Update `internal/server/server.py` lifespan:
   - Initialize PostgreSQL client
   - Initialize research components
   - Include in server state
-
-## Phase 10: Testing & Refinement (Week 5-6)
-
-### 10.1 Integration Testing
-- [ ] Create `tests/test_research_pipeline.py`
-  - Test end-to-end with simple query
-  - Verify each stage completes
-  - Check fact extraction quality
-
-### 10.2 Performance Testing
-- [ ] Test with various query types:
-  - Simple factual queries (10-20 URLs)
-  - Complex research (50+ URLs)
-  - Measure time per stage
-
-### 10.3 Quality Checks
-- [ ] Manual review of:
-  - Template selection accuracy
-  - URL relevance scoring
-  - Fact extraction quality
-  - Report coherence
-
-### 10.4 Documentation
-- [ ] Update README with examples
-- [ ] Create API documentation (Swagger/OpenAPI)
-- [ ] Write user guide for creating templates
-- [ ] Add troubleshooting section
+- [x] Add `max_concurrent_sessions` configuration parameter
 
 ## Quick Start Checklist (MVP)
 
 For a minimal working version, focus on these tasks first:
 
-- [x] Phase 1.1: PostgreSQL setup + basic schema
-- [x] Phase 1.3: Basic research config
-- [ ] Phase 2.2: Simple template manager (hardcoded template OK for MVP)
-- [ ] Phase 3.1: SearXNG integration (basic search only)
-- [ ] Phase 4.2: Web crawler (HTML only, skip PDFs for MVP)
-- [ ] Phase 5.1: Link to existing chunking
-- [ ] Phase 6.2: Basic fact extraction (simple Pydantic model)
-- [ ] Phase 7.1: Minimal pipeline (no progress tracking)
-- [ ] Phase 8.2: Simple report (just concatenate facts)
-- [ ] Phase 9.1: Single endpoint: `POST /research/start` returns final report
+ - [x] Phase 1.1: PostgreSQL setup + basic schema
+ - [x] Phase 1.3: Basic research config
+ - [x] Phase 2.2: Simple template manager (hardcoded template OK for MVP)
+ - [x] Phase 3.1: SearXNG integration (basic search only)
+- [x] Phase 4.2: Web crawler (HTML only, skip PDFs for MVP)
+ - [x] Phase 5.1: Link to existing chunking
+ - [x] Phase 6.2: Basic fact extraction (simple Pydantic model)
+ - [x] Phase 7.1: Minimal pipeline (no progress tracking)
+ - [x] Phase 8.2: Simple report (just concatenate facts)
+ - [ ] Phase 9.1: Single endpoint: `POST /research/start` returns final report
 
 **Estimated MVP time**: 2-3 weeks with focused effort
 

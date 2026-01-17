@@ -1,0 +1,59 @@
+{
+  "name": "historical_economy_events",
+  "description": "Extract structured data from major historical economic shifts, crises, and systemic transformations.",
+  "schema_json": {
+    "fields": {
+      "event_identity": {
+        "type": "object",
+        "properties": {
+          "common_name": {
+            "type": "string",
+            "description": "Primary name (e.g., 'The Long Depression', 'The Nixon Shock')"
+          },
+          "start_year": {
+            "type": "integer",
+            "description": "Year the event began"
+          },
+          "end_year": {
+            "type": "integer",
+            "description": "Year the event ended (null if ongoing)"
+          },
+          "geographic_scope": {
+            "type": "string",
+            "description": "Global, Regional, or National (specify countries)"
+          }
+        }
+      },
+      "classification": {
+        "type": "string",
+        "description": "Category: Banking Crisis, Currency Crisis, Sovereign Debt, Hyperinflation, or Structural Shift"
+      },
+      "preceding_conditions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Factors present before the event (e.g., credit boom, low volatility, asset bubbles)"
+      },
+      "systemic_triggers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "The 'Black Swan' or immediate catalyst (e.g., policy error, commodity shock, bank failure)"
+      },
+      "theoretical_impact": {
+        "type": "string",
+        "description": "How this event changed economic thought (e.g., 'Shift from Classical to Keynesian economics')"
+      }
+    }
+  },
+  "system_prompt": "You are a senior macroeconomic historian. Your goal is to extract structured data that explains not just WHAT happened, but the systemic 'why' and the institutional 'aftermath'. Focus on quantifiable metrics where available and capture the qualitative shift in economic theory or regulation.",
+  "seed_questions": [
+    "What were the major economic crises of the 20th century?",
+    "What caused the Great Depression?",
+    "How did hyperinflation affect Germany in the 1920s?",
+    "What were the economic consequences of the 1970s oil shocks?",
+    "How did the 2008 financial crisis change banking regulation?"
+  ]
+}

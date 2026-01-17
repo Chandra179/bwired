@@ -301,13 +301,90 @@ class PostgresClient:
         with self.get_cursor() as cur:
             cur.execute(
                 """
-                SELECT * FROM research_facts 
+                SELECT * FROM research_facts
                 WHERE session_id = %s AND seed_question = %s
                 ORDER BY confidence DESC
                 """,
                 (session_id, seed_question)
             )
             return [dict(row) for row in cur.fetchall()]
+
+    def store_report_sections(
+        self,
+        session_id: str,
+        executive_summary_overview: str,
+        executive_summary_conclusions: List[str],
+        executive_summary_confidence: str,
+        sections: List[Dict[str, Any]],
+        sections_count: int,
+        key_insights: List[Dict[str, Any]],
+        insights_count: int,
+        total_facts_analyzed: int,
+        unique_sources_count: int,
+        avg_confidence: float,
+        domain_counts: Dict[str, str]
+    ) -> str:
+        with self.get_cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO research_reports
+                (session_id, executive_summary_overview, executive_summary_conclusions,
+                 executive_summary_confidence, sections, sections_count, key_insights,
+                 insights_count, total_facts_analyzed, unique_sources_count,
+                 avg_confidence, domain_counts)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (session_id) DO UPDATE SET
+                    executive_summary_overview = EXCLUDED.executive_summary_overview,
+                    executive_summary_conclusions = EXCLUDED.executive_summary_conclusions,
+                    executive_summary_confidence = EXCLUDED.executive_summary_confidence,
+                    sections = EXCLUDED.sections,
+                    sections_count = EXCLUDED.sections_count,
+                    key_insights = EXCLUDED.key_insights,
+                    insights_count = EXCLUDED.insights_count,
+                    total_facts_analyzed = EXCLUDED.total_facts_analyzed,
+                    unique_sources_count = EXCLUDED.unique_sources_count,
+                    avg_confidence = EXCLUDED.avg_confidence,
+                    domain_counts = EXCLUDED.domain_counts,
+                    updated_at = NOW()
+                RETURNING id
+                """,
+                (
+                    session_id,
+                    executive_summary_overview,
+                    Json(executive_summary_conclusions),
+                    executive_summary_confidence,
+                    Json(sections),
+                    sections_count,
+                    Json(key_insights),
+                    insights_count,
+                    total_facts_analyzed,
+                    unique_sources_count,
+                    avg_confidence,
+                    Json(domain_counts)
+                )
+            )
+            result = cur.fetchone()
+            return str(result['id'])
+
+    def get_report_sections(
+        self,
+        session_id: str
+    ) -> Optional[Dict[str, Any]]:
+        with self.get_cursor() as cur:
+            cur.execute(
+                "SELECT * FROM research_reports WHERE session_id = %s",
+                (session_id,)
+            )
+            result = cur.fetchone()
+            return dict(result) if result else None
+
+    def has_report(self, session_id: str) -> bool:
+        with self.get_cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM research_reports WHERE session_id = %s LIMIT 1",
+                (session_id,)
+            )
+            return cur.fetchone() is not None
 
     def close(self):
         self.pool.closeall()

@@ -162,10 +162,50 @@ class CrawlingConfig:
 
 
 @dataclass
+class OllamaLLMConfig:
+    """Configuration for Ollama LLM provider"""
+    base_url: str = "http://localhost:11434"
+    model: str = "llama3.2"
+    timeout: int = 120
+
+    def __post_init__(self):
+        if self.timeout <= 0:
+            raise ValueError("timeout must be positive")
+
+
+@dataclass
+class OpenAILLMConfig:
+    """Configuration for OpenAI LLM provider"""
+    api_key: str = ""
+    model: str = "gpt-4o-mini"
+    base_url: Optional[str] = None
+    timeout: int = 120
+
+    def __post_init__(self):
+        if self.timeout <= 0:
+            raise ValueError("timeout must be positive")
+
+
+@dataclass
+class LLMProviderConfig:
+    """Configuration for LLM providers used in extraction"""
+    provider: str = "ollama"  # "ollama" or "openai"
+    ollama: OllamaLLMConfig = field(default_factory=OllamaLLMConfig)
+    openai: OpenAILLMConfig = field(default_factory=OpenAILLMConfig)
+
+    def __post_init__(self):
+        valid_providers = {"ollama", "openai"}
+        if self.provider not in valid_providers:
+            raise ValueError(f"provider must be one of {valid_providers}")
+
+
+@dataclass
 class ExtractionConfig:
     """Configuration for fact extraction"""
     batch_size: int = 5
     confidence_threshold: float = 0.7
+    llm: LLMProviderConfig = field(default_factory=LLMProviderConfig)
+    retrieval_top_k: int = 10  # Number of chunks to retrieve per question
 
     def __post_init__(self):
         """Validate extraction configuration"""
@@ -173,6 +213,26 @@ class ExtractionConfig:
             raise ValueError("batch_size must be positive")
         if not 0 <= self.confidence_threshold <= 1:
             raise ValueError("confidence_threshold must be between 0 and 1")
+        if self.retrieval_top_k <= 0:
+            raise ValueError("retrieval_top_k must be positive")
+
+
+@dataclass
+class SynthesisConfig:
+    """Configuration for report synthesis"""
+    llm: LLMProviderConfig = field(default_factory=LLMProviderConfig)
+    max_facts_per_section: int = 20
+    min_confidence: float = 0.7
+    include_citations: bool = True
+    report_format: str = "markdown"  # Single format for MVP
+    citation_format: str = "url"  # "url" for [source_url]
+
+    def __post_init__(self):
+        if self.max_facts_per_section <= 0:
+            raise ValueError("max_facts_per_section must be positive")
+        valid_formats = {"markdown"}
+        if self.report_format not in valid_formats:
+            raise ValueError(f"report_format must be one of {valid_formats}")
 
 
 @dataclass
@@ -182,6 +242,12 @@ class ResearchConfig:
     searxng: SearXNGConfig
     crawling: CrawlingConfig
     extraction: ExtractionConfig
+    synthesis: SynthesisConfig = field(default_factory=lambda: SynthesisConfig(llm=LLMProviderConfig()))
+    max_concurrent_sessions: int = 5
+
+    def __post_init__(self):
+        if self.max_concurrent_sessions <= 0:
+            raise ValueError("max_concurrent_sessions must be positive")
 
 
 @dataclass
@@ -313,16 +379,77 @@ def load_config(config_path: str = "config.yaml") -> Config:
         user_agent=research_raw.get('crawling', {}).get('user_agent', 'BwiredResearchBot/1.0')
     )
 
+    extraction_raw = research_raw.get('extraction', {})
+    llm_raw = extraction_raw.get('llm', {})
+    ollama_raw = llm_raw.get('ollama', {})
+    openai_raw = llm_raw.get('openai', {})
+
+    ollama_llm_cfg = OllamaLLMConfig(
+        base_url=ollama_raw.get('base_url', 'http://localhost:11434'),
+        model=ollama_raw.get('model', 'llama3.2'),
+        timeout=ollama_raw.get('timeout', 120)
+    )
+
+    openai_llm_cfg = OpenAILLMConfig(
+        api_key=openai_raw.get('api_key', ''),
+        model=openai_raw.get('model', 'gpt-4o-mini'),
+        base_url=openai_raw.get('base_url'),
+        timeout=openai_raw.get('timeout', 120)
+    )
+
+    llm_provider_cfg = LLMProviderConfig(
+        provider=llm_raw.get('provider', 'ollama'),
+        ollama=ollama_llm_cfg,
+        openai=openai_llm_cfg
+    )
+
     extraction_cfg = ExtractionConfig(
-        batch_size=research_raw.get('extraction', {}).get('batch_size', 5),
-        confidence_threshold=research_raw.get('extraction', {}).get('confidence_threshold', 0.7)
+        batch_size=extraction_raw.get('batch_size', 5),
+        confidence_threshold=extraction_raw.get('confidence_threshold', 0.7),
+        llm=llm_provider_cfg,
+        retrieval_top_k=extraction_raw.get('retrieval_top_k', 10)
+    )
+
+    synthesis_raw = research_raw.get('synthesis', {})
+    synthesis_llm_raw = synthesis_raw.get('llm', {})
+    synthesis_ollama_raw = synthesis_llm_raw.get('ollama', {})
+    synthesis_openai_raw = synthesis_llm_raw.get('openai', {})
+
+    synthesis_ollama_llm_cfg = OllamaLLMConfig(
+        base_url=synthesis_ollama_raw.get('base_url', 'http://localhost:11434'),
+        model=synthesis_ollama_raw.get('model', 'llama3.2'),
+        timeout=synthesis_ollama_raw.get('timeout', 180)
+    )
+
+    synthesis_openai_llm_cfg = OpenAILLMConfig(
+        api_key=synthesis_openai_raw.get('api_key', ''),
+        model=synthesis_openai_raw.get('model', 'gpt-4o'),
+        base_url=synthesis_openai_raw.get('base_url'),
+        timeout=synthesis_openai_raw.get('timeout', 180)
+    )
+
+    synthesis_llm_provider_cfg = LLMProviderConfig(
+        provider=synthesis_llm_raw.get('provider', 'ollama'),
+        ollama=synthesis_ollama_llm_cfg,
+        openai=synthesis_openai_llm_cfg
+    )
+
+    synthesis_cfg = SynthesisConfig(
+        llm=synthesis_llm_provider_cfg,
+        max_facts_per_section=synthesis_raw.get('max_facts_per_section', 20),
+        min_confidence=synthesis_raw.get('min_confidence', 0.7),
+        include_citations=synthesis_raw.get('include_citations', True),
+        report_format=synthesis_raw.get('report_format', 'markdown'),
+        citation_format=synthesis_raw.get('citation_format', 'url')
     )
 
     research_cfg = ResearchConfig(
         postgres=postgres_cfg,
         searxng=searxng_cfg,
         crawling=crawling_cfg,
-        extraction=extraction_cfg
+        extraction=extraction_cfg,
+        synthesis=synthesis_cfg,
+        max_concurrent_sessions=research_raw.get('max_concurrent_sessions', 5)
     )
 
     return Config(

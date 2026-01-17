@@ -1,0 +1,13 @@
+# Executive Summary
+
+{{ executive_summary.overview }}
+
+## Primary Conclusions
+{% for conclusion in executive_summary.primary_conclusions %}
+- {{ conclusion }}
+{% endfor %}
+
+**Confidence Level:** {{ executive_summary.confidence|title }}
+
+---
+*Generated based on {{ total_facts }} facts from {{ unique_sources }} unique sources (avg confidence: {{ "%.1f"|format(avg_confidence * 100) }}%)*

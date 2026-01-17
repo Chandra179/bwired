@@ -1,0 +1,17 @@
+# Key Insights
+
+{% for insight in key_insights %}
+## Insight {{ loop.index }}
+
+{{ insight.insight }}
+
+**Confidence:** {{ "%.1f"|format(insight.confidence * 100) }}%
+
+{% if insight.supporting_facts %}
+**Supporting Facts:**
+{% for fact in insight.supporting_facts %}
+- {{ fact }}
+{% endfor %}
+{% endif %}
+
+{% endfor %}

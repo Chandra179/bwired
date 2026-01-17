@@ -46,7 +46,7 @@ research:
     port: 5432
     database: "bwired_research"
     user: "bwired"
-    password: "${POSTGRES_PASSWORD}"
+    password: "bwired"
 
   searxng:
     url: "http://localhost:8080"
@@ -62,3 +62,33 @@ research:
   extraction:
     batch_size: 5
     confidence_threshold: 0.7
+    retrieval_top_k: 10
+    llm:
+      provider: "ollama"  # "ollama" or "openai"
+      ollama:
+        base_url: "http://localhost:11434"
+        model: "llama3.2"
+        timeout: 120
+      openai:
+        api_key: ""  # Set via OPENAI_API_KEY env var
+        model: "gpt-4o-mini"
+        timeout: 120
+
+  synthesis:
+    max_facts_per_section: 20
+    min_confidence: 0.7
+    include_citations: true
+    report_format: "markdown"
+    citation_format: "url"
+    llm:
+      provider: "ollama"
+      ollama:
+        base_url: "http://localhost:11434"
+        model: "llama3.2"
+        timeout: 180
+      openai:
+        api_key: ""
+        model: "gpt-4o"
+        timeout: 180
+
+  max_concurrent_sessions: 5
