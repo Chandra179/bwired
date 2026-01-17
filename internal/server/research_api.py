@@ -1,153 +1,36 @@
-from fastapi import APIRouter, HTTPException, status, Depends, Request, Query
-from typing import List, Dict, Any, Optional
-from pydantic import BaseModel, Field
+"""Research session management endpoints."""
 import logging
+import asyncio
 
-from internal.research.template_manager import TemplateManager
+from fastapi import APIRouter, HTTPException, status, Depends, Query
+from typing import Optional
+
 from internal.research.research_pipeline import ResearchPipeline
 from internal.research.synthesizer import ResearchSynthesizer
-from internal.research.models import validate_template_schema
 from internal.storage.postgres_client import PostgresClient
+from internal.server.dependencies import (
+    get_research_pipeline,
+    get_synthesizer,
+    get_postgres_client,
+)
+from internal.server.schemas.research import (
+    ResearchStartRequest,
+    ResearchStartResponse,
+    ProgressDetail,
+    ResearchStatusResponse,
+    FactItem,
+    FactsResponse,
+    ReportResponse,
+)
+from internal.server.errors import (
+    handle_not_found,
+    handle_validation_error,
+    log_and_raise_internal_error,
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/research", tags=["research"])
-
-
-def get_template_manager(request: Request) -> TemplateManager:
-    """Dependency to get template_manager from app state"""
-    state = request.app.state.server_state
-    if not hasattr(state, 'template_manager') or state.template_manager is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Template manager not initialized"
-        )
-    return state.template_manager
-
-
-def get_research_pipeline(request: Request) -> ResearchPipeline:
-    """Dependency to get research_pipeline from app state"""
-    state = request.app.state.server_state
-    if not hasattr(state, 'research_pipeline') or state.research_pipeline is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Research pipeline not initialized"
-        )
-    return state.research_pipeline
-
-
-def get_synthesizer(request: Request) -> ResearchSynthesizer:
-    """Dependency to get synthesizer from app state"""
-    state = request.app.state.server_state
-    if not hasattr(state, 'synthesizer') or state.synthesizer is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Synthesizer not initialized"
-        )
-    return state.synthesizer
-
-
-def get_postgres_client(request: Request) -> PostgresClient:
-    """Dependency to get postgres_client from app state"""
-    state = request.app.state.server_state
-    if not hasattr(state, 'postgres_client') or state.postgres_client is None:
-        raise HTTPException(
-            status_code=503,
-            detail="PostgreSQL client not initialized"
-        )
-    return state.postgres_client
-
-
-class ResearchStartRequest(BaseModel):
-    query: str = Field(..., min_length=3, description="Research query/topic")
-    template_name: Optional[str] = Field(None, description="Optional template name (auto-selects if not provided)")
-    max_urls: Optional[int] = Field(None, ge=1, le=200, description="Maximum number of URLs to crawl")
-    generate_report: bool = Field(True, description="Whether to generate a synthesized report")
-
-
-class ResearchStartResponse(BaseModel):
-    session_id: str
-    status: str
-    message: str
-
-
-class ProgressDetail(BaseModel):
-    total_queries: int
-    completed_queries: int
-    urls_found: int
-    urls_to_crawl: int
-    urls_crawled: int
-    urls_failed: int
-    chunks_processed: int
-    chunks_for_extraction: int
-    facts_extracted: int
-    extraction_failures: int
-
-
-class ResearchStatusResponse(BaseModel):
-    session_id: str
-    query: str
-    template_id: str
-    status: str
-    progress: ProgressDetail
-    start_time: Optional[str]
-    end_time: Optional[str]
-    error_message: Optional[str]
-
-
-class FactItem(BaseModel):
-    id: str
-    fact_data: Dict[str, Any]
-    confidence_score: float
-    source_url: str
-    seed_question: Optional[str] = None
-
-
-class FactsResponse(BaseModel):
-    session_id: str
-    facts: List[FactItem]
-    total_count: int
-    limit: int
-    offset: int
-
-
-class ReportResponse(BaseModel):
-    session_id: str
-    report_format: str
-    content: str
-    metadata: Dict[str, Any]
-
-
-class TemplateCreateRequest(BaseModel):
-    name: str = Field(..., min_length=1, description="Template name")
-    description: str = Field(..., min_length=1, description="Template description")
-    schema_json: Dict[str, Any] = Field(..., description="JSON schema defining the extraction fields")
-    system_prompt: Optional[str] = Field(None, description="Optional system prompt for extraction")
-    seed_questions: Optional[List[str]] = Field(None, description="Optional list of seed questions")
-
-    model_config = {"protected_namespaces": ()}
-
-
-class TemplateUpdateRequest(BaseModel):
-    name: Optional[str] = Field(None, min_length=1)
-    description: Optional[str] = Field(None, min_length=1)
-    schema_json: Optional[Dict[str, Any]] = None
-    system_prompt: Optional[str] = None
-    seed_questions: Optional[List[str]] = None
-
-    model_config = {"protected_namespaces": ()}
-
-
-class TemplateResponse(BaseModel):
-    id: str
-    name: str
-    description: str
-    schema_json: Dict[str, Any]
-    system_prompt: Optional[str]
-    seed_questions: Optional[List[str]]
-    created_at: str
-
-    model_config = {"protected_namespaces": ()}
 
 
 @router.post(
@@ -161,12 +44,7 @@ async def start_research(
     request_data: ResearchStartRequest,
     pipeline: ResearchPipeline = Depends(get_research_pipeline)
 ) -> ResearchStartResponse:
-    """
-    Start a new research session.
-
-    The research runs asynchronously in the background. Use the returned session_id
-    to poll the /status endpoint for progress updates.
-    """
+    """Start a new research session."""
     try:
         logger.info(f"Starting research for query: {request_data.query[:100]}...")
 
@@ -186,16 +64,9 @@ async def start_research(
 
     except ValueError as e:
         logger.error(f"Validation error starting research: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Validation error: {str(e)}"
-        )
+        handle_validation_error(str(e))
     except Exception as e:
-        logger.error(f"Error starting research: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to start research: {str(e)}"
-        )
+        log_and_raise_internal_error("start research", e)
 
 
 @router.get(
@@ -208,20 +79,12 @@ async def get_research_status(
     session_id: str,
     postgres_client: PostgresClient = Depends(get_postgres_client)
 ) -> ResearchStatusResponse:
-    """
-    Get the current status of a research session.
-
-    Returns detailed progress metrics including URLs crawled, chunks processed,
-    and facts extracted.
-    """
+    """Get the current status of a research session."""
     try:
         session_info = postgres_client.get_session_info(session_id)
 
         if not session_info:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Research session '{session_id}' not found"
-            )
+            handle_not_found("Research session", session_id)
 
         progress = session_info.get('progress', {})
 
@@ -236,14 +99,8 @@ async def get_research_status(
             error_message=session_info.get('error_message')
         )
 
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error retrieving session status: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve session status: {str(e)}"
-        )
+        log_and_raise_internal_error("retrieve session status", e)
 
 
 @router.get(
@@ -259,20 +116,12 @@ async def get_session_facts(
     offset: int = Query(0, ge=0, description="Offset for pagination"),
     postgres_client: PostgresClient = Depends(get_postgres_client)
 ) -> FactsResponse:
-    """
-    Get extracted facts from a research session.
-
-    Supports pagination via `limit` and `offset` parameters.
-    Can filter facts by minimum confidence score.
-    """
+    """Get extracted facts from a research session."""
     try:
         session_info = postgres_client.get_session_info(session_id)
 
         if not session_info:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Research session '{session_id}' not found"
-            )
+            handle_not_found("Research session", session_id)
 
         threshold = min_confidence if min_confidence is not None else 0.7
 
@@ -303,14 +152,8 @@ async def get_session_facts(
             offset=offset
         )
 
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error retrieving facts: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve facts: {str(e)}"
-        )
+        log_and_raise_internal_error("retrieve facts", e)
 
 
 @router.get(
@@ -324,22 +167,12 @@ async def get_session_report(
     postgres_client: PostgresClient = Depends(get_postgres_client),
     synthesizer: ResearchSynthesizer = Depends(get_synthesizer)
 ) -> ReportResponse:
-    """
-    Get the synthesized report for a research session.
-
-    The report is generated during the research process if `generate_report` was enabled.
-    Returns the report in markdown format.
-    """
-    import asyncio
-
+    """Get the synthesized report for a research session."""
     try:
         session_info = postgres_client.get_session_info(session_id)
 
         if not session_info:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Research session '{session_id}' not found"
-            )
+            handle_not_found("Research session", session_id)
 
         if session_info['status'] not in ['completed', 'synthesizing']:
             raise HTTPException(
@@ -353,7 +186,7 @@ async def get_session_report(
                 detail="Report not found. Ensure research completed with report generation enabled."
             )
 
-        report = asyncio.run(synthesizer.synthesize_report(session_id, force_regenerate=False))
+        report = await synthesizer.synthesize_report(session_id, force_regenerate=False)
         report_content = synthesizer.generate_markdown_report(session_id, report)
 
         metadata = {
@@ -373,10 +206,4 @@ async def get_session_report(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error retrieving report: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve report: {str(e)}"
-        )
-
-
+        log_and_raise_internal_error("retrieve report", e)
