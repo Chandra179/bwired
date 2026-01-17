@@ -1,14 +1,20 @@
 import logging
 import os
 from contextlib import asynccontextmanager
-from typing import Optional
-from fastapi import FastAPI
+from typing import Optional, Callable
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from internal.embedding.dense_embedder import DenseEmbedder
 from internal.embedding.sparse_embedder import SparseEmbedder
 from internal.processing.reranker import Reranker
 from internal.storage.qdrant_client import QdrantClient
+from internal.storage.postgres_client import PostgresClient, PostgresConfig
+from internal.research.template_manager import TemplateManager
+from internal.research.synthesizer import ResearchSynthesizer
+from internal.research.research_pipeline import ResearchPipeline
+from internal.server import research_api
+from internal.server import template_api
 from internal.chunkers import ChunkerFactory, BaseDocumentChunker
 
 from internal.config import (
@@ -42,7 +48,11 @@ class ServerState:
         self.sparse_embedder: Optional[SparseEmbedder] = None
         self.reranker: Optional[Reranker] = None
         self.qdrant_client: Optional[QdrantClient] = None
+        self.postgres_client: Optional[PostgresClient] = None
+        self.template_manager: Optional[TemplateManager] = None
         self.chunker: Optional[BaseDocumentChunker] = None
+        self.research_pipeline: Optional[ResearchPipeline] = None
+        self.synthesizer: Optional[ResearchSynthesizer] = None
 
 
 @asynccontextmanager
@@ -103,6 +113,52 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to load chunker: {e}")
         raise
     
+    try:
+        logger.info("Initializing PostgreSQL client...")
+        if state.config.research:
+            pg_config = PostgresConfig(
+                host=state.config.research.postgres.host,
+                port=state.config.research.postgres.port,
+                database=state.config.research.postgres.database,
+                user=state.config.research.postgres.user,
+                password=state.config.research.postgres.password
+            )
+            state.postgres_client = PostgresClient(pg_config)
+            
+            logger.info("Initializing template manager...")
+            state.template_manager = TemplateManager(state.postgres_client)
+            logger.info("✓ Template manager loaded")
+            
+            logger.info("Initializing research synthesizer...")
+            from internal.llm import create_llm_client
+            state.synthesizer = ResearchSynthesizer(
+                postgres_client=state.postgres_client,
+                llm_client=create_llm_client(state.config.research.synthesis.llm),
+                config=state.config.research.synthesis
+            )
+            logger.info("✓ Research synthesizer loaded")
+            
+            logger.info("Initializing research pipeline...")
+            if state.qdrant_client is None:
+                logger.warning("Qdrant client not available, skipping research pipeline")
+            else:
+                state.research_pipeline = ResearchPipeline(
+                    config=state.config,
+                    postgres_client=state.postgres_client,
+                    qdrant_client=state.qdrant_client,
+                    chunker=state.chunker,
+                    dense_embedder=state.dense_embedder,
+                    sparse_embedder=state.sparse_embedder,
+                    reranker=state.reranker,
+                    synthesizer=state.synthesizer
+                )
+                logger.info("✓ Research pipeline loaded")
+        else:
+            logger.warning("Research config not found, skipping PostgreSQL and template manager")
+    except Exception as e:
+        logger.error(f"Failed to initialize research components: {e}")
+        raise
+    
     app.state.server_state = state
     
     logger.info("="*60)
@@ -127,6 +183,17 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+
+app.include_router(
+    research_api.router,
+    prefix="/api"
+)
+
+app.include_router(
+    template_api.router,
+    prefix="/api"
 )
 
 
