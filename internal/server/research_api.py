@@ -99,6 +99,8 @@ async def get_research_status(
             error_message=session_info.get('error_message')
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         log_and_raise_internal_error("retrieve session status", e)
 
@@ -152,6 +154,8 @@ async def get_session_facts(
             offset=offset
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         log_and_raise_internal_error("retrieve facts", e)
 
