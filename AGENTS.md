@@ -25,10 +25,14 @@ Pytest is standard (install manually if not in requirements.txt):
 
 *Rule*: Run relevant tests after modifications. Create tests for new features.
 
+**Note**: After installing dependencies, run: `python -m spacy download en_core_web_sm`
+
 ### Linting & Quality
 - `ruff format .` - Auto-format code
 - `ruff check .` - Run linter
 - `mypy internal/` - Type checking (strict mode used)
+
+**Note**: Ruff and mypy use default settings (no ruff.toml or pyproject.toml).
 
 ## 2. Code Style & Conventions
 
@@ -68,6 +72,18 @@ class ResearchConfig:
 - Classes: `PascalCase` (`ResearchPipeline`)
 - Functions/Variables: `snake_case` (`calculate_hash`)
 - Constants: `UPPER_CASE`
+- File names: `snake_case.py` (`postgres_client.py`)
+
+### Docstrings
+- Use triple quotes with brief description on first line.
+- Args documented in Args section, Returns in Returns section.
+- Example from config.py:
+  ```python
+  @dataclass
+  class DenseEmbeddingConfig:
+      """Configuration for dense embedding model (SentenceTransformer)"""
+      model_name: str = "BAAI/bge-base-en-v1.5"
+  ```
 
 ### Async Patterns
 Use `async def` for I/O-bound operations. `await` async calls. Test with `pytest-asyncio` or `asyncio.run()`.
@@ -85,6 +101,7 @@ Use `async def` for I/O-bound operations. `await` async calls. Test with `pytest
   except Exception as e:
       log_and_raise_internal_error("process data", e)
   ```
+- **HTTP Status Codes**: 404 for not found, 400 for validation, 500 for internal errors. All dependencies return 503 if not initialized.
 
 ## 3. Architecture & Patterns
 
@@ -142,8 +159,10 @@ When tackling complex tasks, you must utilize the `using-superpowers` skill. Thi
 2.  Run `make i` to install.
 
 ### Database Changes
-1.  Create a new `.sql` file in `migrations/`.
-2.  Update `Makefile` or run manually via `psql` if needed (currently `make m` runs initial schema).
+1.  Create a new `.sql` file in `migrations/` (prefix with version: `001_*.sql`).
+2.  Run `make m` or `make migrate` to apply.
+3.  Check status: `make migrate-status`
+4.  Reset schema: `make migrate-reset` (DESTRUCTIVE: drops and recreates)
 
 ### Creating a Research Template
 1.  Add a JSON file to `templates/`.
