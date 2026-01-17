@@ -1,13 +1,20 @@
 """Pydantic models for research API requests and responses."""
+
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 
 
 class ResearchStartRequest(BaseModel):
     query: str = Field(..., min_length=3, description="Research query/topic")
-    template_name: Optional[str] = Field(None, description="Optional template name (auto-selects if not provided)")
-    max_urls: Optional[int] = Field(None, ge=1, le=200, description="Maximum number of URLs to crawl")
-    generate_report: bool = Field(True, description="Whether to generate a synthesized report")
+    template_name: Optional[str] = Field(
+        None, description="Optional template name (auto-selects if not provided)"
+    )
+    max_urls: Optional[int] = Field(
+        None, ge=1, le=200, description="Maximum number of URLs to crawl"
+    )
+    generate_report: bool = Field(
+        True, description="Whether to generate a synthesized report"
+    )
 
 
 class ResearchStartResponse(BaseModel):
@@ -66,9 +73,15 @@ class ReportResponse(BaseModel):
 class TemplateCreateRequest(BaseModel):
     name: str = Field(..., min_length=1, description="Template name")
     description: str = Field(..., min_length=1, description="Template description")
-    schema_json: Dict[str, Any] = Field(..., description="JSON schema defining the extraction fields")
-    system_prompt: Optional[str] = Field(None, description="Optional system prompt for extraction")
-    seed_questions: Optional[List[str]] = Field(None, description="Optional list of seed questions")
+    schema_json: Dict[str, Any] = Field(
+        ..., description="JSON schema defining the extraction fields"
+    )
+    system_prompt: Optional[str] = Field(
+        None, description="Optional system prompt for extraction"
+    )
+    seed_questions: Optional[List[str]] = Field(
+        None, description="Optional list of seed questions"
+    )
 
     model_config = {"protected_namespaces": ()}
 

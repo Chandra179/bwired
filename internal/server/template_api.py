@@ -1,4 +1,5 @@
 """Template management endpoints."""
+
 import logging
 from typing import List
 
@@ -23,13 +24,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/research/templates", tags=["templates"])
 
 
-@router.get(
-    "",
-    response_model=List[dict],
-    summary="List all research templates"
-)
+@router.get("", response_model=List[dict], summary="List all research templates")
 async def list_templates(
-    manager: TemplateManager = Depends(get_template_manager)
+    manager: TemplateManager = Depends(get_template_manager),
 ) -> List[dict]:
     """Retrieve all available research templates."""
     try:
@@ -40,7 +37,7 @@ async def list_templates(
                 "name": t.name,
                 "description": t.description,
                 "created_at": t.created_at,
-                "field_count": len(t.get_all_fields())
+                "field_count": len(t.get_all_fields()),
             }
             for t in templates
         ]
@@ -53,11 +50,11 @@ async def list_templates(
     response_model=TemplateResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new research template",
-    description="Creates a new template for structured data extraction with validation."
+    description="Creates a new template for structured data extraction with validation.",
 )
 async def create_template(
     request_data: TemplateCreateRequest,
-    manager: TemplateManager = Depends(get_template_manager)
+    manager: TemplateManager = Depends(get_template_manager),
 ) -> TemplateResponse:
     """Create a new research template."""
     try:
@@ -70,7 +67,7 @@ async def create_template(
             description=request_data.description,
             schema_json=request_data.schema_json,
             system_prompt=request_data.system_prompt,
-            seed_questions=request_data.seed_questions
+            seed_questions=request_data.seed_questions,
         )
 
         template = manager.get_template(template_id)
@@ -78,7 +75,7 @@ async def create_template(
         if not template:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Template created but failed to retrieve"
+                detail="Template created but failed to retrieve",
             )
 
         return TemplateResponse(
@@ -88,7 +85,7 @@ async def create_template(
             schema_json=template.schema_json,
             system_prompt=template.system_prompt,
             seed_questions=template.seed_questions,
-            created_at=template.created_at or ""
+            created_at=template.created_at or "",
         )
 
     except HTTPException:
@@ -104,11 +101,10 @@ async def create_template(
     "/{template_id}",
     response_model=TemplateResponse,
     summary="Get a specific research template",
-    description="Retrieves the full details of a research template by ID."
+    description="Retrieves the full details of a research template by ID.",
 )
 async def get_template(
-    template_id: str,
-    manager: TemplateManager = Depends(get_template_manager)
+    template_id: str, manager: TemplateManager = Depends(get_template_manager)
 ) -> TemplateResponse:
     """Get a specific research template by ID."""
     try:
@@ -124,7 +120,7 @@ async def get_template(
             schema_json=template.schema_json,
             system_prompt=template.system_prompt,
             seed_questions=template.seed_questions,
-            created_at=template.created_at or ""
+            created_at=template.created_at or "",
         )
 
     except HTTPException:
@@ -137,19 +133,21 @@ async def get_template(
     "/{template_id}",
     response_model=TemplateResponse,
     summary="Update a research template",
-    description="Updates an existing research template. Supports partial updates."
+    description="Updates an existing research template. Supports partial updates.",
 )
 async def update_template(
     template_id: str,
     request_data: TemplateUpdateRequest,
-    manager: TemplateManager = Depends(get_template_manager)
+    manager: TemplateManager = Depends(get_template_manager),
 ) -> TemplateResponse:
     """Update an existing research template."""
     try:
         if request_data.schema_json:
             errors = validate_template_schema(request_data.schema_json)
             if errors:
-                handle_validation_error(f"Schema validation failed: {', '.join(errors)}")
+                handle_validation_error(
+                    f"Schema validation failed: {', '.join(errors)}"
+                )
 
         template = manager.get_template(template_id)
 
@@ -162,13 +160,13 @@ async def update_template(
             description=request_data.description,
             schema_json=request_data.schema_json,
             system_prompt=request_data.system_prompt,
-            seed_questions=request_data.seed_questions
+            seed_questions=request_data.seed_questions,
         )
 
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update template"
+                detail="Failed to update template",
             )
 
         updated_template = manager.get_template(template_id)
@@ -176,7 +174,7 @@ async def update_template(
         if not updated_template:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Template updated but failed to retrieve"
+                detail="Template updated but failed to retrieve",
             )
 
         return TemplateResponse(
@@ -186,7 +184,7 @@ async def update_template(
             schema_json=updated_template.schema_json,
             system_prompt=updated_template.system_prompt,
             seed_questions=updated_template.seed_questions,
-            created_at=updated_template.created_at or ""
+            created_at=updated_template.created_at or "",
         )
 
     except HTTPException:
@@ -202,11 +200,10 @@ async def update_template(
     "/{template_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a research template",
-    description="Deletes a research template by ID."
+    description="Deletes a research template by ID.",
 )
 async def delete_template(
-    template_id: str,
-    manager: TemplateManager = Depends(get_template_manager)
+    template_id: str, manager: TemplateManager = Depends(get_template_manager)
 ) -> None:
     """Delete a research template by ID."""
     try:
@@ -220,7 +217,7 @@ async def delete_template(
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete template"
+                detail="Failed to delete template",
             )
 
     except HTTPException:

@@ -1,8 +1,8 @@
 import logging
 import os
 from contextlib import asynccontextmanager
-from typing import Optional, Callable
-from fastapi import FastAPI, Depends, HTTPException
+from typing import Optional
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from internal.embedding.dense_embedder import DenseEmbedder
@@ -35,15 +35,15 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 class ServerState:
     """Global state container for initialized models and configs"""
-    
+
     def __init__(self):
         self.config: Optional[Config] = None
-        
+
         self.qdrant_config: Optional[QdrantConfig] = None
         self.reranker_config: Optional[RerankerConfig] = None
         self.processor_config: Optional[CompressionConfig] = None
         self.llm_config: Optional[LLMConfig] = None
-        
+
         self.dense_embedder: Optional[DenseEmbedder] = None
         self.sparse_embedder: Optional[SparseEmbedder] = None
         self.reranker: Optional[Reranker] = None
@@ -59,15 +59,15 @@ class ServerState:
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
     logger.info("Starting server initialization...")
-    
+
     state = ServerState()
-    state.config = load_config("config.yaml") 
-    
+    state.config = load_config("config.yaml")
+
     state.qdrant_config = state.config.storage
     state.reranker_config = state.config.reranker
     state.llm_config = state.config.llm
     state.processor_config = state.config.compression
-    
+
     try:
         logger.info("Initializing dense embedder...")
         state.dense_embedder = DenseEmbedder(state.config.embedding.dense)
@@ -75,7 +75,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to load dense embedder: {e}")
         raise
-    
+
     try:
         logger.info("Initializing sparse embedder...")
         state.sparse_embedder = SparseEmbedder(state.config.embedding.sparse)
@@ -83,7 +83,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to load sparse embedder: {e}")
         raise
-    
+
     try:
         logger.info("Initializing reranker...")
         if state.config.reranker:
@@ -92,27 +92,27 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to load reranker: {e}")
         raise
-        
+
     try:
         logger.info("Initializing Qdrant client...")
         if state.qdrant_config:
             state.qdrant_client = QdrantClient(
                 config=state.qdrant_config,
-                dense_embedding_dim=state.config.embedding.dense.model_dim
+                dense_embedding_dim=state.config.embedding.dense.model_dim,
             )
             logger.info("✓ Qdrant client initialized and collection ready")
     except Exception as e:
         logger.error(f"Failed to initialize Qdrant client: {e}")
         raise
-    
+
     try:
         logger.info("Initializing chunker...")
-        state.chunker = ChunkerFactory.create(format='markdown', config=state.config)
+        state.chunker = ChunkerFactory.create(format="markdown", config=state.config)
         logger.info("✓ Chunker loaded")
     except Exception as e:
         logger.error(f"Failed to load chunker: {e}")
         raise
-    
+
     try:
         logger.info("Initializing PostgreSQL client...")
         if state.config.research:
@@ -121,26 +121,29 @@ async def lifespan(app: FastAPI):
                 port=state.config.research.postgres.port,
                 database=state.config.research.postgres.database,
                 user=state.config.research.postgres.user,
-                password=state.config.research.postgres.password
+                password=state.config.research.postgres.password,
             )
             state.postgres_client = PostgresClient(pg_config)
-            
+
             logger.info("Initializing template manager...")
             state.template_manager = TemplateManager(state.postgres_client)
             logger.info("✓ Template manager loaded")
-            
+
             logger.info("Initializing research synthesizer...")
             from internal.llm import create_llm_client
+
             state.synthesizer = ResearchSynthesizer(
                 postgres_client=state.postgres_client,
                 llm_client=create_llm_client(state.config.research.synthesis.llm),
-                config=state.config.research.synthesis
+                config=state.config.research.synthesis,
             )
             logger.info("✓ Research synthesizer loaded")
-            
+
             logger.info("Initializing research pipeline...")
             if state.qdrant_client is None:
-                logger.warning("Qdrant client not available, skipping research pipeline")
+                logger.warning(
+                    "Qdrant client not available, skipping research pipeline"
+                )
             else:
                 state.research_pipeline = ResearchPipeline(
                     config=state.config,
@@ -150,23 +153,25 @@ async def lifespan(app: FastAPI):
                     dense_embedder=state.dense_embedder,
                     sparse_embedder=state.sparse_embedder,
                     reranker=state.reranker,
-                    synthesizer=state.synthesizer
+                    synthesizer=state.synthesizer,
                 )
                 logger.info("✓ Research pipeline loaded")
         else:
-            logger.warning("Research config not found, skipping PostgreSQL and template manager")
+            logger.warning(
+                "Research config not found, skipping PostgreSQL and template manager"
+            )
     except Exception as e:
         logger.error(f"Failed to initialize research components: {e}")
         raise
-    
+
     app.state.server_state = state
-    
-    logger.info("="*60)
+
+    logger.info("=" * 60)
     logger.info("✓ Server initialization complete!")
-    logger.info("="*60)
-    
+    logger.info("=" * 60)
+
     yield
-    
+
     logger.info("Shutting down server...")
 
 
@@ -174,7 +179,7 @@ app = FastAPI(
     title="Document Search API",
     description="RAG-based document search with agentic AI",
     version="2.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -186,15 +191,9 @@ app.add_middleware(
 )
 
 
-app.include_router(
-    research_api.router,
-    prefix="/api"
-)
+app.include_router(research_api.router, prefix="/api")
 
-app.include_router(
-    template_api.router,
-    prefix="/api"
-)
+app.include_router(template_api.router, prefix="/api")
 
 
 @app.get("/")
@@ -203,7 +202,7 @@ async def root():
     return {
         "status": "online",
         "message": "Document Search API is running",
-        "version": "2.0.0 (Agentic)"
+        "version": "2.0.0 (Agentic)",
     }
 
 
@@ -217,20 +216,16 @@ async def health():
             "dense_embedder": "loaded" if state.dense_embedder else "failed",
             "sparse_embedder": "loaded" if state.sparse_embedder else "failed",
             "reranker": "loaded" if state.reranker else "failed",
-            "qdrant_client": "connected" if state.qdrant_client else "failed"
-        }
+            "qdrant_client": "connected" if state.qdrant_client else "failed",
+        },
     }
-    
+
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     setup_logging("INFO")
-    
+
     uvicorn.run(
-        "server.server:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=False,
-        log_level="info"
+        "server.server:app", host="0.0.0.0", port=8000, reload=False, log_level="info"
     )

@@ -1,6 +1,7 @@
 """Common error handling utilities for research endpoints."""
+
 import logging
-from typing import Optional, Dict, Any, NoReturn
+from typing import NoReturn
 
 from fastapi import HTTPException, status
 
@@ -11,15 +12,14 @@ def handle_not_found(resource_type: str, identifier: str) -> NoReturn:
     """Raise 404 Not Found exception with consistent format."""
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"{resource_type} '{identifier}' not found"
+        detail=f"{resource_type} '{identifier}' not found",
     )
 
 
 def handle_validation_error(message: str) -> NoReturn:
     """Raise 400 Bad Request exception for validation errors."""
     raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=f"Validation error: {message}"
+        status_code=status.HTTP_400_BAD_REQUEST, detail=f"Validation error: {message}"
     )
 
 
@@ -28,7 +28,7 @@ def log_and_raise_internal_error(context: str, error: Exception) -> NoReturn:
     logger.error(f"{context}: {error}")
     raise HTTPException(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail=f"Failed to {context.lower()}: {str(error)}"
+        detail=f"Failed to {context.lower()}: {str(error)}",
     )
 
 
