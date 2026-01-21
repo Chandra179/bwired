@@ -1,0 +1,14 @@
+use_default_settings: true
+
+server:
+  secret_key: "VALUE_FROM_ENV"
+
+search:
+  formats:
+    - html
+    - json
+
+engines:
+  - name: radio browser
+    engine: radio_browser
+    disabled: true
