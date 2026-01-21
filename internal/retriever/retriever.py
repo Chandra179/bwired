@@ -3,7 +3,7 @@ import logging
 import numpy as np
 
 from ..storage.qdrant_client import QdrantClient
-from ..embedding.reranker import Reranker
+from ..processing.reranker import Reranker
 from ..config import LLMConfig
 
 logger = logging.getLogger(__name__)
