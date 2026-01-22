@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import logging
 import numpy as np
 
@@ -16,7 +16,7 @@ class Retriever:
         self, 
         qdrant_client: QdrantClient,
         reranker: Reranker,
-        llm_config: LLMConfig,
+        llm_config: Optional[LLMConfig] = None,
         processor = None,
     ):
         """
