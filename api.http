@@ -36,57 +36,18 @@ Content-Type: text/markdown
 < example.md
 ------WebKitFormBoundary--
 
-### Upload markdown file to custom collection
-POST http://localhost:8000/process-markdown-file?collection_name=my_collection
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
-
-------WebKitFormBoundary
-Content-Disposition: form-data; name="file"; filename="example.md"
-Content-Type: text/markdown
-
-< example.md
-------WebKitFormBoundary--
-
 ### ============================================================================
 ### Search Endpoints
 ### ============================================================================
-
-### Basic search with default collection and limit
-POST http://localhost:8000/search
-Content-Type: application/json
-
-{
-  "query": "What is machine learning?",
-  "limit": 5
-}
-
-### Search with custom limit
-POST http://localhost:8000/search
-Content-Type: application/json
-
-{
-  "query": "How does deep learning work?",
-  "limit": 10
-}
 
 ### Search with specific collection
 POST http://localhost:8000/search
 Content-Type: application/json
 
 {
-  "query": "Explain neural networks",
-  "collection_name": "research_papers",
-  "limit": 15
-}
-
-### Search in markdown document collection
-POST http://localhost:8000/search
-Content-Type: application/json
-
-{
-  "query": "sample document",
-  "collection_name": "my_collection",
-  "limit": 5
+  "query": "document summary",
+  "collection_name": "example",
+  "limit": 3
 }
 
 ### ============================================================================
