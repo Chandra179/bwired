@@ -10,6 +10,19 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_storage:/qdrant/storage
+    
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+    environment:
+      - SEARXNG_SECRET=${SEARXNG_SECRET}
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
 
 volumes:
   qdrant_storage:

@@ -1,9 +1,9 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import logging
 import numpy as np
 
 from ..storage.qdrant_client import QdrantClient
-from ..embedding.reranker import Reranker
+from ..processing.reranker import Reranker
 from ..config import LLMConfig
 
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ class Retriever:
         self, 
         qdrant_client: QdrantClient,
         reranker: Reranker,
-        llm_config: LLMConfig,
+        llm_config: Optional[LLMConfig] = None,
         processor = None,
     ):
         """

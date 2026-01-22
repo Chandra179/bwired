@@ -1,0 +1,85 @@
+### ============================================================================
+### Health Check Endpoints
+### ============================================================================
+
+### Detailed health check with model status
+GET http://localhost:8000/health
+Accept: application/json
+
+### ============================================================================
+### PDF Extraction Endpoints
+### ============================================================================
+
+### Convert PDF to markdown
+POST http://localhost:8000/extract-pdf
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="example.pdf"
+Content-Type: application/pdf
+
+< example.pdf
+------WebKitFormBoundary--
+
+### ============================================================================
+### Markdown File Processing Endpoints
+### ============================================================================
+
+### Upload markdown file to default collection
+POST http://localhost:8000/process-markdown-file?collection_name=example
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="example.md"
+Content-Type: text/markdown
+
+< example.md
+------WebKitFormBoundary--
+
+### ============================================================================
+### Search Endpoints
+### ============================================================================
+
+### Search with specific collection
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "document summary",
+  "collection_name": "example",
+  "limit": 3
+}
+
+### ============================================================================
+### cURL Commands for Terminal
+### ============================================================================
+
+### Health check
+curl http://localhost:8000/health
+
+### Extract PDF to markdown (replace /path/to/document.pdf with actual path)
+curl -X POST http://localhost:8000/extract-pdf \
+  -F "file=@/path/to/document.pdf"
+
+### Upload markdown file to default collection
+curl -X POST "http://localhost:8000/process-markdown-file?collection_name=documents" \
+  -F "file=@document.md"
+
+### Upload markdown file to custom collection
+curl -X POST "http://localhost:8000/process-markdown-file?collection_name=my_collection" \
+  -F "file=@/path/to/document.md"
+
+### Basic search
+curl -X POST http://localhost:8000/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is machine learning?"}'
+
+### Search with custom limit and collection
+curl -X POST http://localhost:8000/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Explain neural networks", "collection_name": "research_papers", "limit": 15}'
+
+### Search in markdown collection
+curl -X POST http://localhost:8000/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "sample document", "collection_name": "my_collection", "limit": 5}'

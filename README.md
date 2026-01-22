@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Bwired
 
 ## Features
@@ -15,17 +14,6 @@
 - **FastAPI**: RESTful API with CORS support
 
 ## Architecture
-=======
-# AI Agents
-
-![LLM Chat](test.png)
-From docs extraction to retrieval
-
-## Running (Makefile)
-- make up: start docker compose
-- make r: run app server
-- make c: run client
->>>>>>> main
 
 ### Components
 

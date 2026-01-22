@@ -4,7 +4,7 @@ import warnings
 from llmlingua import PromptCompressor
 
 from ..config import CompressionConfig
-from ..utils.token_counter import TokenCounter
+from ..token_counter import TokenCounter
 
 logger = logging.getLogger(__name__)
 
