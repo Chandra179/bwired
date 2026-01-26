@@ -51,35 +51,34 @@ Content-Type: application/json
 }
 
 ### ============================================================================
-### cURL Commands for Terminal
+### Web Search Endpoints
 ### ============================================================================
 
-### Health check
-curl http://localhost:8000/health
+## Available Categories
+# - general      # Web search (default)
+# - images       # Image search
+# - videos       # Video search
+# - news         # News articles
+# - music        # Music/audio
+# - files        # Files and documents
+# - it           # IT/programming
+# - science      # Scientific papers
+# - map          # Maps/locations
+# - social media # Social media posts
 
-### Extract PDF to markdown (replace /path/to/document.pdf with actual path)
-curl -X POST http://localhost:8000/extract-pdf \
-  -F "file=@/path/to/document.pdf"
+## Available Time Ranges
+# - day          # Last 24 hours
+# - week         # Last 7 days
+# - month        # Last 30 days
+# - year         # Last 365 days
+POST http://localhost:8000/web-search
+Content-Type: application/json
 
-### Upload markdown file to default collection
-curl -X POST "http://localhost:8000/process-markdown-file?collection_name=documents" \
-  -F "file=@document.md"
-
-### Upload markdown file to custom collection
-curl -X POST "http://localhost:8000/process-markdown-file?collection_name=my_collection" \
-  -F "file=@/path/to/document.md"
-
-### Basic search
-curl -X POST http://localhost:8000/search \
-  -H "Content-Type: application/json" \
-  -d '{"query": "What is machine learning?"}'
-
-### Search with custom limit and collection
-curl -X POST http://localhost:8000/search \
-  -H "Content-Type: application/json" \
-  -d '{"query": "Explain neural networks", "collection_name": "research_papers", "limit": 15}'
-
-### Search in markdown collection
-curl -X POST http://localhost:8000/search \
-  -H "Content-Type: application/json" \
-  -d '{"query": "sample document", "collection_name": "my_collection", "limit": 5}'
+{
+  "query": "economy news",
+  "categories": "news",
+  "language": "en",
+  "time_range": "month",
+  "page": 5,
+  "per_page": 100
+}
