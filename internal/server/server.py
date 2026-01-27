@@ -20,6 +20,7 @@ from internal.config import (
     RerankerConfig,
     CompressionConfig,
     LLMConfig,
+    SearXNGConfig,
 )
 
 from internal.logger import setup_logging

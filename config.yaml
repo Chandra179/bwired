@@ -39,3 +39,10 @@ compression:
   compression_ratio: 0.5
   token_limit: null
   device: "cpu"
+
+searxng:
+  url: "http://localhost:8888"
+  timeout: 30.0
+  max_results: 100
+  retry_attempts: 3
+  retry_delay: 1.0

@@ -112,6 +112,27 @@ class QdrantConfig:
 
 
 @dataclass
+class SearXNGConfig:
+    """Configuration for SearXNG web search integration"""
+    url: str = "http://localhost:8888"
+    timeout: float = 30.0
+    max_results: int = 100
+    retry_attempts: int = 3
+    retry_delay: float = 1.0
+    
+    def __post_init__(self):
+        """Validate SearXNG configuration"""
+        if self.timeout <= 0:
+            raise ValueError("timeout must be positive")
+        if self.max_results <= 0:
+            raise ValueError("max_results must be positive")
+        if self.retry_attempts < 0:
+            raise ValueError("retry_attempts must be non-negative")
+        if self.retry_delay <= 0:
+            raise ValueError("retry_delay must be positive")
+
+
+@dataclass
 class Config:
     """
     Main configuration for RAG chunking system
@@ -127,6 +148,7 @@ class Config:
     llm: Optional[LLMConfig] = None
     storage: Optional[QdrantConfig] = None
     compression: Optional[CompressionConfig] = None
+    searxng: Optional[SearXNGConfig] = None
     
     def __post_init__(self):
         """Validate cross-config constraints"""
@@ -216,6 +238,14 @@ def load_config(config_path: str = "config.yaml") -> Config:
         token_limit=data.get('compression', {}).get('token_limit'),
         device=data.get('compression', {}).get('device', 'cpu')
     )
+    
+    searxng_cfg = SearXNGConfig(
+        url=data.get('searxng', {}).get('url', 'http://localhost:8888'),
+        timeout=data.get('searxng', {}).get('timeout', 30.0),
+        max_results=data.get('searxng', {}).get('max_results', 100),
+        retry_attempts=data.get('searxng', {}).get('retry_attempts', 3),
+        retry_delay=data.get('searxng', {}).get('retry_delay', 1.0)
+    )
 
     return Config(
         chunking=chunking_cfg,
@@ -224,4 +254,5 @@ def load_config(config_path: str = "config.yaml") -> Config:
         reranker=reranker_cfg,
         llm=llm_cfg,
         compression=compression_cfg,
+        searxng=searxng_cfg,
     )
