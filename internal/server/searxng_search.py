@@ -135,6 +135,11 @@ async def web_search_with_bang(request: BangSyntaxRequest):
     # Combine bang and query
     query = f"{request.bang} {request.query}"
     
+    # Special handling for reddit bang to enforce site-specific search
+    if request.bang == "!re":
+        query = f"site:reddit.com {request.query}"
+        logger.info(f"Reddit bang detected - transformed query to: {query}")
+    
     params = {
         "q": query,
         "format": "json",

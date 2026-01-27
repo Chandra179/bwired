@@ -44,8 +44,6 @@ engines:
     categories: [news, general]
     shortcut: re
     base_url: https://www.google.com/search
-    custom_params:
-      as_sitesearch: "reddit.com"
     weight: 1.5
 
   - name: yahoo news
