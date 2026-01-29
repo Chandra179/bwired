@@ -1,8 +1,15 @@
+"""
+Health check endpoints for the API.
+
+Provides basic and detailed health status endpoints for monitoring
+and service discovery.
+"""
+
 from typing import TYPE_CHECKING
 from fastapi import APIRouter, Request
 
 if TYPE_CHECKING:
-    from .server import ServerState
+    from internal.server.server import ServerState
 
 
 router = APIRouter()
@@ -10,7 +17,7 @@ router = APIRouter()
 
 @router.get("/")
 async def root(request: Request):
-    """Health check endpoint"""
+    """Root health check endpoint"""
     return {
         "status": "online",
         "message": "Document Search API is running",
@@ -20,9 +27,9 @@ async def root(request: Request):
 
 @router.get("/health")
 async def health(request: Request):
-    """Detailed health check"""
+    """Detailed health check with component status"""
     if hasattr(request.app.state, 'server_state'):
-        from .server import ServerState
+        from internal.server.server import ServerState
         state: ServerState = request.app.state.server_state
         return {
             "status": "healthy",
@@ -32,7 +39,8 @@ async def health(request: Request):
                 "reranker": "loaded" if state.reranker else "failed",
                 "qdrant_client": "connected" if state.qdrant_client else "failed",
                 "retriever": "loaded" if state.retriever else "failed",
-                "document_processor": "loaded" if state.document_processor else "failed"
+                "document_processor": "loaded" if state.document_processor else "failed",
+                "searxng_client": "loaded" if state.searxng_client else "failed"
             }
         }
     else:

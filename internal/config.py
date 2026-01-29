@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Dict, Any
 import yaml
 import logging
 
@@ -119,6 +119,7 @@ class SearXNGConfig:
     max_results: int = 100
     retry_attempts: int = 3
     retry_delay: float = 1.0
+    bangs: Optional[Dict[str, Any]] = None
     
     def __post_init__(self):
         """Validate SearXNG configuration"""
@@ -244,7 +245,8 @@ def load_config(config_path: str = "config.yaml") -> Config:
         timeout=data.get('searxng', {}).get('timeout', 30.0),
         max_results=data.get('searxng', {}).get('max_results', 100),
         retry_attempts=data.get('searxng', {}).get('retry_attempts', 3),
-        retry_delay=data.get('searxng', {}).get('retry_delay', 1.0)
+        retry_delay=data.get('searxng', {}).get('retry_delay', 1.0),
+        bangs=data.get('searxng', {}).get('bangs')
     )
 
     return Config(

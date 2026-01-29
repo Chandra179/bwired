@@ -2,16 +2,17 @@
 ### Health Check Endpoints
 ### ============================================================================
 
-### Detailed health check with model status
+### Detailed health check with component status
 GET http://localhost:8000/health
 Accept: application/json
 
+
 ### ============================================================================
-### PDF Extraction Endpoints
+### Document Processing Endpoints
 ### ============================================================================
 
-### Convert PDF to markdown
-POST http://localhost:8000/extract-pdf
+### Extract PDF to markdown
+POST http://localhost:8000/documents/extract-pdf
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
 
 ------WebKitFormBoundary
@@ -21,12 +22,8 @@ Content-Type: application/pdf
 < example.pdf
 ------WebKitFormBoundary--
 
-### ============================================================================
-### Markdown File Processing Endpoints
-### ============================================================================
-
-### Upload markdown file to default collection
-POST http://localhost:8000/process-markdown-file?collection_name=example
+### Upload markdown file to Qdrant
+POST http://localhost:8000/documents/upload?collection_name=example
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
 
 ------WebKitFormBoundary
@@ -36,12 +33,13 @@ Content-Type: text/markdown
 < example.md
 ------WebKitFormBoundary--
 
+
 ### ============================================================================
 ### Search Endpoints
 ### ============================================================================
 
-### Search with specific collection
-POST http://localhost:8000/search
+### Search documents in a collection
+POST http://localhost:8000/vector-search
 Content-Type: application/json
 
 {
@@ -50,48 +48,25 @@ Content-Type: application/json
   "limit": 3
 }
 
+
 ### ============================================================================
 ### Web Search Endpoints
 ### ============================================================================
 
-## Available Categories
-# - general      # Web search (default)
-# - images       # Image search
-# - videos       # Video search
-# - news         # News articles
-# - music        # Music/audio
-# - files        # Files and documents
-# - it           # IT/programming
-# - science      # Scientific papers
-# - map          # Maps/locations
-# - social media # Social media posts
-
-## Available Time Ranges
-# - day          # Last 24 hours
-# - week         # Last 7 days
-# - month        # Last 30 days
-# - year         # Last 365 days
-GET http://localhost:8888/search?q=economy%20news&categories=news&language=en&time_range=month&format=json
-
-### ============================================================================
-### SearXNG Bang Syntax Search Endpoints
-### ============================================================================
-
-### Basic SearXNG Search with Bang Syntax
+### General web search
 POST http://localhost:8000/web-search
 Content-Type: application/json
 
 {
   "query": "latest technology trends",
-  "categories": "news",
-  "bang": "!news",
+  "categories": "general",
   "language": "en",
   "time_range": "week",
   "page": 1,
   "per_page": 10
 }
 
-### Search Specific News Engine
+### Web search with bang syntax
 POST http://localhost:8000/web-search/bang
 Content-Type: application/json
 
@@ -104,56 +79,89 @@ Content-Type: application/json
   "per_page": 20
 }
 
-### Search Multiple Sources
+### Get available bang shortcuts
+GET http://localhost:8000/web-search/bangs
+
+### Web search with markdown conversion
+POST http://localhost:8000/web-search/markdown
+Content-Type: application/json
+
+{
+  "query": "artificial intelligence news",
+  "categories": "news",
+  "language": "en",
+  "time_range": "week",
+  "page": 1,
+  "per_page": 10,
+  "max_conversions": 5
+}
+
+
+### ============================================================================
+### Web Search Examples by Category
+### ============================================================================
+
+## Available Categories:
+# - general      # Web search (default)
+# - images       # Image search
+# - videos       # Video search
+# - news         # News articles
+# - music        # Music/audio
+# - files        # Files and documents
+# - it           # IT/programming
+# - science      # Scientific papers
+# - map          # Maps/locations
+# - social media # Social media posts
+
+## Available Time Ranges:
+# - day          # Last 24 hours
+# - week         # Last 7 days
+# - month        # Last 30 days
+# - year         # Last 365 days
+
+### News search example
 POST http://localhost:8000/web-search
 Content-Type: application/json
 
 {
-  "query": "artificial intelligence",
-  "categories": "general",
-  "bang": "!go",
-  "language": "en",
-  "page": 1,
-  "per_page": 15
-}
-
-### Reddit Search
-POST http://localhost:8000/web-search/bang
-Content-Type: application/json
-
-{
-  "query": "python programming",
-  "bang": "!re",
-  "categories": "general",
-  "language": "en",
-  "page": 1,
-  "per_page": 25
-}
-
-### All Available Bang Shortcuts
-GET http://localhost:8000/web-search/bangs
-
-### News Search Examples:
-POST http://localhost:8000/web-search/bang
-Content-Type: application/json
-
-{
   "query": "economy news",
-  "bang": "!yhn",
+  "categories": "news",
+  "bang": "!news",
   "language": "en",
   "time_range": "day",
   "page": 1,
   "per_page": 10
 }
 
-### General Search Examples:
+### Reddit search example
 POST http://localhost:8000/web-search/bang
 Content-Type: application/json
 
 {
-  "query": "climate change",
-  "bang": "!bi",
+  "query": "python programming",
+  "bang": "!re",
   "language": "en",
   "page": 1,
-  "per_page": 10
+  "per_page": 25
 }
+
+### Science search example
+POST http://localhost:8000/web-search
+Content-Type: application/json
+
+{
+  "query": "machine learning research",
+  "categories": "science",
+  "language": "en",
+  "time_range": "month",
+  "page": 1,
+  "per_page": 15
+}
+
+
+### ============================================================================
+### Direct SearXNG Access (for reference)
+### ============================================================================
+
+### Direct SearXNG search (bypassing API)
+GET http://localhost:8888/search?q=economy%20news&categories=news&language=en&time_range=month&format=json
