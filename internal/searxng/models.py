@@ -66,7 +66,7 @@ class BangConfig(BaseModel):
     """Configuration for individual bang shortcut"""
     name: str
     description: str
-    engines: List[str]
+    engines: List[str] = []
     category: Optional[str] = None
     categories: Optional[List[str]] = None
 

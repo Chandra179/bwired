@@ -43,6 +43,7 @@ class WebSearchMarkdownRequest(BaseModel):
     per_page: Optional[int] = Field(10, ge=1, le=1000, description="Results per page (max 1000)")
     bang: Optional[str] = Field(None, description="Bang shortcut (e.g., '!news', '!go', '!yhn')")
     max_conversions: Optional[int] = Field(5, ge=1, le=20, description="Maximum number of results to convert to markdown")
+    export_to_file: Optional[bool] = Field(False, description="Export converted markdown to files in ./exports/ directory")
 
 
 class MarkdownResult(BaseModel):
@@ -52,6 +53,7 @@ class MarkdownResult(BaseModel):
     markdown: str
     success: bool
     error: Optional[str] = None
+    file_path: Optional[str] = Field(None, description="Path to saved markdown file (if export_to_file is enabled)")
 
 
 class WebSearchMarkdownResponse(BaseModel):
@@ -241,10 +243,13 @@ async def web_search_markdown(request: Request, search_request: WebSearchMarkdow
         results_to_convert = search_response.results[:search_request.max_conversions]
         urls = [result.url for result in results_to_convert]
         
-        logger.info(f"Converting {len(urls)} URLs to markdown...")
+        logger.info(f"Converting {len(urls)} URLs to markdown (export_to_file={search_request.export_to_file})...")
         
         # Convert URLs to markdown
-        markdown_contents = convert_urls_to_markdown(urls)
+        conversion_results = convert_urls_to_markdown(
+            urls, 
+            save_to_disk=search_request.export_to_file
+        )
         
         # Build markdown results
         markdown_results = []
@@ -252,7 +257,7 @@ async def web_search_markdown(request: Request, search_request: WebSearchMarkdow
         failed_count = 0
         
         for i, result in enumerate(results_to_convert):
-            markdown_content = markdown_contents[i] if i < len(markdown_contents) else ""
+            markdown_content, file_path = conversion_results[i] if i < len(conversion_results) else ("", None)
             success = bool(markdown_content)
             
             if success:
@@ -265,7 +270,8 @@ async def web_search_markdown(request: Request, search_request: WebSearchMarkdow
                 title=result.title,
                 markdown=markdown_content,
                 success=success,
-                error=None if success else "Failed to convert URL to markdown"
+                error=None if success else "Failed to convert URL to markdown",
+                file_path=str(file_path) if file_path else None
             ))
         
         logger.info(f"Conversion complete: {converted_count} successful, {failed_count} failed")

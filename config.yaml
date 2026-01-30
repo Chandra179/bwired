@@ -46,3 +46,14 @@ searxng:
   max_results: 100
   retry_attempts: 3
   retry_delay: 1.0
+
+url_fetching:
+  timeout: 30
+  max_retries: 3
+  retry_delay: 1.0
+  retry_backoff: 2.0
+  request_delay: 0.5
+  rotate_user_agents: true
+  use_playwright_fallback: true
+  playwright_timeout: 30
+  playwright_wait_until: "networkidle"

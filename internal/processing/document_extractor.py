@@ -1,14 +1,21 @@
 import logging
+import re
 import tempfile
+from datetime import datetime
 from pathlib import Path
-from typing import Union, List
+from typing import Union, List, Tuple, Optional
+from urllib.parse import urlparse
 
-import requests
 from docling.document_converter import DocumentConverter, PdfFormatOption, HTMLFormatOption
 from docling.datamodel.pipeline_options import PdfPipelineOptions, TableFormerMode
 from docling.datamodel.base_models import InputFormat
 
+from internal.fetcher import fetch_url_content
+
 logger = logging.getLogger(__name__)
+
+# Default exports directory
+DEFAULT_EXPORTS_DIR = Path("exports")
 
 
 def convert_pdf_to_markdown(pdf_path: Path) -> str:
@@ -69,51 +76,129 @@ def convert_html_to_markdown(html_path: Path) -> str:
     return markdown_content
 
 
-def fetch_url_content(url: str, timeout: int = 30) -> str:
+# Note: fetch_url_content is now imported from internal.processing.url_fetcher
+# It provides enhanced headers, User-Agent rotation, and retry logic
+
+
+def _sanitize_filename(url: str, max_length: int = 100) -> str:
     """
-    Fetch HTML content from a URL
+    Create a safe filename from a URL.
     
     Args:
-        url: URL to fetch
-        timeout: Request timeout in seconds
+        url: The URL to convert to a filename
+        max_length: Maximum length for the filename
         
     Returns:
-        HTML content as string
-        
-    Raises:
-        requests.RequestException: If the request fails
+        A sanitized filename string
     """
-    logger.info(f"Fetching URL: {url}")
+    # Parse URL to get domain and path
+    parsed = urlparse(url)
     
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
+    # Start with domain
+    domain = parsed.netloc or "unknown"
     
-    response = requests.get(url, headers=headers, timeout=timeout)
-    response.raise_for_status()
+    # Add path if present (remove leading/trailing slashes)
+    path = parsed.path.strip("/")
+    if path:
+        # Take last part of path or full path if short
+        path_parts = path.split("/")
+        path = path_parts[-1] if path_parts else path
     
-    logger.info(f"Fetched {len(response.text)} chars from {url}")
-    return response.text
+    # Combine domain and path
+    if path and len(domain + "_" + path) <= max_length:
+        filename = f"{domain}_{path}"
+    else:
+        filename = domain
+    
+    # Replace invalid characters with underscores
+    filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
+    
+    # Limit length
+    if len(filename) > max_length:
+        filename = filename[:max_length]
+    
+    # Remove trailing dots/spaces
+    filename = filename.rstrip('. ')
+    
+    # Ensure we have something valid
+    if not filename or filename == "_":
+        filename = "exported_content"
+    
+    return filename
 
 
-def convert_urls_to_markdown(urls: List[str], timeout: int = 30) -> List[str]:
+def _generate_unique_filename(url: str, exports_dir: Path, timestamp: Optional[str] = None) -> Path:
+    """
+    Generate a unique filename for a markdown export.
+    
+    Args:
+        url: The URL being converted
+        exports_dir: Directory to save the file
+        timestamp: Optional timestamp string to include in filename
+        
+    Returns:
+        Path object for the unique filename
+    """
+    base_name = _sanitize_filename(url)
+    
+    if timestamp:
+        base_name = f"{timestamp}_{base_name}"
+    
+    # Ensure unique filename
+    counter = 0
+    filename = f"{base_name}.md"
+    file_path = exports_dir / filename
+    
+    while file_path.exists():
+        counter += 1
+        filename = f"{base_name}_{counter}.md"
+        file_path = exports_dir / filename
+    
+    return file_path
+
+
+def convert_urls_to_markdown(
+    urls: List[str], 
+    timeout: int = 30,
+    save_to_disk: bool = False,
+    exports_dir: Optional[Path] = None,
+    include_timestamp: bool = True
+) -> List[Tuple[str, Optional[Path]]]:
     """
     Convert a list of URLs to markdown using Docling
     
     Fetches HTML content from each URL and converts it to markdown.
+    Optionally saves the markdown content to disk.
     
     Args:
         urls: List of URLs to convert
         timeout: Request timeout in seconds for each URL
+        save_to_disk: Whether to save markdown files to disk
+        exports_dir: Directory to save files (defaults to ./exports/)
+        include_timestamp: Whether to include timestamp in filenames
         
     Returns:
-        List of markdown content strings (one per URL)
+        List of tuples containing (markdown_content, file_path) for each URL.
+        file_path is None if save_to_disk is False or if conversion failed.
         
     Note:
         If a URL fails to fetch or convert, an empty string is returned
         for that URL and the error is logged.
     """
-    logger.info(f"Converting {len(urls)} URLs to markdown")
+    logger.info(f"Converting {len(urls)} URLs to markdown (save_to_disk={save_to_disk})")
+    
+    # Setup exports directory
+    if save_to_disk:
+        if exports_dir is None:
+            exports_dir = DEFAULT_EXPORTS_DIR
+        exports_dir = Path(exports_dir)
+        exports_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Exports directory: {exports_dir.absolute()}")
+    
+    # Generate timestamp for filenames
+    timestamp = None
+    if save_to_disk and include_timestamp:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
     converter = DocumentConverter(
         format_options={
@@ -124,6 +209,9 @@ def convert_urls_to_markdown(urls: List[str], timeout: int = 30) -> List[str]:
     results = []
     
     for i, url in enumerate(urls):
+        file_path: Optional[Path] = None
+        markdown_content = ""
+        
         try:
             logger.info(f"Processing URL {i + 1}/{len(urls)}: {url}")
             
@@ -139,17 +227,28 @@ def convert_urls_to_markdown(urls: List[str], timeout: int = 30) -> List[str]:
                 # Convert HTML to markdown
                 result = converter.convert(temp_html_path)
                 markdown_content = result.document.export_to_markdown()
-                results.append(markdown_content)
-                logger.info(f"URL {i + 1} converted successfully ({len(markdown_content)} chars)")
+                
+                # Save to disk if requested
+                if save_to_disk and markdown_content:
+                    file_path = _generate_unique_filename(url, exports_dir, timestamp)
+                    file_path.write_text(markdown_content, encoding="utf-8")
+                    logger.info(f"URL {i + 1} converted and saved to {file_path.name} ({len(markdown_content)} chars)")
+                else:
+                    logger.info(f"URL {i + 1} converted successfully ({len(markdown_content)} chars)")
+                    
             finally:
                 # Clean up temporary file
                 temp_html_path.unlink()
                 
         except Exception as e:
             logger.error(f"Failed to convert URL {url}: {e}")
-            results.append("")
+            markdown_content = ""
+            file_path = None
+        
+        results.append((markdown_content, file_path))
     
-    logger.info(f"Completed conversion of {len(urls)} URLs")
+    saved_count = sum(1 for _, fp in results if fp is not None)
+    logger.info(f"Completed conversion of {len(urls)} URLs ({saved_count} saved to disk)")
     return results
 
 

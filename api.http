@@ -82,7 +82,7 @@ Content-Type: application/json
 ### Get available bang shortcuts
 GET http://localhost:8000/web-search/bangs
 
-### Web search with markdown conversion
+### Web search with markdown conversion (save to file)
 POST http://localhost:8000/web-search/markdown
 Content-Type: application/json
 
@@ -93,7 +93,23 @@ Content-Type: application/json
   "time_range": "week",
   "page": 1,
   "per_page": 10,
-  "max_conversions": 5
+  "max_conversions": 5,
+  "export_to_file": true
+}
+
+### Web search with markdown conversion (memory only)
+POST http://localhost:8000/web-search/markdown
+Content-Type: application/json
+
+{
+  "query": "artificial intelligence news",
+  "categories": "news",
+  "language": "en",
+  "time_range": "week",
+  "page": 1,
+  "per_page": 10,
+  "max_conversions": 5,
+  "export_to_file": false
 }
 
 
