@@ -1,26 +1,38 @@
+"""
+Document search endpoints for the API.
+
+Provides semantic search capabilities using dense and sparse embeddings
+with reranking support.
+"""
+
 import logging
 from typing import TYPE_CHECKING
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from .server import ServerState
+    from internal.server.server import ServerState
 
 
 logger = logging.getLogger(__name__)
 
-
 router = APIRouter()
 
+
 class SearchRequest(BaseModel):
+    """Request model for document search"""
     query: str
     collection_name: str = "documents"
     limit: int = 10
 
-@router.post("/search")
-async def search(request: Request, search_request: SearchRequest):
+
+@router.post("/vector-search")
+async def search_documents(request: Request, search_request: SearchRequest):
     """
     Search for relevant documents using retriever
+    
+    Performs semantic search using dense and sparse embeddings,
+    with optional reranking.
     
     Args:
         request: FastAPI Request object
@@ -35,7 +47,7 @@ async def search(request: Request, search_request: SearchRequest):
             detail="Server not properly initialized"
         )
     
-    from .server import ServerState
+    from internal.server.server import ServerState
     state: ServerState = request.app.state.server_state
     
     if not state.retriever:

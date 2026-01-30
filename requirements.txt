@@ -37,4 +37,9 @@ jinja2>=3.0.0
 # Utilities
 python-dotenv>=1.0.0
 
+# Browser Automation (for bot detection bypass)
+playwright>=1.40.0
+nest-asyncio>=1.5.0  # Required for running async code in nested event loops
+
 # Run after installation: python -m spacy download en_core_web_sm
+# Run after installation: playwright install chromium

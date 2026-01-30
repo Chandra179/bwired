@@ -1,3 +1,11 @@
+
+"""
+Document processing endpoints for the API.
+
+Provides endpoints for PDF extraction and markdown file processing,
+including conversion to embeddings and storage in Qdrant.
+"""
+
 import logging
 import tempfile
 import shutil
@@ -8,15 +16,14 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 from internal.processing.document_extractor import convert_pdf_to_markdown
 
 if TYPE_CHECKING:
-    from .server import ServerState
+    from internal.server.server import ServerState
 
 logger = logging.getLogger(__name__)
-
 
 router = APIRouter()
 
 
-@router.post("/extract-pdf")
+@router.post("/documents/extract-pdf")
 async def extract_pdf(request: Request, file: UploadFile = File(...)):
     """
     Convert uploaded PDF to markdown using Docling
@@ -51,8 +58,8 @@ async def extract_pdf(request: Request, file: UploadFile = File(...)):
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 
-@router.post("/process-markdown-file")
-async def process_markdown_file(
+@router.post("/documents/upload")
+async def upload_document(
     request: Request,
     file: UploadFile = File(...),
     collection_name: str = "documents"
@@ -91,7 +98,7 @@ async def process_markdown_file(
             detail="Server not properly initialized"
         )
     
-    from .server import ServerState
+    from internal.server.server import ServerState
     state: ServerState = request.app.state.server_state
     if not state.document_processor:
         raise HTTPException(

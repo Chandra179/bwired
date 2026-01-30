@@ -12,6 +12,7 @@ from internal.storage.qdrant_client import QdrantClient
 from internal.chunkers import ChunkerFactory, BaseDocumentChunker
 from internal.retriever.retriever import Retriever
 from internal.processing.document_processor import DocumentProcessor
+from internal.searxng.client import SearXNGClient
 
 from internal.config import (
     load_config,
@@ -25,8 +26,13 @@ from internal.config import (
 
 from internal.logger import setup_logging
 
-# Import endpoint modules
-from . import health, document, search, searxng_search
+# Import endpoint modules from internal.api
+from internal.api import (
+    health_router,
+    documents_router,
+    search_router,
+    web_search_router,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +49,7 @@ class ServerState:
         self.reranker_config: Optional[RerankerConfig] = None
         self.processor_config: Optional[CompressionConfig] = None
         self.llm_config: Optional[LLMConfig] = None
+        self.searxng_config: Optional[SearXNGConfig] = None
         
         self.dense_embedder: Optional[DenseEmbedder] = None
         self.sparse_embedder: Optional[SparseEmbedder] = None
@@ -51,6 +58,7 @@ class ServerState:
         self.chunker: Optional[BaseDocumentChunker] = None
         self.retriever: Optional[Retriever] = None
         self.document_processor: Optional[DocumentProcessor] = None
+        self.searxng_client: Optional[SearXNGClient] = None
 
 
 @asynccontextmanager
@@ -65,6 +73,7 @@ async def lifespan(app: FastAPI):
     state.reranker_config = state.config.reranker
     state.llm_config = state.config.llm
     state.processor_config = state.config.compression
+    state.searxng_config = state.config.searxng
     
     # try:
     #     logger.info("Initializing dense embedder...")
@@ -139,6 +148,17 @@ async def lifespan(app: FastAPI):
     #     logger.error(f"Failed to load document processor: {e}")
     #     raise
     
+    try:
+        logger.info("Initializing SearXNG client...")
+        if state.searxng_config:
+            state.searxng_client = SearXNGClient(state.searxng_config)
+            logger.info("✓ SearXNG client loaded")
+        else:
+            logger.warning("SearXNG configuration not found, skipping SearXNG client initialization")
+    except Exception as e:
+        logger.error(f"Failed to load SearXNG client: {e}")
+        raise
+    
     app.state.server_state = state
     
     logger.info("="*60)
@@ -166,10 +186,10 @@ app.add_middleware(
 )
 
 # Include endpoint routers
-app.include_router(health.router, tags=["health"])
-app.include_router(document.router, tags=["document"])
-app.include_router(search.router, tags=["search"])
-app.include_router(searxng_search.router, tags=["web-search"])
+app.include_router(health_router, tags=["health"])
+app.include_router(documents_router, tags=["documents"])
+app.include_router(search_router, tags=["search"])
+app.include_router(web_search_router, tags=["web-search"])
 
 
 if __name__ == "__main__":
