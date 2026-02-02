@@ -17,58 +17,94 @@ outgoing:
   max_request_timeout: 20.0
 
 engines:
+  # IT/Files Category
+  - name: github
+    engine: github
+    categories: [files, it]
+    shortcut: gh
+    disabled: false
+    weight: 1.5
+    
+  - name: stackoverflow
+    engine: stackoverflow
+    categories: [it, files]
+    shortcut: so
+    disabled: false
+    weight: 1.4
+    
+  - name: archwiki
+    engine: archwiki
+    categories: [it, files]
+    shortcut: aw
+    disabled: false
+    weight: 1.0
+
+  # Science/Academic Category  
+  - name: arxiv
+    engine: arxiv
+    categories: [science]
+    shortcut: arxiv
+    disabled: false
+    weight: 1.5
+    
+  - name: google scholar
+    engine: google_scholar
+    categories: [science]
+    shortcut: scholar
+    disabled: false
+    weight: 1.5
+
+  # Social Media Category
+  - name: reddit
+    engine: google
+    categories: [social media]
+    shortcut: r
+    disabled: false
+    weight: 1.2
+    google_search_type: normal
+    
+  - name: lemmy
+    engine: lemmy
+    categories: [social media]
+    shortcut: lemmy
+    disabled: false
+    weight: 1.2
+    
+  - name: mastodon
+    engine: mastodon
+    categories: [social media]
+    shortcut: mastodon
+    disabled: false
+    weight: 1.2
+
+  # Categories
+  - name: google images
+    engine: google_images
+    categories: [images]
+    shortcut: images
+    disabled: false
+    
+  - name: openstreetmap
+    engine: openstreetmap
+    categories: [map]
+    shortcut: map
+    disabled: false
+    
+  - name: youtube
+    engine: youtube
+    categories: [videos]
+    shortcut: videos
+    disabled: false
+
+  # General Search
   - name: google
     engine: google
-    categories: [general, news]
+    categories: [general]
     disabled: false
     weight: 1.5
     
   - name: bing
     engine: bing
-    categories: [general, news]
+    categories: [general]
     disabled: false
     weight: 1.3
-
-  - name: google news
-    engine: google_news
-    categories: news
-    disabled: false
-    
-  - name: bing news
-    engine: bing_news
-    categories: news
-    disabled: false
-    
-  - name: reddit
-    engine: google
-    categories: [news, general]
-    shortcut: re
-    base_url: https://www.google.com/search
-    weight: 1.5
-
-  - name: yahoo news
-    engine: yahoo
-    categories: news
-    shortcut: yhn
-    disabled: false
-    
-  - name: qwant news
-    engine: qwant
-    categories: news
-    shortcut: qwn
-    disabled: false
-    
-  - name: twitter
-    engine: google
-    categories: [news, social media]
-    base_url: https://www.google.com/search
-    custom_params:
-      as_sitesearch: "twitter.com"
-    weight: 1.2
-    
-  - name: brave
-    engine: brave
-    categories: [general, news]
-    shortcut: br
-    disabled: false
-    weight: 1.4

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import yaml
 import logging
 
@@ -120,9 +120,16 @@ class SearXNGConfig:
     retry_attempts: int = 3
     retry_delay: float = 1.0
     bangs: Optional[Dict[str, Any]] = None
+    enabled_categories: List[str] = field(
+        default_factory=lambda: [
+            "general", "it", "science", "social", "files", 
+            "images", "map", "videos", "news"
+        ]
+    )
+    language_prefix_enabled: bool = True
+    default_category: str = "general"
     
     def __post_init__(self):
-        """Validate SearXNG configuration"""
         if self.timeout <= 0:
             raise ValueError("timeout must be positive")
         if self.max_results <= 0:
@@ -131,6 +138,14 @@ class SearXNGConfig:
             raise ValueError("retry_attempts must be non-negative")
         if self.retry_delay <= 0:
             raise ValueError("retry_delay must be positive")
+        
+        valid_categories = [
+            "general", "news", "images", "videos", "map",
+            "it", "science", "social", "files", "music"
+        ]
+        for cat in self.enabled_categories:
+            if cat not in valid_categories:
+                raise ValueError(f"Invalid category: {cat}")
 
 
 @dataclass
@@ -246,7 +261,13 @@ def load_config(config_path: str = "config.yaml") -> Config:
         max_results=data.get('searxng', {}).get('max_results', 100),
         retry_attempts=data.get('searxng', {}).get('retry_attempts', 3),
         retry_delay=data.get('searxng', {}).get('retry_delay', 1.0),
-        bangs=data.get('searxng', {}).get('bangs')
+        bangs=data.get('searxng', {}).get('bangs'),
+        enabled_categories=data.get('searxng', {}).get('enabled_categories', [
+            "general", "it", "science", "social", "files", 
+            "images", "map", "videos", "news"
+        ]),
+        language_prefix_enabled=data.get('searxng', {}).get('language_prefix_enabled', True),
+        default_category=data.get('searxng', {}).get('default_category', 'general')
     )
 
     return Config(

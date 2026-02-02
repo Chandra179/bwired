@@ -1,0 +1,12 @@
+### ============================================================================
+### TEST 4: Bang Management Endpoints
+### ============================================================================
+
+### 4.1 Get all available bang shortcuts
+GET http://localhost:8000/web-search/bangs
+
+### 4.2 Get all available categories
+GET http://localhost:8000/web-search/categories
+
+### 4.3 Get bang syntax help and examples
+GET http://localhost:8000/web-search/bangs/syntax

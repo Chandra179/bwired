@@ -1,8 +1,11 @@
 """
 Web search endpoints for the API.
 
-Provides SearXNG web search integration with optional markdown conversion
-for fetched URLs.
+Provides:
+- POST /web-search - General search with bang support
+- POST /web-search/specialized - Specialized category search
+- GET /web-search/bangs - List available bangs
+- GET /web-search/categories - List available categories
 """
 
 import logging
@@ -14,17 +17,18 @@ from fastapi import APIRouter, HTTPException, Request
 from internal.searxng.models import (
     SearXNGSearchRequest,
     SearXNGSearchResponse,
-    SearXNGResult,
-    BangSyntaxRequest,
-    BangListResponse
+    SpecializedSearchRequest,
+    SpecializedSearchResponse,
+    BangListResponse,
+    CategoryListResponse
 )
 from internal.searxng.exceptions import (
     SearXNGTimeoutError,
     SearXNGConnectionError,
     SearXNGHTTPError,
-    SearXNGInvalidResponseError
+    SearXNGInvalidResponseError,
+    BangNotFoundError
 )
-from internal.processing.document_extractor import convert_urls_to_markdown
 
 if TYPE_CHECKING:
     from internal.server.server import ServerState
@@ -36,14 +40,14 @@ router = APIRouter()
 class WebSearchMarkdownRequest(BaseModel):
     """Request model for web search with markdown conversion"""
     query: str
-    categories: Optional[str] = Field("general", description="general, news, science, images, videos, files, it, map")
-    language: Optional[str] = Field("en", description="Language code")
+    category: Optional[str] = None
+    language: Optional[str] = "en"
     time_range: Optional[Literal["day", "week", "month", "year"]] = None
-    page: Optional[int] = Field(1, ge=1, description="Page number for pagination")
-    per_page: Optional[int] = Field(10, ge=1, le=1000, description="Results per page (max 1000)")
-    bang: Optional[str] = Field(None, description="Bang shortcut (e.g., '!news', '!go', '!yhn')")
-    max_conversions: Optional[int] = Field(5, ge=1, le=20, description="Maximum number of results to convert to markdown")
-    export_to_file: Optional[bool] = Field(False, description="Export converted markdown to files in ./exports/ directory")
+    page: int = Field(1, ge=1)
+    per_page: int = Field(10, ge=1, le=1000)
+    bang: Optional[str] = None
+    max_conversions: int = Field(5, ge=1, le=20)
+    export_to_file: bool = False
 
 
 class MarkdownResult(BaseModel):
@@ -53,7 +57,7 @@ class MarkdownResult(BaseModel):
     markdown: str
     success: bool
     error: Optional[str] = None
-    file_path: Optional[str] = Field(None, description="Path to saved markdown file (if export_to_file is enabled)")
+    file_path: Optional[str] = None
 
 
 class WebSearchMarkdownResponse(BaseModel):
@@ -62,7 +66,7 @@ class WebSearchMarkdownResponse(BaseModel):
     search_results_count: int
     converted_count: int
     failed_count: int
-    search_results: List[SearXNGResult]
+    results: List
     markdown_results: List[MarkdownResult]
     page: int
     per_page: int
@@ -71,29 +75,21 @@ class WebSearchMarkdownResponse(BaseModel):
 @router.post("/web-search", response_model=SearXNGSearchResponse)
 async def web_search(request: Request, search_request: SearXNGSearchRequest):
     """
-    Search the web using SearXNG API
+    Search the web using SearXNG with bang syntax support.
     
-    Performs a web search with optional category filtering, time ranges,
-    and bang syntax shortcuts.
+    Supports:
+    - Engine bangs: !gh, !so, !arxiv, !scholar
+    - Category bangs: !images, !map, !science, !it, !files, !social
+    - Language prefixes: :en, :de, :fr, etc.
     """
-    if not hasattr(request.app.state, 'server_state'):
-        raise HTTPException(
-            status_code=503,
-            detail="Server not properly initialized"
-        )
-    
-    from internal.server.server import ServerState
-    state: ServerState = request.app.state.server_state
-    
-    if not state.searxng_client:
-        raise HTTPException(status_code=503, detail="SearXNG client not initialized")
+    state = _get_state(request)
     
     try:
-        logger.info(f"Processing web search query: {search_request.query[:100]}...")
+        logger.info(f"Processing web search: {search_request.query[:100]}...")
         
         return await state.searxng_client.search(
             query=search_request.query,
-            categories=search_request.categories,
+            category=search_request.category,
             language=search_request.language,
             time_range=search_request.time_range,
             page=search_request.page,
@@ -101,204 +97,145 @@ async def web_search(request: Request, search_request: SearXNGSearchRequest):
             bang=search_request.bang
         )
         
+    except BangNotFoundError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except SearXNGTimeoutError:
-        logger.error("SearXNG request timeout")
         raise HTTPException(status_code=504, detail="SearXNG request timeout")
     except SearXNGHTTPError as e:
-        logger.error(f"SearXNG HTTP error: {e}")
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except SearXNGConnectionError:
-        logger.error("Failed to connect to SearXNG")
         raise HTTPException(status_code=503, detail="SearXNG service unavailable")
     except SearXNGInvalidResponseError as e:
-        logger.error(f"SearXNG invalid response: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
-        logger.error(f"Failed to perform web search: {e}")
+        logger.error(f"Web search failed: {e}")
         raise HTTPException(status_code=500, detail=f"Web search failed: {str(e)}")
 
 
-@router.post("/web-search/bang", response_model=SearXNGSearchResponse)
-async def web_search_with_bang(request: Request, bang_request: BangSyntaxRequest):
+@router.post("/web-search/specialized", response_model=SpecializedSearchResponse)
+async def specialized_search(
+    request: Request, 
+    search_request: SpecializedSearchRequest
+):
     """
-    Search using bang syntax shortcuts
+    Search using specialized categories.
     
-    Bang shortcuts allow searching specific engines directly.
-    Examples: !go (Google), !yhn (Yahoo News), !re (Reddit)
+    Supported categories:
+    - it: Programming, Linux, IT resources
+    - science: Academic papers, scientific databases
+    - social: Social media platforms
+    - files: Code repositories, file sharing
+    - images: Image search
+    - map: Maps and locations
+    - videos: Video platforms
+    - news: News articles
+    - general: General web search
     """
-    if not hasattr(request.app.state, 'server_state'):
-        raise HTTPException(
-            status_code=503,
-            detail="Server not properly initialized"
-        )
-    
-    from internal.server.server import ServerState
-    state: ServerState = request.app.state.server_state
-    
-    if not state.searxng_client:
-        raise HTTPException(status_code=503, detail="SearXNG client not initialized")
+    state = _get_state(request)
     
     try:
-        logger.info(f"Processing bang search: {bang_request.bang} {bang_request.query[:100]}...")
+        logger.info(f"Processing specialized search: {search_request.query[:100]}...")
         
-        return await state.searxng_client.search_with_bang(
-            query=bang_request.query,
-            bang=bang_request.bang,
-            categories=bang_request.categories,
-            language=bang_request.language,
-            time_range=bang_request.time_range,
-            page=bang_request.page,
-            per_page=bang_request.per_page
-        )
+        return await state.searxng_client.search_specialized(search_request)
         
+    except BangNotFoundError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except SearXNGTimeoutError:
-        logger.error("SearXNG request timeout")
         raise HTTPException(status_code=504, detail="SearXNG request timeout")
     except SearXNGHTTPError as e:
-        logger.error(f"SearXNG HTTP error: {e}")
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except SearXNGConnectionError:
-        logger.error("Failed to connect to SearXNG")
         raise HTTPException(status_code=503, detail="SearXNG service unavailable")
-    except SearXNGInvalidResponseError as e:
-        logger.error(f"SearXNG invalid response: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
-        logger.error(f"Failed to perform bang search: {e}")
-        raise HTTPException(status_code=500, detail=f"Bang search failed: {str(e)}")
+        logger.error(f"Specialized search failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
 
 
 @router.get("/web-search/bangs", response_model=BangListResponse)
-async def get_available_bangs(request: Request):
-    """
-    Get list of available bang shortcuts and their descriptions
-    
-    Returns all supported bang shortcuts that can be used with
-    the /web-search/bang endpoint.
-    """
-    if not hasattr(request.app.state, 'server_state'):
-        raise HTTPException(
-            status_code=503,
-            detail="Server not properly initialized"
-        )
-    
-    from internal.server.server import ServerState
-    state: ServerState = request.app.state.server_state
-    
-    if not state.searxng_client:
-        raise HTTPException(status_code=503, detail="SearXNG client not initialized")
+async def get_bangs(request: Request):
+    """Get list of available bang shortcuts"""
+    state = _get_state(request)
     
     try:
-        logger.info("Getting available bang shortcuts")
         available_bangs = await state.searxng_client.get_available_bangs()
-        return BangListResponse(available_bangs=available_bangs)
+        return BangListResponse(bangs=available_bangs)
         
     except Exception as e:
-        logger.error(f"Failed to get available bangs: {e}")
+        logger.error(f"Failed to get bangs: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get bangs: {str(e)}")
 
 
-@router.post("/web-search/markdown", response_model=WebSearchMarkdownResponse)
-async def web_search_markdown(request: Request, search_request: WebSearchMarkdownRequest):
-    """
-    Search the web using SearXNG and convert result URLs to markdown
+@router.get("/web-search/categories", response_model=CategoryListResponse)
+async def get_categories(request: Request):
+    """Get list of available search categories"""
+    state = _get_state(request)
     
-    Performs a web search, then fetches and converts the top results
-    to markdown format using Docling.
-    
-    Args:
-        request: FastAPI Request object
-        search_request: WebSearchMarkdownRequest with search parameters
+    try:
+        categories = await state.searxng_client.get_categories()
+        return CategoryListResponse(categories=categories)
         
-    Returns:
-        WebSearchMarkdownResponse with search results and converted markdown
-    """
-    if not hasattr(request.app.state, 'server_state'):
-        raise HTTPException(
-            status_code=503,
-            detail="Server not properly initialized"
-        )
+    except Exception as e:
+        logger.error(f"Failed to get categories: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get categories: {str(e)}")
+
+
+@router.get("/web-search/bangs/syntax")
+async def get_bang_syntax_help(request: Request):
+    """Get help documentation for bang syntax usage"""
+    state = _get_state(request)
     
-    from internal.server.server import ServerState
-    state: ServerState = request.app.state.server_state
+    bangs = await state.searxng_client.get_available_bangs()
+    
+    # Organize by category
+    engine_bangs = {}
+    category_bangs = {}
+    
+    for bang, config in bangs.items():
+        if config.engine:
+            if config.engine not in engine_bangs:
+                engine_bangs[config.engine] = []
+            engine_bangs[config.engine].append({
+                "bang": bang,
+                "name": config.name,
+                "description": config.description
+            })
+        elif config.category:
+            if config.category not in category_bangs:
+                category_bangs[config.category] = []
+            category_bangs[config.category].append({
+                "bang": bang,
+                "name": config.name,
+                "description": config.description
+            })
+    
+    return {
+        "language_prefixes": BangRegistry.LANGUAGE_PREFIXES,
+        "engine_bangs": engine_bangs,
+        "category_bangs": category_bangs,
+        "examples": {
+            "github_search": "!gh python web framework",
+            "stackoverflow_search": "!so how to use fastapi",
+            "arxiv_search": "!arxiv transformer attention mechanism",
+            "images_search": "!images cute cats",
+            "maps_search": "!map coffee shops nearby",
+            "language_prefix": ":de machine learning tutorial",
+            "combined": ":de !gh rust async"
+        }
+    }
+
+
+def _get_state(request: Request) -> "ServerState":
+    """Get server state from request"""
+    if not hasattr(request.app.state, 'server_state'):
+        raise HTTPException(status_code=503, detail="Server not properly initialized")
+    
+    state = request.app.state.server_state
     
     if not state.searxng_client:
         raise HTTPException(status_code=503, detail="SearXNG client not initialized")
     
-    try:
-        logger.info(f"Processing web search with markdown conversion: {search_request.query[:100]}...")
-        
-        # Perform web search
-        search_response = await state.searxng_client.search(
-            query=search_request.query,
-            categories=search_request.categories,
-            language=search_request.language,
-            time_range=search_request.time_range,
-            page=search_request.page,
-            per_page=search_request.per_page,
-            bang=search_request.bang
-        )
-        
-        # Get URLs to convert (limited by max_conversions)
-        results_to_convert = search_response.results[:search_request.max_conversions]
-        urls = [result.url for result in results_to_convert]
-        
-        logger.info(f"Converting {len(urls)} URLs to markdown (export_to_file={search_request.export_to_file})...")
-        
-        # Convert URLs to markdown
-        conversion_results = convert_urls_to_markdown(
-            urls, 
-            save_to_disk=search_request.export_to_file
-        )
-        
-        # Build markdown results
-        markdown_results = []
-        converted_count = 0
-        failed_count = 0
-        
-        for i, result in enumerate(results_to_convert):
-            markdown_content, file_path = conversion_results[i] if i < len(conversion_results) else ("", None)
-            success = bool(markdown_content)
-            
-            if success:
-                converted_count += 1
-            else:
-                failed_count += 1
-            
-            markdown_results.append(MarkdownResult(
-                url=result.url,
-                title=result.title,
-                markdown=markdown_content,
-                success=success,
-                error=None if success else "Failed to convert URL to markdown",
-                file_path=str(file_path) if file_path else None
-            ))
-        
-        logger.info(f"Conversion complete: {converted_count} successful, {failed_count} failed")
-        
-        return WebSearchMarkdownResponse(
-            query=search_response.query,
-            search_results_count=len(search_response.results),
-            converted_count=converted_count,
-            failed_count=failed_count,
-            search_results=search_response.results,
-            markdown_results=markdown_results,
-            page=search_response.page,
-            per_page=search_response.per_page
-        )
-        
-    except SearXNGTimeoutError:
-        logger.error("SearXNG request timeout")
-        raise HTTPException(status_code=504, detail="SearXNG request timeout")
-    except SearXNGHTTPError as e:
-        logger.error(f"SearXNG HTTP error: {e}")
-        raise HTTPException(status_code=e.status_code, detail=str(e))
-    except SearXNGConnectionError:
-        logger.error("Failed to connect to SearXNG")
-        raise HTTPException(status_code=503, detail="SearXNG service unavailable")
-    except SearXNGInvalidResponseError as e:
-        logger.error(f"SearXNG invalid response: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-    except Exception as e:
-        logger.error(f"Failed to perform web search with markdown conversion: {e}")
-        raise HTTPException(status_code=500, detail=f"Web search with markdown conversion failed: {str(e)}")
+    return state
+
+
+# Import BangRegistry at bottom to avoid circular imports
+from internal.searxng.bangs import BangRegistry

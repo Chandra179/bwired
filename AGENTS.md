@@ -1,172 +1,106 @@
 # Bwired - Agentic Coding Guidelines
 
-This file contains essential information for AI agents working on this codebase.
+## Build/Run/Test Commands
 
-## Build and Run Commands
-
-### Environment Setup
 ```bash
-# Required environment variable (set in server.py)
-export KMP_DUPLICATE_LIB_OK="TRUE"  # For NumPy compatibility
+# Environment setup
+export KMP_DUPLICATE_LIB_OK="TRUE"  # Required for NumPy compatibility
 
-# Generate secrets for services
-make sec  # Generate secret key for SearXNG
+# Development
+make i            # Install dependencies
+make up           # Start Docker services (Qdrant, SearXNG)
+make r            # Run server: uvicorn internal.server:app --host 0.0.0.0 --port 8000
+make b            # Build and start services
+make sec          # Generate SearXNG secret (first time only)
+
+# Testing (when tests exist)
+pytest                            # Run all tests
+pytest tests/test_file.py         # Run single test file
+pytest tests/test_file.py::test_func  # Run single test
+pytest --cov=internal --cov-report=html  # With coverage
 ```
 
-### Development Commands
-```bash
-make i            # Install dependencies: pip install -r requirements.txt
-make req          # Generate requirements.txt from imports
-make up           # Start services via docker compose: docker compose up -d
-make b            # Build and start services: docker compose up --build -d
-make r            # Run development server: uvicorn internal.server:app --host 0.0.0.0 --port 8000
-make sec          # Generate secret: openssl rand -hex 32
-```
+**Services**: Qdrant (6333/6334), SearXNG (8888) | **Verify**: `docker ps`
 
-### Testing
-Currently no formal test suite exists. To add proper testing:
-1. Install pytest: `pip install pytest pytest-asyncio`
-2. Create `pytest.ini` for configuration:
-   ```ini
-   [tool:pytest]
-   testpaths = tests
-   python_files = test_*.py
-   python_classes = Test*
-   python_functions = test_*
-   ```
-3. Run tests: `pytest` (all tests) or `pytest path/to/test_file.py::test_function` (single test)
-4. Run with coverage: `pytest --cov=internal --cov-report=html`
-
-**Current testing approach**: Basic assertions in development code. See server.py:139 for commented example.
-
-### Linting and Formatting
-No linting tools are currently configured. Recommended additions:
-- Black for formatting: `black .`
-- Ruff for linting: `ruff check .`
-- mypy for type checking: `mypy .`
-
-### Environment Verification
-```bash
-# Verify Python environment
-python -c "import torch; print('PyTorch:', torch.__version__)"
-python -c "import spacy; print('Spacy OK')"
-python -m spacy download en_core_web_sm  # Required model
-
-# Verify Docker services
-docker ps  # Check Qdrant (6333/6334) and SearXNG (8888) are running
-curl http://localhost:6333/collections  # Qdrant health check
-curl http://localhost:8888  # SearXNG health check
-```
-
-### Development Workflow
-```bash
-# Start fresh development environment
-make i                    # Install dependencies
-make sec                  # Generate SearXNG secret (first time)
-make up                   # Start Docker services (Qdrant, SearXNG)
-make r                    # Start development server
-
-# For production builds
-make b                    # Build and start all services
-
-# Verify setup
-make r                    # Server should start without errors on port 8000
-```
+**Prerequisites**: `python -m spacy download en_core_web_sm`
 
 ## Code Style Guidelines
 
 ### Imports
-Order imports in three groups, each separated by a blank line:
-1. Standard library: `import logging`, `from typing import List`
+Order in three groups, separated by blank lines:
+1. Standard library: `import logging`, `from typing import List, Dict, Optional`
 2. Third-party: `import numpy`, `from fastapi import FastAPI`
 3. Local/internal: `from internal.config import load_config`
 
 ### Type Hints
-- Use `typing` module types: `List`, `Dict`, `Optional`, `Any`
-- Explicit `Optional[T]` not `T | None`
-- Dataclasses for configuration: `@dataclass class Config:`
+- Use `typing` module: `List`, `Dict`, `Optional`, `Any`, `Literal`
+- Use `Optional[T]` not `T | None`
 - Type hint all function arguments and return values
-- Use `Literal` for restricted string types (e.g., document formats)
-- Define type aliases after imports for clarity
+- Use `Literal` for restricted strings (e.g., `ChunkerFormat = Literal['markdown']`)
 
 ### Naming Conventions
 - Classes: `PascalCase` (e.g., `DenseEmbedder`, `MarkdownDocumentChunker`)
 - Functions/Methods: `snake_case` (e.g., `chunk_document`, `encode`)
 - Variables: `snake_case` (e.g., `query_text`, `buffer_elements`)
-- Private members: prefix with `_` (e.g., `_chunk_section`, `_is_metadata_noise`)
+- Private members: prefix with `_` (e.g., `_chunk_section`)
 - Constants: `UPPER_SNAKE_CASE` (e.g., `KMP_DUPLICATE_LIB_OK`)
 
-### Error Handling
+### Error Handling & Logging
 - Use try-except with specific exception types
 - Log errors with `logger.error()` in except blocks
 - Raise `ValueError` for configuration validation errors
 - Validate state in `__post_init__` methods of dataclasses
-- Use warnings.warn() for non-critical issues (e.g., high overlap ratios)
-
-### Logging
 - Always create module-level logger: `logger = logging.getLogger(__name__)`
-- Use structured logging with context
-- Log levels: `logger.info()` for normal operations, `logger.warning()` for issues, `logger.error()` for failures
-- Log component initialization with confirmation messages
 
 ### Docstrings
-- Use triple-quoted docstrings for all classes and public methods
-- Multi-line format for complex functions
-- Include Args, Returns, and Note sections where applicable
-- Keep docstrings focused on behavior, not implementation
+- Triple-quoted docstrings for all classes and public methods
+- Include Args, Returns sections where applicable
+- Focus on behavior, not implementation details
 
-### File Organization
-- `/internal/` - Main application code
-- `/internal/chunkers/` - Document chunking logic
-- `/internal/embedding/` - Dense and sparse embedders
-- `/internal/processing/` - Text processing and reranking
-- `/internal/server/` - FastAPI application
-- `/internal/storage/` - Qdrant client
-- `/internal/retriever/` - Search and retrieval logic
-- `/internal/api/` - API route handlers
-- `/internal/searxng/` - SearXNG web search client
-- `config.yaml` - Configuration file
-- `requirements.txt` - Python dependencies
-- `docker-compose.yml` - Qdrant and SearXNG services
-- `searxng/` - SearXNG configuration directory
+## Architecture Patterns
 
-### Common Patterns
-- **Dataclasses with validation**: Use `@dataclass` with `__post_init__` for config validation
-- **Abstract base classes**: Use `ABC` with `@abstractmethod` for interfaces (see `BaseDocumentChunker`)
-- **Factory pattern**: Component creation via factories (`ChunkerFactory.create()`)
-- **Type aliases**: Use `Literal` for format specifications (`ChunkerFormat = Literal['markdown']`)
-- **Template Method**: Base classes define workflow, subclasses implement specifics
-- **Async context managers**: Use `@asynccontextmanager` for FastAPI lifespan events
-- **Dependency injection**: Pass dependencies via constructors for testability
-- **Cross-config validation**: Check dependencies between configuration sections
+| Pattern | Implementation |
+|---------|---------------|
+| **Abstract Base Class** | `ABC` with `@abstractmethod` for interfaces (see `BaseDocumentChunker`) |
+| **Factory** | Component creation via factories (`ChunkerFactory.create()`) |
+| **Dataclass Validation** | `@dataclass` with `__post_init__` for config validation |
+| **Template Method** | Base classes define workflow, subclasses implement specifics |
+| **Async Context Managers** | `@asynccontextmanager` for FastAPI lifespan events |
+| **Dependency Injection** | Pass dependencies via constructors for testability |
 
-### Architecture Patterns
-- Abstract base classes with `@abstractmethod` for interfaces
-- Factory pattern for component creation (`ChunkerFactory.create()`)
-- Dependency injection for testing and flexibility
-- Async context managers for lifecycle management (FastAPI lifespan)
-- Dataclasses for configuration and structured data
+## File Organization
 
-### Important Notes
-- Set `KMP_DUPLICATE_LIB_OK` environment variable for NumPy compatibility
-- Use `SentenceTransformer` models via the `sentence-transformers` library
-- GPU acceleration supported via `device="cuda"` in config
-- Spacy model required: `python -m spacy download en_core_web_sm`
-- All configuration loaded from `config.yaml` via `load_config()`
+| Directory | Purpose |
+|-----------|---------|
+| `internal/` | Main application code |
+| `internal/chunkers/` | Document chunking logic |
+| `internal/embedding/` | Dense and sparse embedders |
+| `internal/processing/` | Text processing and reranking |
+| `internal/server/` | FastAPI application |
+| `internal/storage/` | Qdrant client |
+| `internal/retriever/` | Search and retrieval logic |
+| `internal/api/` | API route handlers |
+| `internal/searxng/` | Web search client |
 
-### Docker Services
-- **Qdrant**: Vector database (ports 6333/6334) for similarity search
-- **SearXNG**: Web search engine (port 8888) for external search integration
-- Both services started via `make up` or `make b`
+**Key Files**: `config.yaml` (configuration), `requirements.txt`, `docker-compose.yml`
 
-### Performance Considerations
-- **GPU Support**: Set `device: "cuda"` in config for CUDA acceleration
-- **FP16 Precision**: Enable `use_fp16: true` to reduce memory usage on GPU
+## Important Notes
+
+- **NumPy**: Set `KMP_DUPLICATE_LIB_OK` environment variable
+- **Models**: Use `SentenceTransformer` via `sentence-transformers` library
+- **GPU**: Set `device: "cuda"` in config for CUDA acceleration
+- **Config**: All changes require server restart due to model loading
+- **Spacy**: Required model `en_core_web_sm` must be downloaded
+
+## Performance Considerations
+
+- **FP16 Precision**: Enable `use_fp16: true` for GPU memory savings
 - **Batch Processing**: Configure `batch_size` for efficient embedding generation
-- **Model Caching**: Models are loaded once and reused across requests
+- **Model Caching**: Models loaded once and reused across requests
+- **Development**: Use small documents to reduce processing time
 
-### Development Tips
-- **Configuration**: All changes require server restart due to model loading
-- **Testing**: Use small documents during development to reduce processing time
-- **Debugging**: Check `docker ps` to verify services are running before server start
-- **Validation**: Config validation occurs at startup, providing clear error messages
+## Docker Services
+
+- **Qdrant**: Vector database on ports 6333/6334
+- **SearXNG**: Web search on port 8888
+- Start with: `make up` or `make b`

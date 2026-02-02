@@ -60,8 +60,6 @@ class ListSplitter:
         if current_items:
             chunks.append(create_chunk("\n".join(current_items), current_tokens, header_path, parent_section, "list"))
         return chunks
-        
-        return chunks
     
     def _extract_list_items(self, list_content: str) -> List[str]:
         """Extract individual list items, handling nested content"""

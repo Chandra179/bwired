@@ -1,4 +1,5 @@
 """Overlap handler for markdown chunks"""
+import uuid
 from typing import List, Optional
 import logging
 
@@ -86,6 +87,7 @@ class OverlapHandler:
                     continue
                 
                 overlapped_chunk = SemanticChunk(
+                    id=str(uuid.uuid4()),
                     content=overlapped_content,
                     token_count=TokenCounter.count_tokens(overlapped_content, token_counter.model_name, token_counter.tokenizer),
                     chunk_type=chunk.chunk_type,

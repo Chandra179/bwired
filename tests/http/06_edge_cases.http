@@ -1,0 +1,46 @@
+### ============================================================================
+### TEST 6: Edge Cases and Special Scenarios
+### ============================================================================
+
+### 6.1 Query with special characters
+POST http://localhost:8000/web-search
+Content-Type: application/json
+
+{
+  "query": "C++ vs Python performance \"benchmark\" 2024",
+  "language": "en",
+  "time_range": "year"
+}
+
+### 6.2 Very short query
+POST http://localhost:8000/web-search
+Content-Type: application/json
+
+{
+  "query": "ai"
+}
+
+### 6.3 Long query
+POST http://localhost:8000/web-search
+Content-Type: application/json
+
+{
+  "query": "What are the best practices for implementing microservices architecture in a large-scale enterprise application with considerations for security, scalability, and maintainability using containerization and orchestration tools"
+}
+
+### 6.4 Query with emoji
+POST http://localhost:8000/web-search
+Content-Type: application/json
+
+{
+  "query": "python 🐍 programming tutorial",
+  "language": "en"
+}
+
+### 6.5 Empty query (should error or return default)
+POST http://localhost:8000/web-search
+Content-Type: application/json
+
+{
+  "query": ""
+}

@@ -1,0 +1,40 @@
+### ============================================================================
+### Available Bangs Reference
+### ============================================================================
+
+# Engine-specific bangs:
+# !gh    -> GitHub
+# !so    -> Stack Overflow
+# !aw    -> ArchWiki
+# !arxiv -> arXiv
+# !scholar -> Google Scholar
+# !lemmy -> Lemmy
+# !mastodon -> Mastodon
+# !g     -> Google (shortcut: !go)
+# !b     -> Bing (shortcut: !bi)
+# !r     -> Reddit (shortcut: !re)
+
+# Category bangs:
+# !images   -> Image search
+# !map      -> Maps and locations
+# !videos   -> Video search
+# !science  -> Scientific databases
+# !it       -> IT and programming
+# !files    -> Code repositories and files
+# !social   -> Social media
+# !news     -> News sources
+# !general  -> General web search
+
+# Language prefixes:
+# :en, :de, :fr, :es, :ja, :zh, :ru, :pt, :it, :nl, :pl, :ko, :ar, :hi, :tr
+
+# Time ranges:
+# day, week, month, year
+
+
+### ============================================================================
+### Direct SearXNG Access (for reference)
+### ============================================================================
+
+### Direct SearXNG search (bypassing API)
+GET http://localhost:8888/search?q=economy%20news&categories=news&language=en&time_range=month&format=json
