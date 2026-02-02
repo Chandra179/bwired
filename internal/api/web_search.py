@@ -42,7 +42,7 @@ class WebSearchMarkdownRequest(BaseModel):
     query: str
     category: Optional[str] = None
     language: Optional[str] = "en"
-    time_range: Optional[Literal["day", "week", "month", "year"]] = None
+    time_range: Optional[Literal["day", "month", "year"]] = None
     page: int = Field(1, ge=1)
     per_page: int = Field(10, ge=1, le=1000)
     bang: Optional[str] = None

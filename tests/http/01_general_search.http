@@ -31,7 +31,7 @@ Content-Type: application/json
   "query": "maschinelles Lernen Tutorial",
   "category": "general",
   "language": "de",
-  "time_range": "week",
+  "time_range": "month",
   "page": 1,
   "per_page": 15
 }

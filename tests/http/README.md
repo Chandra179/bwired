@@ -151,7 +151,7 @@ curl "http://localhost:8000/web-search/bangs"
 `:en`, `:de`, `:fr`, `:es`, `:ja`, `:zh`, `:ru`, `:pt`, `:it`, `:nl`, `:pl`, `:ko`, `:ar`, `:hi`, `:tr`
 
 ### Time Ranges
-`day`, `week`, `month`, `year`
+`day`, `month`, `year`
 
 ## Related Files
 

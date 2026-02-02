@@ -74,7 +74,7 @@ Content-Type: application/json
   "query": "cute cats",
   "bang": "!images",
   "language": "en",
-  "time_range": "week",
+  "time_range": "month",
   "page": 1,
   "per_page": 20
 }
@@ -164,7 +164,7 @@ Content-Type: application/json
   "query": "tech discussions",
   "bang": "!social",
   "language": "en",
-  "time_range": "week",
+  "time_range": "month",
   "page": 1,
   "per_page": 20
 }

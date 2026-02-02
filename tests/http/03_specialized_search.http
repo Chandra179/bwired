@@ -64,7 +64,7 @@ Content-Type: application/json
   "query": "landscape photography",
   "category": "images",
   "language": "en",
-  "time_range": "week",
+  "time_range": "month",
   "page": 1,
   "per_page": 20
 }

@@ -51,10 +51,7 @@ class SearXNGSearchRequest(BaseModel):
     query: str
     category: Optional[str] = Field(None, description="Search category")
     language: Optional[str] = Field("en", description="Language code")
-    time_range: Optional[Literal["day", "week", "month", "year"]] = None
-    page: int = Field(1, ge=1)
-    per_page: int = Field(10, ge=1, le=100)
-    bang: Optional[str] = Field(None, description="Bang shortcut")
+    time_range: Optional[Literal["day", "month", "year"]] = None
 
 
 class SpecializedSearchRequest(BaseModel):
@@ -65,7 +62,7 @@ class SpecializedSearchRequest(BaseModel):
         "images", "map", "videos", "news"
     ] = "general"
     language: Optional[str] = "en"
-    time_range: Optional[Literal["day", "week", "month", "year"]] = None
+    time_range: Optional[Literal["day", "month", "year"]] = None
     page: int = Field(1, ge=1)
     per_page: int = Field(10, ge=1, le=100)
     bang: Optional[str] = None
@@ -145,6 +142,6 @@ class BangSyntaxRequest(BaseModel):
     bang: str = Field(..., description="Bang shortcut")
     category: Optional[str] = None
     language: Optional[str] = Field("en", description="Language code")
-    time_range: Optional[Literal["day", "week", "month", "year"]] = None
+    time_range: Optional[Literal["day", "month", "year"]] = None
     page: Optional[int] = Field(1, ge=1)
     per_page: Optional[int] = Field(10, ge=1, le=1000)

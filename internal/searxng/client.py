@@ -123,7 +123,7 @@ class SearXNGClient:
         query: str,
         bang: str,
         language: Optional[str] = None,
-        time_range: Optional[Literal["day", "week", "month", "year"]] = None,
+        time_range: Optional[Literal["day", "month", "year"]] = None,
         page: int = 1,
         per_page: int = 10
     ) -> SearXNGSearchResponse:
