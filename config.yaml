@@ -46,6 +46,29 @@ searxng:
   max_results: 100
   retry_attempts: 3
   retry_delay: 1.0
+  
+  # Categories and engines configuration
+  # 3 categories with 5 total engines
+  categories:
+    books:
+      engines:
+        - openlibrary
+        - annas archive
+      bangs:
+        - ol
+        - aa
+    science:
+      engines:
+        - arxiv
+        - google scholar
+      bangs:
+        - arxiv
+        - gos
+    social_media:
+      engines:
+        - reddit
+      bangs:
+        - re
 
 url_fetching:
   timeout: 30

@@ -46,26 +46,22 @@ class SearchParams(BaseModel):
     per_page: int = 10
 
 
-class SearXNGSearchRequest(BaseModel):
-    """Request model for web search"""
+class SearchRequest(BaseModel):
+    """Unified search request for all categories
+    
+    Supports searching books, science papers, and social media content.
+    
+    Usage:
+        - Books: category="books" or use bang !ol/!aa
+        - Science: category="science" or use bang !arxiv/!gos  
+        - Social Media: category="social_media" or use bang !re
+    """
     query: str
-    category: Optional[str] = Field(None, description="Search category")
-    language: Optional[str] = Field("en", description="Language code")
-    time_range: Optional[Literal["day", "month", "year"]] = None
-
-
-class SpecializedSearchRequest(BaseModel):
-    """Request for specialized category search"""
-    query: str
-    category: Literal[
-        "general", "it", "science", "social", "files", 
-        "images", "map", "videos", "news"
-    ] = "general"
-    language: Optional[str] = "en"
-    time_range: Optional[Literal["day", "month", "year"]] = None
+    category: Optional[Literal["books", "science", "social_media"]] = None
+    engine: Optional[str] = Field(None, description="Engine: openlibrary, annas archive, arxiv, google scholar, reddit")
     page: int = Field(1, ge=1)
     per_page: int = Field(10, ge=1, le=100)
-    bang: Optional[str] = None
+    time_range: Optional[Literal["day", "month", "year"]] = None
 
 
 class SearXNGResult(BaseModel):
@@ -78,29 +74,13 @@ class SearXNGResult(BaseModel):
     category: str = "general"
 
 
-class SearXNGSearchResponse(BaseModel):
-    """Complete search response from SearXNG"""
+class SearchResponse(BaseModel):
+    """Unified search response for all categories"""
     query: str
-    number_of_results: int
-    results: List[SearXNGResult]
-    answers: List[Dict[str, Any]] = []
-    infoboxes: List[Dict[str, Any]] = []
-    suggestions: List[str] = []
-    corrections: List[str] = []
-    page: int
-    per_page: int
-    has_next: bool
-    has_previous: bool
-
-
-class SpecializedSearchResponse(BaseModel):
-    """Response for specialized search"""
-    query: str
-    category: str
-    language: Optional[str]
-    results: List[SearXNGResult]
-    number_of_results: int
+    category: Optional[str] = None
     engine: Optional[str] = None
+    results: List[SearXNGResult]
+    number_of_results: int
     page: int
     per_page: int
     has_next: bool
@@ -111,37 +91,11 @@ class CategoryInfo(BaseModel):
     """Information about a search category"""
     name: str
     description: str
+    engines: List[str]
     bang_shortcuts: List[str]
-
-
-class EngineInfo(BaseModel):
-    """Information about a search engine"""
-    name: str
-    categories: List[str]
-    shortcut: Optional[str]
+    examples: List[str]
 
 
 class CategoryListResponse(BaseModel):
     """Response with available categories"""
     categories: Dict[str, CategoryInfo]
-
-
-class EngineListResponse(BaseModel):
-    """Response with available engines"""
-    engines: List[EngineInfo]
-
-
-class BangListResponse(BaseModel):
-    """Response containing available bang shortcuts"""
-    bangs: Dict[str, Dict[str, Any]]
-
-
-class BangSyntaxRequest(BaseModel):
-    """Request model for bang syntax search"""
-    query: str
-    bang: str = Field(..., description="Bang shortcut")
-    category: Optional[str] = None
-    language: Optional[str] = Field("en", description="Language code")
-    time_range: Optional[Literal["day", "month", "year"]] = None
-    page: Optional[int] = Field(1, ge=1)
-    per_page: Optional[int] = Field(10, ge=1, le=1000)

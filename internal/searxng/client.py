@@ -2,25 +2,23 @@
 SearXNG client for web search operations.
 
 Provides methods for:
-- General web search with bang syntax
-- Specialized category search
-- Language prefix handling
+- Unified search across books, science, and social media
+- Category-based search
+- Bang syntax handling
 - Result parsing and validation
 """
 
 import logging
-from typing import Optional, Dict, Any, Literal
+from typing import Optional, Dict, Any, List
 
 import httpx
 
 from internal.config import SearXNGConfig
 from .models import (
-    SearXNGSearchResponse, 
+    SearchResponse, 
     SearXNGResult,
     SearchParams,
-    SpecializedSearchRequest,
-    SpecializedSearchResponse,
-    BangResult,
+    SearchRequest,
     CategoryInfo
 )
 from .bangs import BangRegistry
@@ -37,7 +35,11 @@ logger = logging.getLogger(__name__)
 class SearXNGClient:
     """
     Client for SearXNG web search operations.
+    Supports 3 categories: books, science, social_media
     """
+    
+    # Engines that don't support pagination
+    NO_PAGINATION_ENGINES = ["reddit"]
     
     def __init__(self, config: SearXNGConfig):
         """
@@ -47,167 +49,79 @@ class SearXNGClient:
             config: SearXNGConfig with connection settings
         """
         self.config = config
-        self.bangs = BangRegistry(config.bangs if hasattr(config, 'bangs') else None)
+        self.bangs = BangRegistry()
         
         logger.info(f"Initializing SearXNG client: {config.url}")
     
-    async def search(
-        self,
-        query: str,
-        category: Optional[str] = None,
-        language: Optional[str] = None,
-        time_range: Optional[Literal["day", "week", "month", "year"]] = None,
-        page: int = 1,
-        per_page: int = 10,
-        bang: Optional[str] = None,
-        engine: Optional[str] = None
-    ) -> SearXNGSearchResponse:
+    async def search(self, request: SearchRequest) -> SearchResponse:
         """
-        Perform web search with optional bang syntax.
+        Perform unified search across all categories.
         
         Args:
-            query: Search query string (supports !bangs and :language prefixes)
-            category: Search category override
-            language: Language code
-            time_range: Time filter
-            page: Page number
-            per_page: Results per page
-            bang: Optional bang shortcut to apply
-            engine: Specific engine to use
+            request: SearchRequest with query, category, engine, etc.
             
         Returns:
-            SearXNGSearchResponse with search results
+            SearchResponse with results
         """
-        # Process bang syntax if provided
-        bang_result: Optional[BangResult] = None
-        if bang:
-            bang_result = self.bangs.process_query(f"{bang} {query}")
-        elif query.startswith("!"):
-            bang_result = self.bangs.process_query(query)
+        # Process bang syntax if present in query
+        processed_query = request.query
+        engine = request.engine
+        category = request.category
+        
+        if request.query.startswith("!"):
+            bang_result = self.bangs.process_query(request.query)
+            processed_query = bang_result.query
+            if bang_result.engine:
+                engine = bang_result.engine
+            if bang_result.category:
+                category = bang_result.category
         
         # Build search parameters
-        # If a specific engine is set via bang, use it and don't set category
-        # to avoid overriding the engine selection
-        if bang_result and bang_result.engine:
-            params = SearchParams(
-                query=bang_result.query if bang_result else query,
-                pageno=page,
-                language=bang_result.language if bang_result else language,
-                time_range=time_range,
-                engine=bang_result.engine,
-                per_page=per_page
-            )
-        else:
-            params = SearchParams(
-                query=bang_result.query if bang_result else query,
-                pageno=page,
-                categories=category or (bang_result.category if bang_result else None),
-                language=bang_result.language if bang_result else language,
-                time_range=time_range,
-                engine=engine or (bang_result.engine if bang_result else None),
-                per_page=per_page
-            )
+        params = SearchParams(
+            query=processed_query,
+            pageno=request.page,
+            categories=category,
+            engine=engine,
+            time_range=request.time_range,
+            per_page=request.per_page
+        )
         
         # Make request
         data = await self._make_request(params)
         
-        # DEBUG: Log the engine being used
-        if bang_result and bang_result.engine:
-            logger.debug(f"Bang '{bang}' resolved to engine: '{bang_result.engine}'")
-        
         # Parse response
-        return self._parse_response(data, page, per_page)
-    
-    async def search_with_bang(
-        self,
-        query: str,
-        bang: str,
-        language: Optional[str] = None,
-        time_range: Optional[Literal["day", "month", "year"]] = None,
-        page: int = 1,
-        per_page: int = 10
-    ) -> SearXNGSearchResponse:
-        """
-        Perform search using bang syntax shortcut.
-        
-        Args:
-            query: Search query string
-            bang: Bang shortcut (e.g., '!news', '!gh')
-            language: Language code
-            time_range: Time filter
-            page: Page number
-            per_page: Results per page
-            
-        Returns:
-            SearXNGSearchResponse with search results
-        """
-        return await self.search(
-            query=query,
-            bang=bang,
-            language=language,
-            time_range=time_range,
-            page=page,
-            per_page=per_page
-        )
-    
-    async def search_specialized(
-        self,
-        request: SpecializedSearchRequest
-    ) -> SpecializedSearchResponse:
-        """
-        Perform search within a specialized category.
-        
-        Args:
-            request: SpecializedSearchRequest with category and query
-            
-        Returns:
-            SpecializedSearchResponse with search results
-        """
-        response = await self.search(
-            query=request.query,
-            category=request.category,
-            language=request.language,
-            time_range=request.time_range,
-            page=request.page,
-            per_page=request.per_page
-        )
-        
-        # Determine engine from bang
-        engine = None
-        if request.bang:
-            bang_config = self.bangs.get_bang(request.bang)
-            engine = bang_config.engine if bang_config else None
-        
-        return SpecializedSearchResponse(
-            query=response.query,
-            category=request.category,
-            language=request.language,
-            results=response.results,
-            number_of_results=response.number_of_results,
-            engine=engine,
-            page=response.page,
-            per_page=response.per_page,
-            has_next=response.has_next,
-            has_previous=response.has_previous
-        )
-    
-    async def get_available_bangs(self) -> Dict[str, Dict[str, Any]]:
-        """Get all available bang shortcuts"""
-        return self.bangs.get_all_bangs()
+        return self._parse_response(data, params)
     
     async def get_categories(self) -> Dict[str, CategoryInfo]:
-        """Get all available search categories"""
-        categories = {}
-        for bang, config in self.bangs.get_all_bangs().items():
-            if config.category:
-                if config.category not in categories:
-                    categories[config.category] = CategoryInfo(
-                        name=config.category,
-                        description=f"Search {config.category} content",
-                        bang_shortcuts=[]
-                    )
-                categories[config.category].bang_shortcuts.append(bang)
-        return categories
+        """
+        Get available search categories with engines and bangs.
+        
+        Returns:
+            Dict of 3 categories: books, science, social_media
+        """
+        return {
+            "books": CategoryInfo(
+                name="books",
+                description="Search books and literature",
+                engines=["openlibrary", "annas archive"],
+                bang_shortcuts=["!ol", "!aa"],
+                examples=["!ol python programming", "!aa machine learning"]
+            ),
+            "science": CategoryInfo(
+                name="science",
+                description="Search scientific papers and academic content",
+                engines=["arxiv", "google scholar"],
+                bang_shortcuts=["!arxiv", "!gos"],
+                examples=["!arxiv quantum computing", "!gos climate change"]
+            ),
+            "social_media": CategoryInfo(
+                name="social_media",
+                description="Search social media discussions",
+                engines=["reddit"],
+                bang_shortcuts=["!re"],
+                examples=["!re web development"]
+            )
+        }
     
     async def _make_request(self, params: SearchParams) -> Dict[str, Any]:
         """Make HTTP request to SearXNG API"""
@@ -216,35 +130,28 @@ class SearXNGClient:
         request_params = {
             "q": params.query,
             "format": params.format,
-            "pageno": params.pageno,
             "per_page": params.per_page
         }
         
+        # Skip pagination for engines that don't support it (e.g., Reddit)
+        if params.engine and params.engine.lower() in self.NO_PAGINATION_ENGINES:
+            logger.debug(f"Skipping pagination for {params.engine} - not supported")
+        else:
+            request_params["pageno"] = params.pageno
+        
         if params.categories:
             request_params["categories"] = params.categories
-        if params.language:
-            request_params["language"] = params.language
         if params.time_range:
             request_params["time_range"] = params.time_range
         if params.engine:
             request_params["engines"] = params.engine
-            logger.debug(f"Setting engine parameter: '{params.engine}'")
-        else:
-            logger.debug("No engine specified, using default")
-        
-        # DEBUG: Log the full request parameters
-        logger.debug(f"SearXNG request params: {request_params}")
+            logger.debug(f"Using engine: '{params.engine}'")
         
         try:
             async with httpx.AsyncClient(timeout=self.config.timeout) as client:
-                logger.debug(f"Making request to: {url}")
                 response = await client.get(url, params=request_params)
                 response.raise_for_status()
-                
-                data = response.json()
-                raw_results_count = len(data.get('results', []))
-                logger.debug(f"Raw SearXNG response: {raw_results_count} results, full data keys: {list(data.keys())}")
-                return data
+                return response.json()
                 
         except httpx.TimeoutException:
             logger.error("SearXNG request timeout")
@@ -262,10 +169,9 @@ class SearXNGClient:
     def _parse_response(
         self, 
         data: Dict[str, Any], 
-        page: int, 
-        per_page: int
-    ) -> SearXNGSearchResponse:
-        """Parse SearXNG response into structured format"""
+        params: SearchParams
+    ) -> SearchResponse:
+        """Parse SearXNG response into unified format"""
         try:
             results = []
             for result in data.get("results", []):
@@ -275,26 +181,26 @@ class SearXNGClient:
                     content=result.get("content", ""),
                     engine=result.get("engine", ""),
                     score=result.get("score", 0.0),
-                    category=result.get("category", "general")
+                    category=result.get("category", params.categories or "general")
                 ))
             
-            # DEBUG: Log engines seen in results
-            engines_in_results = set(r.engine for r in results)
-            logger.debug(f"Results returned from engines: {engines_in_results}")
+            # Determine if there's a next page
+            # For engines without pagination, has_next is always False
+            if params.engine and params.engine.lower() in self.NO_PAGINATION_ENGINES:
+                has_next = False
+            else:
+                has_next = len(results) == params.per_page
             
-            has_next = len(results) == per_page
-            has_previous = page > 1
+            has_previous = params.pageno > 1
             
-            return SearXNGSearchResponse(
-                query=data.get("query", ""),
-                number_of_results=len(results),
+            return SearchResponse(
+                query=data.get("query", params.query),
+                category=params.categories,
+                engine=params.engine,
                 results=results,
-                answers=data.get("answers", []),
-                infoboxes=data.get("infoboxes", []),
-                suggestions=data.get("suggestions", []),
-                corrections=data.get("corrections", []),
-                page=page,
-                per_page=per_page,
+                number_of_results=len(results),
+                page=params.pageno,
+                per_page=params.per_page,
                 has_next=has_next,
                 has_previous=has_previous
             )
