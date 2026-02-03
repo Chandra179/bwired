@@ -2,29 +2,33 @@
 SearXNG web search integration components.
 
 This package provides:
-- BangRegistry: Configurable bang shortcuts management
+- SearXNGClient: Main client for web search operations (requires httpx)
+- BangRegistry: Bang shortcuts management
 - Data models: Request/response validation models
 - Custom exceptions: Specific error handling
-- SearXNGClient: Main client for web search operations (requires httpx)
+
+Supports 4 categories: books, science, social_media, news
 
 Usage:
-    from internal.searxng import SearXNGClient
+    from internal.searxng import SearXNGClient, SearchRequest
     from internal.config import SearXNGConfig
     
     config = SearXNGConfig(url="http://localhost:8888")
     client = SearXNGClient(config)
-    results = await client.search("python programming")
+    
+    request = SearchRequest(query="python programming", category="books")
+    results = await client.search(request)
 """
 
 from .bangs import BangRegistry
 from .models import (
-    SearXNGSearchRequest,
-    SearXNGSearchResponse,
+    SearchRequest,
+    SearchResponse,
     SearXNGResult,
-    BangSyntaxRequest,
-    BangListResponse,
     BangConfig,
-    SearchParams
+    SearchParams,
+    CategoryInfo,
+    CategoryListResponse
 )
 from .exceptions import (
     SearXNGError,
@@ -49,13 +53,13 @@ __all__ = [
     'BangRegistry',
     
     # Data models
-    'SearXNGSearchRequest',
-    'SearXNGSearchResponse',
+    'SearchRequest',
+    'SearchResponse',
     'SearXNGResult',
-    'BangSyntaxRequest',
-    'BangListResponse',
     'BangConfig',
     'SearchParams',
+    'CategoryInfo',
+    'CategoryListResponse',
     
     # Exceptions
     'SearXNGError',

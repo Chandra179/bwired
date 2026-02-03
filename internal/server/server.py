@@ -189,7 +189,7 @@ app.add_middleware(
 app.include_router(health_router, tags=["health"])
 app.include_router(documents_router, tags=["documents"])
 app.include_router(search_router, tags=["search"])
-app.include_router(web_search_router, tags=["web-search"])
+app.include_router(web_search_router, tags=["search"])
 
 
 if __name__ == "__main__":

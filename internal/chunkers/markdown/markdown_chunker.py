@@ -78,8 +78,17 @@ class MarkdownDocumentChunker(BaseDocumentChunker):
             all_chunks.extend(section_chunks)
         
         logger.info(f"Stage 3: Created {len(all_chunks)} semantic chunks")
-                
-        return all_chunks
+        
+        # Stage 4: Apply overlap
+        overlapped_chunks = self._apply_overlap_by_section(
+            all_chunks,
+            self.config.chunking.overlap_tokens,
+            self.token_counter,
+            self.config.embedding.embedding_token_limit,
+        )
+        logger.info(f"Stage 4: Applied overlap, {len(overlapped_chunks)} final chunks")
+        
+        return overlapped_chunks
     
     def _chunk_section(
         self, 

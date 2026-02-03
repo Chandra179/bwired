@@ -10,65 +10,74 @@ search:
     - html
     - json
   default_lang: "en"
-  autocomplete: "google"
+  autocomplete: ""
 
 outgoing:
   request_timeout: 15.0
   max_request_timeout: 20.0
 
+# Override: Only enable 5 specific engines
 engines:
-  - name: google
-    engine: google
-    categories: [general, news]
+  # === BOOKS CATEGORY - ENABLED ===
+  - name: openlibrary
+    engine: openlibrary
+    shortcut: ol
+    categories: books
+    timeout: 10.0
     disabled: false
-    weight: 1.5
-    
-  - name: bing
-    engine: bing
-    categories: [general, news]
+    paging: true
+  
+  - name: annas archive
+    engine: annas_archive
+    shortcut: aa
+    categories: [books, files]
+    timeout: 15.0
     disabled: false
-    weight: 1.3
+    paging: true
+    base_url: "https://annas-archive.org"
 
-  - name: google news
-    engine: google_news
-    categories: news
+  # === SCIENCE CATEGORY - ENABLED ===
+  - name: arxiv
+    engine: arxiv
+    shortcut: arxiv
+    categories: [science, scientific_publications]
+    timeout: 10.0
     disabled: false
-    
-  - name: bing news
-    engine: bing_news
-    categories: news
+    paging: true
+  
+  - name: google scholar
+    engine: google_scholar
+    shortcut: gos
+    categories: [science, scientific_publications]
+    timeout: 10.0
     disabled: false
-    
+    paging: true
+    max_page: 50
+
+  # === SOCIAL MEDIA CATEGORY - ENABLED ===
   - name: reddit
-    engine: google
-    categories: [news, general]
+    engine: reddit
     shortcut: re
-    base_url: https://www.google.com/search
-    weight: 1.5
+    categories: social_media
+    timeout: 10.0
+    disabled: false
+    # Note: Reddit has NO pagination support
 
-  - name: yahoo news
-    engine: yahoo
+  # === NEWS CATEGORY - ENABLED ===
+  - name: duckduckgo news
+    engine: duckduckgo_extra
+    shortcut: ddn
     categories: news
-    shortcut: yhn
+    ddg_category: news
+    timeout: 10.0
     disabled: false
-    
-  - name: qwant news
-    engine: qwant
+    paging: true
+
+  - name: presearch news
+    engine: presearch
+    shortcut: psn
     categories: news
-    shortcut: qwn
+    search_type: news
+    timeout: 10.0
     disabled: false
-    
-  - name: twitter
-    engine: google
-    categories: [news, social media]
-    base_url: https://www.google.com/search
-    custom_params:
-      as_sitesearch: "twitter.com"
-    weight: 1.2
-    
-  - name: brave
-    engine: brave
-    categories: [general, news]
-    shortcut: br
-    disabled: false
-    weight: 1.4
+    paging: true

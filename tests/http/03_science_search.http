@@ -1,0 +1,103 @@
+### ============================================================================
+### TEST 3: Science Search - POST /search
+### Testing Science category with arXiv and Google Scholar
+### ============================================================================
+
+### 3.1 Basic science search (category-based)
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "neural networks",
+  "category": "science"
+}
+
+### 3.2 Search with arXiv bang (!arxiv)
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "!arxiv transformer attention mechanism"
+}
+
+### 3.3 Search with Google Scholar bang (!gos)
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "!gos climate change 2024"
+}
+
+### 3.4 Science search with pagination
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "quantum computing",
+  "category": "science",
+  "page": 1,
+  "per_page": 10
+}
+
+### 3.5 arXiv search with specific engine parameter
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "deep learning",
+  "engine": "arxiv",
+  "page": 1,
+  "per_page": 10
+}
+
+### 3.6 Google Scholar search with specific engine parameter
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "machine learning applications",
+  "engine": "google scholar",
+  "page": 1,
+  "per_page": 10
+}
+
+### 3.7 Science search with time range filter
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "renewable energy",
+  "category": "science",
+  "time_range": "year",
+  "page": 1,
+  "per_page": 10
+}
+
+### 3.8 Search with !science category bang
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "!science blockchain technology"
+}
+
+### 3.9 Advanced arXiv search with pagination (page 2)
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "!arxiv reinforcement learning",
+  "page": 2,
+  "per_page": 10
+}
+
+### 3.10 Google Scholar search with year filter
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "!gos artificial intelligence ethics",
+  "time_range": "month",
+  "page": 1,
+  "per_page": 5
+}

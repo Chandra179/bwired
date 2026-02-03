@@ -1,0 +1,72 @@
+### ============================================================================
+### TEST 4: Social Media Search - POST /search
+### Testing Social Media category with Reddit (no pagination support)
+### ============================================================================
+
+### 4.1 Basic social media search (category-based)
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "web development tips",
+  "category": "social_media"
+}
+
+### 4.2 Search with Reddit bang (!re)
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "!re programming best practices"
+}
+
+### 4.3 Reddit search with specific engine parameter
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "linux administration",
+  "engine": "reddit"
+}
+
+### 4.4 Reddit search (note: pagination will be ignored)
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "!re homelab setup",
+  "page": 1,
+  "per_page": 25
+}
+
+### 4.5 Search with !social category bang
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "!social selfhosted applications"
+}
+
+### 4.6 Reddit search - tech discussions
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "!re docker vs kubernetes"
+}
+
+### 4.7 Reddit search - programming languages
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "!re rust vs go 2024"
+}
+
+### 4.8 Reddit search - development tools
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "!re neovim configuration"
+}

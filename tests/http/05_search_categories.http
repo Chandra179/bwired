@@ -1,0 +1,40 @@
+### ============================================================================
+### TEST 5: Search Categories - GET /search/categories
+### Testing the categories endpoint
+### ============================================================================
+
+### 5.1 Get all available categories with engines and bangs
+GET http://localhost:8000/search/categories
+
+### 5.2 Get categories (should return 4 categories: books, science, social_media, news)
+GET http://localhost:8000/search/categories
+Accept: application/json
+
+### ============================================================================
+### Note: Expected Response Structure:
+### {
+###   "categories": {
+###     "books": {
+###       "name": "books",
+###       "description": "Search books and literature",
+###       "engines": ["openlibrary", "annas archive"],
+###       "bang_shortcuts": ["!ol", "!aa"],
+###       "examples": ["!ol python programming", "!aa machine learning"]
+###     },
+###     "science": {
+###       "name": "science",
+###       "description": "Search scientific papers and academic content",
+###       "engines": ["arxiv", "google scholar"],
+###       "bang_shortcuts": ["!arxiv", "!gos"],
+###       "examples": ["!arxiv quantum computing", "!gos climate change"]
+###     },
+###     "social_media": {
+###       "name": "social_media",
+###       "description": "Search social media discussions",
+###       "engines": ["reddit"],
+###       "bang_shortcuts": ["!re"],
+###       "examples": ["!re web development"]
+###     }
+###   }
+### }
+### ============================================================================

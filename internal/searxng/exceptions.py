@@ -41,3 +41,8 @@ class SearXNGBangNotFoundError(SearXNGError):
     def __init__(self, bang: str):
         super().__init__(f"Bang shortcut not found: {bang}")
         self.bang = bang
+
+
+# Aliases for backward compatibility
+BangNotFoundError = SearXNGBangNotFoundError
+InvalidBangSyntaxError = SearXNGInvalidResponseError
