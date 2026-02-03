@@ -7,7 +7,7 @@ This package provides:
 - Data models: Request/response validation models
 - Custom exceptions: Specific error handling
 
-Supports 3 categories: books, science, social_media
+Supports 4 categories: books, science, social_media, news
 
 Usage:
     from internal.searxng import SearXNGClient, SearchRequest

@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 class SearXNGClient:
     """
     Client for SearXNG web search operations.
-    Supports 3 categories: books, science, social_media
+    Supports 4 categories: books, science, social_media, news
     """
     
     # Engines that don't support pagination
@@ -97,7 +97,7 @@ class SearXNGClient:
         Get available search categories with engines and bangs.
         
         Returns:
-            Dict of 3 categories: books, science, social_media
+            Dict of 4 categories: books, science, social_media, news
         """
         return {
             "books": CategoryInfo(
@@ -120,6 +120,13 @@ class SearXNGClient:
                 engines=["reddit"],
                 bang_shortcuts=["!re"],
                 examples=["!re web development"]
+            ),
+            "news": CategoryInfo(
+                name="news",
+                description="Search news articles and current events",
+                engines=["duckduckgo news", "presearch news"],
+                bang_shortcuts=["!ddn", "!psn"],
+                examples=["!ddn technology news", "!psn climate updates"]
             )
         }
     

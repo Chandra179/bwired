@@ -1,0 +1,42 @@
+### ============================================================================
+### TEST 6: News Search - POST /search
+### Testing News category with DuckDuckGo and Presearch
+### ============================================================================
+
+### 6.1 Basic news search (category-based)
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "artificial intelligence breakthroughs",
+  "category": "news"
+}
+
+### 6.4 News search with pagination
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "machine learning",
+  "category": "news",
+  "page": 4
+}
+
+### 6.5 News search with multiple engines (returns from all news engines)
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "renewable energy",
+  "category": "news",
+  "page": 1,
+  "per_page": 20
+}
+
+### 6.10 Search with !news category bang
+POST http://localhost:8000/search
+Content-Type: application/json
+
+{
+  "query": "!news stock market"
+}

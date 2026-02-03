@@ -6,7 +6,7 @@
 ### 5.1 Get all available categories with engines and bangs
 GET http://localhost:8000/search/categories
 
-### 5.2 Get categories (should return 3 categories: books, science, social_media)
+### 5.2 Get categories (should return 4 categories: books, science, social_media, news)
 GET http://localhost:8000/search/categories
 Accept: application/json
 

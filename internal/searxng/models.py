@@ -57,7 +57,7 @@ class SearchRequest(BaseModel):
         - Social Media: category="social_media" or use bang !re
     """
     query: str
-    category: Optional[Literal["books", "science", "social_media"]] = None
+    category: Optional[Literal["books", "science", "social_media", "news"]] = None
     engine: Optional[str] = Field(None, description="Engine: openlibrary, annas archive, arxiv, google scholar, reddit")
     page: int = Field(1, ge=1)
     per_page: int = Field(10, ge=1, le=100)

@@ -1,11 +1,12 @@
 """
 Bang shortcuts registry for SearXNG web search.
 
-Provides bang shortcuts for 3 categories:
+Provides bang shortcuts for 4 categories:
 - Books: !ol, !aa
 - Science: !arxiv, !gos
 - Social Media: !re
-- Category shortcuts: !books, !science, !social
+- News: !ddn, !psn
+- Category shortcuts: !books, !science, !social, !news
 """
 
 import logging
@@ -20,16 +21,16 @@ logger = logging.getLogger(__name__)
 class BangRegistry:
     """
     Registry for managing SearXNG bang shortcuts.
-    Supports 5 engine bangs and 3 category bangs.
+    Supports 7 engine bangs and 4 category bangs.
     """
     
     def __init__(self):
-        """Initialize the bang registry with 8 essential bangs."""
+        """Initialize the bang registry with 11 essential bangs."""
         self._bangs: Dict[str, BangConfig] = self._build_bangs()
         logger.info(f"Bang registry initialized with {len(self._bangs)} shortcuts")
     
     def _build_bangs(self) -> Dict[str, BangConfig]:
-        """Build all bang shortcuts for books, science, and social media."""
+        """Build all bang shortcuts for books, science, social media, and news."""
         return {
             # === BOOKS CATEGORY ===
             "!ol": BangConfig(
@@ -67,6 +68,20 @@ class BangRegistry:
                 category="social_media"
             ),
             
+            # === NEWS CATEGORY ===
+            "!ddn": BangConfig(
+                name="DuckDuckGo News",
+                description="Search news articles on DuckDuckGo",
+                engine="duckduckgo news",
+                category="news"
+            ),
+            "!psn": BangConfig(
+                name="Presearch News",
+                description="Search news articles on Presearch",
+                engine="presearch news",
+                category="news"
+            ),
+            
             # === CATEGORY BANGS ===
             "!books": BangConfig(
                 name="Books",
@@ -82,6 +97,11 @@ class BangRegistry:
                 name="Social Media",
                 description="Search social media platforms (Reddit)",
                 category="social_media"
+            ),
+            "!news": BangConfig(
+                name="News",
+                description="Search all news sources (DuckDuckGo News, Presearch News)",
+                category="news"
             ),
         }
     

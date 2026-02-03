@@ -62,3 +62,22 @@ engines:
     timeout: 10.0
     disabled: false
     # Note: Reddit has NO pagination support
+
+  # === NEWS CATEGORY - ENABLED ===
+  - name: duckduckgo news
+    engine: duckduckgo_extra
+    shortcut: ddn
+    categories: news
+    ddg_category: news
+    timeout: 10.0
+    disabled: false
+    paging: true
+
+  - name: presearch news
+    engine: presearch
+    shortcut: psn
+    categories: news
+    search_type: news
+    timeout: 10.0
+    disabled: false
+    paging: true
