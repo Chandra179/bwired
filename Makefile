@@ -15,3 +15,4 @@ r:
 
 sec:
 	openssl rand -hex 32
+

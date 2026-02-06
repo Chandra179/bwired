@@ -42,8 +42,17 @@ class SearchParams(BaseModel):
     categories: Optional[str] = None
     language: Optional[str] = None
     time_range: Optional[str] = None
+    engines: Optional[List[str]] = None
     engine: Optional[str] = None
     per_page: int = 10
+    
+    def get_engines_list(self) -> Optional[List[str]]:
+        """Get engines as a list, combining both engines and engine fields"""
+        if self.engines:
+            return self.engines
+        if self.engine:
+            return [self.engine]
+        return None
 
 
 class SearchRequest(BaseModel):
@@ -58,10 +67,19 @@ class SearchRequest(BaseModel):
     """
     query: str
     category: Optional[Literal["books", "science", "social_media", "news"]] = None
-    engine: Optional[str] = Field(None, description="Engine: openlibrary, annas archive, arxiv, google scholar, reddit")
+    engines: Optional[List[str]] = Field(None, description="List of engines to search (e.g., ['openlibrary', 'annas archive'])")
+    engine: Optional[str] = Field(None, description="Single engine (deprecated, use engines instead)")
     page: int = Field(1, ge=1)
     per_page: int = Field(10, ge=1, le=100)
     time_range: Optional[Literal["day", "month", "year"]] = None
+    
+    def get_engines(self) -> Optional[List[str]]:
+        """Get engines list, combining engines and legacy engine fields"""
+        if self.engines:
+            return self.engines
+        if self.engine:
+            return [self.engine]
+        return None
 
 
 class SearXNGResult(BaseModel):
@@ -87,6 +105,14 @@ class SearchResponse(BaseModel):
     has_previous: bool
 
 
+class EngineInfo(BaseModel):
+    """Information about a search engine"""
+    name: str
+    bang: str
+    description: str
+    enabled: bool = True
+
+
 class CategoryInfo(BaseModel):
     """Information about a search category"""
     name: str
@@ -99,3 +125,8 @@ class CategoryInfo(BaseModel):
 class CategoryListResponse(BaseModel):
     """Response with available categories"""
     categories: Dict[str, CategoryInfo]
+
+
+class EnginesListResponse(BaseModel):
+    """Response with available engines grouped by category"""
+    engines: Dict[str, List[EngineInfo]]

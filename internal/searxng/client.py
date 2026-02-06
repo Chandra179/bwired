@@ -19,7 +19,8 @@ from .models import (
     SearXNGResult,
     SearchParams,
     SearchRequest,
-    CategoryInfo
+    CategoryInfo,
+    EngineInfo
 )
 from .bangs import BangRegistry
 from .exceptions import (
@@ -58,21 +59,21 @@ class SearXNGClient:
         Perform unified search across all categories.
         
         Args:
-            request: SearchRequest with query, category, engine, etc.
+            request: SearchRequest with query, category, engines, etc.
             
         Returns:
             SearchResponse with results
         """
         # Process bang syntax if present in query
         processed_query = request.query
-        engine = request.engine
+        engines = request.get_engines()
         category = request.category
         
         if request.query.startswith("!"):
             bang_result = self.bangs.process_query(request.query)
             processed_query = bang_result.query
             if bang_result.engine:
-                engine = bang_result.engine
+                engines = [bang_result.engine]
             if bang_result.category:
                 category = bang_result.category
         
@@ -81,7 +82,7 @@ class SearXNGClient:
             query=processed_query,
             pageno=request.page,
             categories=category,
-            engine=engine,
+            engines=engines,
             time_range=request.time_range,
             per_page=request.per_page
         )
@@ -130,6 +131,31 @@ class SearXNGClient:
             )
         }
     
+    async def get_engines(self) -> Dict[str, List[EngineInfo]]:
+        """
+        Get available search engines grouped by category.
+        
+        Returns:
+            Dict of categories with their engines
+        """
+        return {
+            "books": [
+                EngineInfo(name="openlibrary", bang="!ol", description="Search books on OpenLibrary"),
+                EngineInfo(name="annas archive", bang="!aa", description="Search books on Anna's Archive")
+            ],
+            "science": [
+                EngineInfo(name="arxiv", bang="!arxiv", description="Search scientific papers on arXiv"),
+                EngineInfo(name="google scholar", bang="!gos", description="Search academic papers on Google Scholar")
+            ],
+            "social_media": [
+                EngineInfo(name="reddit", bang="!re", description="Search Reddit discussions")
+            ],
+            "news": [
+                EngineInfo(name="duckduckgo news", bang="!ddn", description="Search news articles on DuckDuckGo"),
+                EngineInfo(name="presearch news", bang="!psn", description="Search news articles on Presearch")
+            ]
+        }
+    
     async def _make_request(self, params: SearchParams) -> Dict[str, Any]:
         """Make HTTP request to SearXNG API"""
         url = f"{self.config.url}/search"
@@ -140,9 +166,15 @@ class SearXNGClient:
             "per_page": params.per_page
         }
         
+        # Get engines list (supporting both single and multiple engines)
+        engines_list = params.get_engines_list()
+        
         # Skip pagination for engines that don't support it (e.g., Reddit)
-        if params.engine and params.engine.lower() in self.NO_PAGINATION_ENGINES:
-            logger.debug(f"Skipping pagination for {params.engine} - not supported")
+        if engines_list and any(
+            engine.lower() in self.NO_PAGINATION_ENGINES 
+            for engine in engines_list
+        ):
+            logger.debug(f"Skipping pagination for engines - not supported")
         else:
             request_params["pageno"] = params.pageno
         
@@ -150,9 +182,10 @@ class SearXNGClient:
             request_params["categories"] = params.categories
         if params.time_range:
             request_params["time_range"] = params.time_range
-        if params.engine:
-            request_params["engines"] = params.engine
-            logger.debug(f"Using engine: '{params.engine}'")
+        if engines_list:
+            # Join multiple engines with comma for SearXNG API
+            request_params["engines"] = ",".join(engines_list)
+            logger.debug(f"Using engines: '{request_params['engines']}'")
         
         try:
             async with httpx.AsyncClient(timeout=self.config.timeout) as client:
