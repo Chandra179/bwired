@@ -30,7 +30,7 @@ Content-Type: application/json
   "query": "renewable energy",
   "category": "news",
   "page": 1,
-  "per_page": 20
+  "per_page": 3
 }
 
 ### 6.10 Search with !news category bang

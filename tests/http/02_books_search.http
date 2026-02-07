@@ -8,24 +8,8 @@ POST http://localhost:8000/search
 Content-Type: application/json
 
 {
-  "query": "python programming",
+  "query": "artificial intelligence",
   "category": "books"
-}
-
-### 2.2 Search with OpenLibrary bang (!ol)
-POST http://localhost:8000/search
-Content-Type: application/json
-
-{
-  "query": "!ol machine learning"
-}
-
-### 2.3 Search with Anna's Archive bang (!aa)
-POST http://localhost:8000/search
-Content-Type: application/json
-
-{
-  "query": "!aa artificial intelligence"
 }
 
 ### 2.4 Books search with pagination
@@ -35,30 +19,7 @@ Content-Type: application/json
 {
   "query": "data science",
   "category": "books",
-  "page": 6,
-  "per_page": 100
-}
-
-### 2.5 OpenLibrary search with specific engine parameter
-POST http://localhost:8000/search
-Content-Type: application/json
-
-{
-  "query": "javascript",
-  "engine": "openlibrary",
-  "page": 20,
-  "per_page": 5
-}
-
-### 2.6 Anna's Archive search with specific engine parameter
-POST http://localhost:8000/search
-Content-Type: application/json
-
-{
-  "query": "computer science",
-  "engine": "annas archive",
-  "page": 1,
-  "per_page": 10
+  "page": 500
 }
 
 ### 2.8 Search with !books category bang

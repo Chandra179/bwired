@@ -15,7 +15,7 @@ from internal.searxng.models import (
     SearchRequest,
     SearchResponse,
     CategoryListResponse,
-    CategoryInfo
+    EnginesListResponse
 )
 from internal.searxng.exceptions import (
     SearXNGTimeoutError,
@@ -84,10 +84,11 @@ async def get_categories(request: Request):
     """
     Get available search categories with engines and usage examples.
     
-    Returns 3 categories:
+    Returns 4 categories:
     - **books**: OpenLibrary (!ol), Anna's Archive (!aa)
     - **science**: arXiv (!arxiv), Google Scholar (!gos)
     - **social_media**: Reddit (!re)
+    - **news**: DuckDuckGo News (!ddn), Presearch News (!psn)
     
     Each category includes:
     - List of engines
@@ -103,6 +104,30 @@ async def get_categories(request: Request):
     except Exception as e:
         logger.error(f"Failed to get categories: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get categories: {str(e)}")
+
+
+@router.get("/search/engines", response_model=EnginesListResponse)
+async def get_engines(request: Request):
+    """
+    Get available search engines grouped by category.
+    
+    Returns all engines organized by their category:
+    - **books**: openlibrary, annas archive
+    - **science**: arxiv, google scholar
+    - **social_media**: reddit
+    - **news**: duckduckgo news, presearch news
+    
+    Each engine includes its name, bang shortcut, and description.
+    """
+    state = _get_state(request)
+    
+    try:
+        engines = await state.searxng_client.get_engines()
+        return EnginesListResponse(engines=engines)
+        
+    except Exception as e:
+        logger.error(f"Failed to get engines: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get engines: {str(e)}")
 
 
 def _get_state(request: Request) -> "ServerState":

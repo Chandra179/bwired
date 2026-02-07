@@ -8,7 +8,7 @@ POST http://localhost:8000/search
 Content-Type: application/json
 
 {
-  "query": "web development tips",
+  "query": "bitcoin",
   "category": "social_media"
 }
 
