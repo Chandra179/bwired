@@ -1,5 +1,5 @@
-import { createSignal, createEffect } from 'solid-js';
-import { search, fetchCategories } from '../services/searchApi';
+import { createSignal } from 'solid-js';
+import { search } from '../services/searchApi';
 
 const PER_PAGE = 10;
 
@@ -14,28 +14,16 @@ export function useSearch() {
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal(null);
   const [totalResults, setTotalResults] = createSignal(0);
-  const [hasNext, setHasNext] = createSignal(false);
-  const [hasPrevious, setHasPrevious] = createSignal(false);
-  const [categoryInfo, setCategoryInfo] = createSignal(null);
-  
-  // Filter state
-  const [selectedCategory, setSelectedCategory] = createSignal('news');
+  // Pagination computed from results, not API response
+  const [emptyPageDetected, setEmptyPageDetected] = createSignal(false);
+  const [lastScrollPosition, setLastScrollPosition] = createSignal(0);
+
+  // Filter state - null means general search (no category filter)
+  const [selectedCategory, setSelectedCategory] = createSignal(null);
   const [selectedEngines, setSelectedEngines] = createSignal([]);
 
-  // Calculate total pages
-  const totalPages = () => Math.ceil(totalResults() / PER_PAGE);
-
-  // Fetch category info on mount
-  createEffect(async () => {
-    try {
-      const data = await fetchCategories();
-      if (data.categories && data.categories.news) {
-        setCategoryInfo(data.categories.news);
-      }
-    } catch (err) {
-      console.error('Failed to fetch categories:', err);
-    }
-  });
+  // Calculate total pages (this is now just for display, not logic)
+  const totalPages = () => Math.ceil(totalResults() / PER_PAGE) || 1;
 
   /**
    * Perform search for a specific page
@@ -46,10 +34,13 @@ export function useSearch() {
   const performSearch = async (searchQuery, targetPage = 1, filters = null) => {
     if (!searchQuery.trim()) return;
 
+    // Save current scroll position before loading
+    setLastScrollPosition(window.scrollY);
+
     // Use provided filters or current state
     const category = filters?.category ?? selectedCategory();
     const engines = filters?.engines ?? selectedEngines();
-    
+
     setLoading(true);
     setError(null);
 
@@ -60,12 +51,24 @@ export function useSearch() {
         targetPage,
         PER_PAGE
       );
-      
-      setResults(data.results || []);
+
+      const newResults = data.results || [];
+      setResults(newResults);
       setTotalResults(data.number_of_results || 0);
-      setHasNext(data.has_next || false);
-      setHasPrevious(data.has_previous || false);
       setPage(targetPage);
+
+      // Detect empty page - this means no next page available
+      if (newResults.length === 0) {
+        setEmptyPageDetected(true);
+      } else {
+        // Reset empty page detection if we got results
+        setEmptyPageDetected(false);
+      }
+
+      // Restore scroll position after a short delay to ensure DOM is updated
+      setTimeout(() => {
+        window.scrollTo(0, lastScrollPosition());
+      }, 0);
     } catch (err) {
       setError(err.message || 'Failed to fetch results');
     } finally {
@@ -88,16 +91,14 @@ export function useSearch() {
    * Go to next page
    */
   const goToNextPage = () => {
-    if (hasNext()) {
-      goToPage(page() + 1);
-    }
+    goToPage(page() + 1);
   };
 
   /**
    * Go to previous page
    */
   const goToPreviousPage = () => {
-    if (hasPrevious()) {
+    if (page() > 1) {
       goToPage(page() - 1);
     }
   };
@@ -108,6 +109,7 @@ export function useSearch() {
    */
   const handleSearch = (newQuery) => {
     setQuery(newQuery);
+    setEmptyPageDetected(false);
     performSearch(newQuery, 1);
   };
 
@@ -126,14 +128,8 @@ export function useSearch() {
   const applyFilters = (filters) => {
     setSelectedCategory(filters.category);
     setSelectedEngines(filters.engines);
-    
-    // Update category info display
-    fetchCategories().then((data) => {
-      if (data.categories && data.categories[filters.category]) {
-        setCategoryInfo(data.categories[filters.category]);
-      }
-    });
-    
+    setEmptyPageDetected(false);
+
     // If there's an active query, re-search with new filters
     if (query()) {
       performSearch(query(), 1, filters);
@@ -141,23 +137,19 @@ export function useSearch() {
   };
 
   /**
-   * Clear all filters and reset to defaults
+   * Clear all filters and reset to defaults (general search)
    */
   const clearFilters = () => {
-    setSelectedCategory('news');
+    setSelectedCategory(null);
     setSelectedEngines([]);
-    
-    // Reset category info to news
-    fetchCategories().then((data) => {
-      if (data.categories && data.categories.news) {
-        setCategoryInfo(data.categories.news);
-      }
-    });
-    
-    // If there's an active query, re-search without filters
-    if (query()) {
-      performSearch(query(), 1, { category: 'news', engines: [] });
-    }
+    setEmptyPageDetected(false);
+
+    // Clear results and reset state without fetching
+    setResults([]);
+    setQuery('');
+    setPage(1);
+    setTotalResults(0);
+    setError(null);
   };
 
   /**
@@ -167,75 +159,51 @@ export function useSearch() {
   const removeEngine = (engineName) => {
     const newEngines = selectedEngines().filter((e) => e !== engineName);
     setSelectedEngines(newEngines);
-    
-    // Re-search with updated filters
-    if (query()) {
-      performSearch(query(), 1, {
-        category: selectedCategory(),
-        engines: newEngines,
-      });
-    }
+    setEmptyPageDetected(false);
+
+    // Clear results and reset state without fetching
+    setResults([]);
+    setQuery('');
+    setPage(1);
+    setTotalResults(0);
+    setError(null);
   };
 
   /**
-   * Remove category filter (reset to news)
+   * Remove category filter (reset to general search)
    */
   const removeCategory = () => {
-    setSelectedCategory('news');
+    setSelectedCategory(null);
     setSelectedEngines([]);
-    
-    fetchCategories().then((data) => {
-      if (data.categories && data.categories.news) {
-        setCategoryInfo(data.categories.news);
-      }
-    });
-    
-    if (query()) {
-      performSearch(query(), 1, { category: 'news', engines: [] });
-    }
+    setEmptyPageDetected(false);
+
+    // Clear results and reset state without fetching
+    setResults([]);
+    setQuery('');
+    setPage(1);
+    setTotalResults(0);
+    setError(null);
   };
 
   /**
    * Get visible page numbers for pagination
-   * Shows pages around current page with ellipsis for gaps
-   * @returns {Array} Array of page numbers and ellipsis markers
+   * Shows exactly 3 pages as a sliding window
+   * Pages 1-3: show 1, 2, 3
+   * Page 4+: slide window showing current-1, current, current+1
+   * @returns {Array} Array of page numbers (always 3 pages)
    */
   const getVisiblePages = () => {
     const current = page();
-    const total = totalPages();
     const pages = [];
-    
-    if (total <= 7) {
-      // Show all pages if 7 or fewer
-      for (let i = 1; i <= total; i++) {
-        pages.push(i);
-      }
+
+    if (current <= 2) {
+      // Pages 1-2: show 1, 2, 3
+      pages.push(1, 2, 3);
     } else {
-      // Always show first page
-      pages.push(1);
-      
-      if (current > 3) {
-        pages.push('...');
-      }
-      
-      // Show pages around current
-      const start = Math.max(2, current - 1);
-      const end = Math.min(total - 1, current + 1);
-      
-      for (let i = start; i <= end; i++) {
-        if (i !== 1 && i !== total) {
-          pages.push(i);
-        }
-      }
-      
-      if (current < total - 2) {
-        pages.push('...');
-      }
-      
-      // Always show last page
-      pages.push(total);
+      // Page 3+: show sliding window (current-1, current, current+1)
+      pages.push(current - 1, current, current + 1);
     }
-    
+
     return pages;
   };
 
@@ -258,16 +226,15 @@ export function useSearch() {
     error,
     totalResults,
     totalPages,
-    hasNext,
-    hasPrevious,
-    categoryInfo,
     selectedCategory,
     selectedEngines,
-    
+    PER_PAGE,
+    emptyPageDetected,
+
     // Computed
     getVisiblePages,
     getResultRange,
-    
+
     // Actions
     handleSearch,
     goToPage,

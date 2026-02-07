@@ -19,25 +19,22 @@ outgoing:
   pool_maxsize: 20
   enable_http2: true
 
-# Override: Only enable 5 specific engines
+# Override: Only enable 6 specific engines
 engines:
   # === BOOKS CATEGORY - ENABLED ===
   - name: openlibrary
     engine: openlibrary
     shortcut: ol
-    categories: books
-    timeout: 10.0
+    categories: [books]
     disabled: false
-    paging: true
-  
+
   - name: annas archive
     engine: annas_archive
     shortcut: aa
-    categories: [books, files]
-    timeout: 15.0
+    categories: [files, books]
     disabled: false
-    paging: true
-    base_url: "https://annas-archive.org"
+    # Use only the .li domain to avoid DNS errors with other mirrors
+    base_url: 'https://annas-archive.li'
 
   # === SCIENCE CATEGORY - ENABLED ===
   - name: arxiv
@@ -61,7 +58,7 @@ engines:
   - name: reddit
     engine: reddit
     shortcut: re
-    categories: social_media
+    categories: [social_media]
     timeout: 10.0
     disabled: false
     # Note: Reddit has NO pagination support
@@ -70,7 +67,7 @@ engines:
   - name: duckduckgo news
     engine: duckduckgo_extra
     shortcut: ddn
-    categories: news
+    categories: [news]
     ddg_category: news
     timeout: 10.0
     disabled: false
@@ -79,7 +76,7 @@ engines:
   - name: presearch news
     engine: presearch
     shortcut: psn
-    categories: news
+    categories: [news]
     search_type: news
     timeout: 10.0
     disabled: false

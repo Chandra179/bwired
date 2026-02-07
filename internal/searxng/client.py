@@ -226,19 +226,26 @@ class SearXNGClient:
             
             # Determine if there's a next page
             # For engines without pagination, has_next is always False
-            if params.engine and params.engine.lower() in self.NO_PAGINATION_ENGINES:
+            engines_list = params.get_engines_list()
+            if engines_list and any(
+                engine.lower() in self.NO_PAGINATION_ENGINES
+                for engine in engines_list
+            ):
                 has_next = False
             else:
                 has_next = len(results) == params.per_page
-            
+
             has_previous = params.pageno > 1
-            
+
+            # Get total results from SearXNG response, fallback to current page count
+            total_results = data.get("number_of_results") or len(results)
+
             return SearchResponse(
                 query=data.get("query", params.query),
                 category=params.categories,
                 engine=params.engine,
                 results=results,
-                number_of_results=len(results),
+                number_of_results=total_results,
                 page=params.pageno,
                 per_page=params.per_page,
                 has_next=has_next,

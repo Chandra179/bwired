@@ -10,39 +10,37 @@ import ActiveFilters from './ActiveFilters';
  * Pagination component
  */
 function Pagination(props) {
-  const { 
-    page, 
-    totalPages, 
-    hasNext, 
-    hasPrevious, 
-    visiblePages, 
-    onPageChange, 
-    onNext, 
+  const {
+    page,
+    totalPages,
+    hasNext,
+    hasPrevious,
+    visiblePages,
+    onPageChange,
+    onNext,
     onPrevious,
-    resultRange,
-    totalResults
+    resultsCount
   } = props;
 
   return (
     <div class="flex flex-col items-center gap-4 py-6">
       {/* Results count */}
-      <Show when={totalResults > 0}>
+      <Show when={resultsCount > 0}>
         <p class="text-sm text-gray-600">
-          Showing {resultRange.start}-{resultRange.end} of {totalResults} results
+          Showing {resultsCount} results
         </p>
       </Show>
-      
+
       {/* Page navigation */}
       <div class="flex items-center gap-2">
         {/* Previous button */}
         <button
           onClick={onPrevious}
           disabled={!hasPrevious}
-          class={`px-3 py-2 rounded-lg font-medium transition-colors ${
-            hasPrevious
+          class={`px-3 py-2 rounded-lg font-medium transition-colors ${hasPrevious
               ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'
               : 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
-          }`}
+            }`}
         >
           <span class="flex items-center gap-1">
             <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
@@ -64,11 +62,10 @@ function Pagination(props) {
               >
                 <button
                   onClick={() => onPageChange(pageNum)}
-                  class={`min-w-[40px] px-3 py-2 rounded-lg font-medium transition-colors ${
-                    page === pageNum
+                  class={`min-w-[40px] px-3 py-2 rounded-lg font-medium transition-colors ${page === pageNum
                       ? 'bg-blue-600 text-white'
                       : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'
-                  }`}
+                    }`}
                 >
                   {pageNum}
                 </button>
@@ -81,11 +78,10 @@ function Pagination(props) {
         <button
           onClick={onNext}
           disabled={!hasNext}
-          class={`px-3 py-2 rounded-lg font-medium transition-colors ${
-            hasNext
+          class={`px-3 py-2 rounded-lg font-medium transition-colors ${hasNext
               ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'
               : 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
-          }`}
+            }`}
         >
           <span class="flex items-center gap-1">
             Next
@@ -121,9 +117,6 @@ function SearchList() {
     error,
     totalResults,
     totalPages,
-    hasNext,
-    hasPrevious,
-    categoryInfo,
     selectedCategory,
     selectedEngines,
     handleSearch,
@@ -137,6 +130,8 @@ function SearchList() {
     removeCategory,
     getVisiblePages,
     getResultRange,
+    PER_PAGE,
+    emptyPageDetected,
   } = useSearch();
 
   // Handle form submission
@@ -158,6 +153,10 @@ function SearchList() {
     clearFilters();
   };
 
+  // Compute pagination state from results
+  const hasNext = () => !emptyPageDetected();
+  const hasPrevious = () => page() > 1;
+
   // Render skeleton items
   const renderSkeletons = () => {
     return Array.from({ length: 3 }, (_, i) => <SkeletonItem />);
@@ -170,45 +169,27 @@ function SearchList() {
     social_media: 'Social Media',
   };
 
+  const getCategoryLabel = () => {
+    return selectedCategory() ? categoryLabels[selectedCategory()] : 'General';
+  };
+
   return (
     <div class="min-h-screen bg-gray-50">
       <div class="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <header class="mb-8">
           <h1 class="text-3xl font-bold text-gray-900 mb-2">
-            {categoryLabels[selectedCategory()] || 'News'} Search
+            {getCategoryLabel()} Search
           </h1>
           <p class="text-gray-600">
-            Search for {selectedCategory() === 'news' 
-              ? 'news articles and current events' 
-              : `${selectedCategory()} content`
+            Search for {selectedCategory() === null
+              ? 'content across all sources'
+              : selectedCategory() === 'news'
+                ? 'news articles and current events'
+                : `${selectedCategory()} content`
             }
           </p>
         </header>
-
-        {/* Category Info Banner */}
-        <Show when={categoryInfo()}>
-          {(info) => (
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <h2 class="text-sm font-semibold text-blue-900 mb-1">
-                {info().name}
-              </h2>
-              <p class="text-sm text-blue-700 mb-2">
-                {info().description}
-              </p>
-              <div class="flex flex-wrap gap-2 text-xs">
-                <span class="text-blue-600">Engines:</span>
-                <For each={info().engines}>
-                  {(engine) => (
-                    <span class="inline-flex items-center px-2 py-0.5 rounded bg-blue-100 text-blue-800">
-                      {engine}
-                    </span>
-                  )}
-                </For>
-              </div>
-            </div>
-          )}
-        </Show>
 
         {/* Search Form with Filter Button */}
         <form onSubmit={onSubmit} class="mb-4">
@@ -218,7 +199,7 @@ function SearchList() {
                 type="text"
                 value={searchInput()}
                 onInput={(e) => setSearchInput(e.target.value)}
-                placeholder={`Search ${categoryLabels[selectedCategory()]?.toLowerCase() || 'news'}...`}
+                placeholder={selectedCategory() ? `Search ${categoryLabels[selectedCategory()]?.toLowerCase()}...` : 'Search...'}
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                 disabled={loading()}
               />
@@ -234,29 +215,23 @@ function SearchList() {
                 </button>
               </Show>
             </div>
-            
+
             {/* Filter Button */}
             <div class="relative">
               <button
                 type="button"
                 onClick={() => setIsFilterOpen(!isFilterOpen())}
-                class={`px-4 py-3 border rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all flex items-center gap-2 ${
-                  isFilterOpen() || selectedCategory() !== 'news' || selectedEngines().length > 0
+                class={`px-4 py-3 border rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all flex items-center gap-2 ${isFilterOpen() || selectedCategory() !== null
                     ? 'border-blue-500 text-blue-600 bg-blue-50'
                     : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
                 </svg>
                 <span>Filter</span>
-                <Show when={selectedEngines().length > 0}>
-                  <span class="ml-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {selectedEngines().length}
-                  </span>
-                </Show>
               </button>
-              
+
               {/* Filter Dropdown */}
               <FilterDropdown
                 isOpen={isFilterOpen()}
@@ -267,7 +242,7 @@ function SearchList() {
                 onClear={onFilterClear}
               />
             </div>
-            
+
             <button
               type="submit"
               disabled={!searchInput().trim() || loading()}
@@ -322,30 +297,30 @@ function SearchList() {
           {/* Empty state */}
           <Show when={!loading() && results().length === 0 && !error()}>
             <div class="text-center py-12">
-              <svg 
-                class="mx-auto h-12 w-12 text-gray-400 mb-4" 
-                fill="none" 
-                viewBox="0 0 24 24" 
+              <svg
+                class="mx-auto h-12 w-12 text-gray-400 mb-4"
+                fill="none"
+                viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path 
-                  stroke-linecap="round" 
-                  stroke-linejoin="round" 
-                  stroke-width={2} 
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
               <h3 class="text-lg font-medium text-gray-900 mb-1">
                 No results yet
               </h3>
               <p class="text-gray-500">
-                Enter a search query to find {selectedCategory() === 'news' ? 'news articles' : 'content'}
+                Enter a search query to find {selectedCategory() === null ? 'content across all sources' : selectedCategory() === 'news' ? 'news articles' : 'content'}
               </p>
             </div>
           </Show>
 
           {/* Pagination */}
-          <Show when={!loading() && results().length > 0 && totalPages() > 1}>
+          <Show when={!loading() && results().length > 0}>
             <Pagination
               page={page()}
               totalPages={totalPages()}
@@ -355,16 +330,8 @@ function SearchList() {
               onPageChange={goToPage}
               onNext={goToNextPage}
               onPrevious={goToPreviousPage}
-              resultRange={getResultRange()}
-              totalResults={totalResults()}
+              resultsCount={results().length}
             />
-          </Show>
-
-          {/* Single page indicator (when only 1 page of results) */}
-          <Show when={!loading() && results().length > 0 && totalPages() === 1}>
-            <div class="text-center py-6 text-gray-500 text-sm">
-              Showing all {totalResults()} results
-            </div>
           </Show>
         </div>
       </div>

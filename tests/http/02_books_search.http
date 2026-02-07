@@ -8,7 +8,7 @@ POST http://localhost:8000/search
 Content-Type: application/json
 
 {
-  "query": "python programming",
+  "query": "artificial intelligence",
   "category": "books"
 }
 
@@ -19,7 +19,7 @@ Content-Type: application/json
 {
   "query": "data science",
   "category": "books",
-  "page": 1
+  "page": 500
 }
 
 ### 2.8 Search with !books category bang
