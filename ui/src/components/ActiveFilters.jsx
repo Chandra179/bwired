@@ -15,14 +15,12 @@ function ActiveFilters(props) {
     news: 'News',
     books: 'Books',
     science: 'Science',
-    social_media: 'Social Media',
   };
 
   const categoryIcons = {
     news: '📰',
     books: '📚',
     science: '🔬',
-    social_media: '💬',
   };
 
   const hasActiveFilters = () => {

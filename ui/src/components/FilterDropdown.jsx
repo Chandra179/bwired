@@ -4,7 +4,6 @@ const CATEGORIES = [
   { id: 'news', label: 'News', icon: '📰' },
   { id: 'books', label: 'Books', icon: '📚' },
   { id: 'science', label: 'Science', icon: '🔬' },
-  { id: 'social_media', label: 'Social', icon: '💬' },
 ];
 
 /**

@@ -16,7 +16,7 @@ outgoing:
   request_timeout: 5.0
   max_request_timeout: 20.0
   pool_connections: 100
-  pool_maxsize: 20
+  pool_maxsize: 50
   enable_http2: true
 
 # Override: Only enable 6 specific engines

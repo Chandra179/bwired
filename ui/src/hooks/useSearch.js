@@ -224,16 +224,12 @@ export function useSearch() {
     page,
     loading,
     error,
-    totalResults,
-    totalPages,
     selectedCategory,
     selectedEngines,
-    PER_PAGE,
     emptyPageDetected,
 
     // Computed
     getVisiblePages,
-    getResultRange,
 
     // Actions
     handleSearch,

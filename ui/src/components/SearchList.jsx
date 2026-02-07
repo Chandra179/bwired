@@ -12,7 +12,6 @@ import ActiveFilters from './ActiveFilters';
 function Pagination(props) {
   const {
     page,
-    totalPages,
     hasNext,
     hasPrevious,
     visiblePages,
@@ -115,8 +114,7 @@ function SearchList() {
     page,
     loading,
     error,
-    totalResults,
-    totalPages,
+
     selectedCategory,
     selectedEngines,
     handleSearch,
@@ -129,8 +127,6 @@ function SearchList() {
     removeEngine,
     removeCategory,
     getVisiblePages,
-    getResultRange,
-    PER_PAGE,
     emptyPageDetected,
   } = useSearch();
 
@@ -166,7 +162,6 @@ function SearchList() {
     news: 'News',
     books: 'Books',
     science: 'Science',
-    social_media: 'Social Media',
   };
 
   const getCategoryLabel = () => {
@@ -323,7 +318,6 @@ function SearchList() {
           <Show when={!loading() && results().length > 0}>
             <Pagination
               page={page()}
-              totalPages={totalPages()}
               hasNext={hasNext()}
               hasPrevious={hasPrevious()}
               visiblePages={getVisiblePages()}
